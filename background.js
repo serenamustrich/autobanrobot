@@ -1,4 +1,7 @@
 let bearer = null;
+const bearerReady = chrome.storage.session.get(['bearer']).then(result => {
+  if (!bearer) bearer = result.bearer ?? null;
+});
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {
@@ -7,6 +10,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
     );
     if (auth && auth.value !== bearer) {
       bearer = auth.value;
+      chrome.storage.session.set({ bearer });
       chrome.tabs.query({ url: ['https://twitter.com/*', 'https://x.com/*'] }, tabs => {
         tabs.forEach(tab =>
           chrome.tabs.sendMessage(tab.id, { type: 'BEARER', token: bearer }).catch(() => {})
@@ -19,5 +23,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 );
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg.type === 'GET_BEARER') { sendResponse({ token: bearer }); return true; }
+  if (msg.type !== 'GET_BEARER') return;
+  bearerReady.then(() => sendResponse({ token: bearer }));
+  return true;
 });

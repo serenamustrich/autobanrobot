@@ -18,14 +18,21 @@
 
   window.addEventListener('__twblocker_keywords__', e => {
     SPAM = e.detail?.kws ?? SPAM;
-    processed = new WeakSet();
+    processedSignatures = new WeakMap();
     scanAll();
   });
   let bearer = null;
-  const blockQueue = [];
+  const pendingBlocks = new Map();
+  const queuedBlocks = new Map();
   const blocked = new Set();
-  let processed = new WeakSet();
+  const blocking = new Set();
+  const matchedElements = new Map();
+  let processedSignatures = new WeakMap();
+  let scanScheduled = false;
+  let blockQueueRunning = false;
   const _f = window.fetch.bind(window);
+  const MAX_BLOCK_ATTEMPTS = 3;
+  const BLOCK_INTERVAL_MS = 500;
 
   function toast(msg, ok = true) {
     const show = () => {
@@ -51,61 +58,113 @@
     bearer = token;
     if (isNew) {
       toast('🔑 Token 已就绪，开始封号');
-      const pending = blockQueue.splice(0);
-      pending.forEach(({ username, el }) => doBlock(username, el));
+      const pending = [...pendingBlocks.entries()];
+      pendingBlocks.clear();
+      pending.forEach(([username, el]) => enqueueBlock(username, el));
     }
   });
 
-  async function doBlock(username, el) {
-    if (blocked.has(username)) return;
-    blocked.add(username);
+  function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
-    const csrfRaw = document.cookie.match(/ct0=([^;]+)/)?.[1];
-    if (!csrfRaw) {
-      toast('❌ 无 CSRF token', false);
-      blocked.delete(username);
-      if (el) el.style.opacity = '1';
-      return;
+  function updateMatchedElements(username, opacity, title = '') {
+    matchedElements.get(username)?.forEach(el => {
+      if (!el?.isConnected) return;
+      el.style.opacity = opacity;
+      el.title = title;
+    });
+  }
+
+  function shouldRetry(status) {
+    return status === 408 || status === 425 || status === 429 || status >= 500;
+  }
+
+  async function doBlock(username, el) {
+    if (blocked.has(username) || blocking.has(username)) return;
+    blocking.add(username);
+
+    let lastError = '';
+    try {
+      for (let attempt = 1; attempt <= MAX_BLOCK_ATTEMPTS; attempt++) {
+        const csrfRaw = document.cookie.match(/ct0=([^;]+)/)?.[1];
+        if (!csrfRaw) {
+          lastError = '无 CSRF token';
+        } else {
+          const csrf = decodeURIComponent(csrfRaw);
+          try {
+            const res = await _f(`https://${location.hostname}/i/api/1.1/blocks/create.json`, {
+              method: 'POST',
+              headers: {
+                'authorization': bearer,
+                'x-csrf-token': csrf,
+                'content-type': 'application/x-www-form-urlencoded',
+                'x-twitter-active-user': 'yes',
+                'x-twitter-auth-type': 'OAuth2Session',
+              },
+              body: `screen_name=${encodeURIComponent(username)}`,
+              credentials: 'include',
+            });
+
+            if (res.ok) {
+              blocked.add(username);
+              toast(`✅ 已屏蔽 @${username}`);
+              updateMatchedElements(username, '0.12', `[已屏蔽] @${username}`);
+              window.dispatchEvent(new CustomEvent('__twblocker_blocked__'));
+              return;
+            }
+
+            const body = await res.text().catch(() => '');
+            lastError = `HTTP ${res.status}: ${body.slice(0, 60)}`;
+            if (!shouldRetry(res.status)) break;
+          } catch (e) {
+            lastError = `异常: ${e.message}`;
+          }
+        }
+
+        if (attempt < MAX_BLOCK_ATTEMPTS) {
+          await wait(750 * (2 ** (attempt - 1)));
+        }
+      }
+    } finally {
+      blocking.delete(username);
     }
-    const csrf = decodeURIComponent(csrfRaw);
+
+    toast(`❌ @${username} ${lastError}`, false);
+    updateMatchedElements(username, '1');
+  }
+
+  async function drainBlockQueue() {
+    if (blockQueueRunning || !bearer) return;
+    blockQueueRunning = true;
 
     try {
-      const res = await _f(`https://${location.hostname}/i/api/1.1/blocks/create.json`, {
-        method: 'POST',
-        headers: {
-          'authorization': bearer,
-          'x-csrf-token': csrf,
-          'content-type': 'application/x-www-form-urlencoded',
-          'x-twitter-active-user': 'yes',
-          'x-twitter-auth-type': 'OAuth2Session',
-        },
-        body: `screen_name=${encodeURIComponent(username)}`,
-        credentials: 'include',
-      });
-
-      if (res.ok) {
-        toast(`✅ 已屏蔽 @${username}`);
-        if (el) { el.style.opacity = '0.12'; el.title = `[已屏蔽] @${username}`; }
-        window.dispatchEvent(new CustomEvent('__twblocker_blocked__'));
-      } else {
-        const body = await res.text().catch(() => '');
-        toast(`❌ @${username} HTTP ${res.status}: ${body.slice(0, 60)}`, false);
-        blocked.delete(username);
-        if (el) el.style.opacity = '1';
+      while (queuedBlocks.size && bearer) {
+        const [username, el] = queuedBlocks.entries().next().value;
+        queuedBlocks.delete(username);
+        await doBlock(username, el);
+        if (queuedBlocks.size) await wait(BLOCK_INTERVAL_MS);
       }
-    } catch (e) {
-      toast(`❌ 异常: ${e.message}`, false);
-      blocked.delete(username);
-      if (el) el.style.opacity = '1';
+    } finally {
+      blockQueueRunning = false;
+      if (queuedBlocks.size && bearer) drainBlockQueue();
     }
   }
 
+  function enqueueBlock(username, el) {
+    if (blocked.has(username) || blocking.has(username) || queuedBlocks.has(username)) return;
+    queuedBlocks.set(username, el);
+    drainBlockQueue();
+  }
+
   function blockUser(username, el) {
-    if (blocked.has(username)) return;
+    if (!matchedElements.has(username)) matchedElements.set(username, new Set());
+    matchedElements.get(username).add(el);
+    if (blocked.has(username) || blocking.has(username)) return;
     if (!bearer) {
-      blockQueue.push({ username, el });
+      pendingBlocks.set(username, el);
     } else {
-      doBlock(username, el);
+      enqueueBlock(username, el);
     }
   }
 
@@ -115,21 +174,41 @@
     return /^(?:\p{Extended_Pictographic}\u{FE0F}?(?:\p{Emoji_Modifier})?(?:\u{200D}\p{Extended_Pictographic}\u{FE0F}?(?:\p{Emoji_Modifier})?)*|[\u{1F1E0}-\u{1F1FF}]{2}|[0-9#*]\u{FE0F}?\u{20E3})$/u.test(s);
   }
 
-  function hasKeyword(t) { return SPAM.some(k => t.includes(k)); }
+  function normalizeForMatch(text) {
+    return text
+      .normalize('NFKC')
+      .toLocaleLowerCase()
+      .replace(/[\s\u200B-\u200D\u2060\uFEFF]/gu, '');
+  }
+
+  function hasKeyword(text) {
+    const normalizedText = normalizeForMatch(text);
+    return SPAM.some(keyword => {
+      const normalizedKeyword = normalizeForMatch(keyword);
+      return normalizedKeyword && normalizedText.includes(normalizedKeyword);
+    });
+  }
 
   function processTweet(el) {
-    if (processed.has(el)) return;
-    processed.add(el);
-
     const text = el.querySelector('[data-testid="tweetText"]')?.textContent ?? '';
     const nameBlock = el.querySelector('[data-testid="User-Name"]');
     if (!nameBlock) return;
 
     const link = nameBlock.querySelector('a[href^="/"]');
     const username = link?.getAttribute('href')?.replace(/^\//, '') ?? '';
-    if (!username || blocked.has(username)) return;
+    if (!username) return;
 
     const nameText = nameBlock.textContent.replace(`@${username}`, '').trim();
+    const signature = `${username}\u0000${nameText}\u0000${text}`;
+    if (processedSignatures.get(el) === signature) return;
+    processedSignatures.set(el, signature);
+
+    if (blocked.has(username)) {
+      el.style.opacity = '0.12';
+      el.title = `[已屏蔽] @${username}`;
+      return;
+    }
+
     const nameSpam = hasKeyword(nameText) || hasKeyword(username);
     const contentSpam = hasKeyword(text);
     const singleEmoji = isSingleEmoji(text);
@@ -144,6 +223,19 @@
       .forEach(sel => document.querySelectorAll(sel).forEach(processTweet));
   }
 
-  new MutationObserver(scanAll).observe(document.documentElement, { childList: true, subtree: true });
+  function scheduleScan() {
+    if (scanScheduled) return;
+    scanScheduled = true;
+    requestAnimationFrame(() => {
+      scanScheduled = false;
+      scanAll();
+    });
+  }
+
+  new MutationObserver(scheduleScan).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    characterData: true
+  });
   setTimeout(scanAll, 2000);
 })();

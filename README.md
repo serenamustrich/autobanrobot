@@ -6,6 +6,39 @@ Twitter/X spam-account blocker for Chromium browsers.
 
 > This extension performs real account blocks through the logged-in Twitter/X session. Review your keyword list before enabling it.
 
+## Release notes / 更新说明
+
+### v1.1.0 — 2026-07-28
+
+Reliability and rate-limit protection update.
+
+- Fixed intermittent missed matches caused by marking partially rendered Twitter/X posts as processed too early.
+- Replaced one-time DOM tracking with content signatures, allowing posts to be checked again when their author or text changes.
+- Added a global sequential blocking queue with a mandatory 500 ms interval between accounts.
+- Added up to three controlled retries for temporary network errors, HTTP `408`, `425`, `429`, and `5xx` responses.
+- Deduplicated pending, queued, in-progress, and successfully blocked accounts.
+- Improved keyword matching with Unicode NFKC normalization, case-insensitive comparison, and removal of whitespace and invisible separator characters.
+- Preserved the captured Bearer token in session-only extension storage so Manifest V3 service-worker restarts do not temporarily interrupt blocking.
+- Coalesced DOM mutation scans with `requestAnimationFrame` to reduce redundant work on busy timelines.
+
+本版本重点提升动态时间线中的识别可靠性并降低接口限流风险：
+
+- 修复推文尚未渲染完整就被提前标记为“已处理”造成的偶发漏判。
+- 使用内容签名跟踪 DOM；用户名、显示名称或正文变化后会重新检查。
+- 新增全局串行屏蔽队列，每个账号之间强制等待 500 毫秒。
+- 针对临时网络异常及 HTTP `408`、`425`、`429`、`5xx` 响应，最多进行三次受控重试。
+- 对等待中、队列中、执行中及已成功屏蔽的账号统一去重。
+- 关键词匹配新增 Unicode NFKC 规范化、大小写兼容、空白及不可见分隔符清理。
+- Bearer Token 使用浏览器会话级存储，避免 Manifest V3 后台休眠重启造成短暂失效；关闭浏览器后自动清除。
+- 使用 `requestAnimationFrame` 合并 DOM 变化扫描，降低繁忙时间线中的重复计算。
+
+### v1.0.0 — 2026-07-28
+
+- Initial public release.
+- Added username, display-name, post-content, and single-emoji blocking rules.
+- Added built-in and user-defined keywords with immediate page rescanning.
+- Added multilingual documentation in nine languages.
+
 ## 中文
 
 AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自动屏蔽扩展。
