@@ -2,6 +2,7 @@
   let SPAM = [];
   let emojiEnglishEmojiEnabled = true;
   let singleEmojiEnabled = true;
+  let structuredEmojiTimeEnabled = true;
 
   window.addEventListener('__twblocker_keywords__', e => {
     SPAM = e.detail?.kws ?? SPAM;
@@ -14,6 +15,9 @@
     }
     if (typeof e.detail?.singleEmojiEnabled === 'boolean') {
       singleEmojiEnabled = e.detail.singleEmojiEnabled;
+    }
+    if (typeof e.detail?.structuredEmojiTimeEnabled === 'boolean') {
+      structuredEmojiTimeEnabled = e.detail.structuredEmojiTimeEnabled;
     }
     processedSignatures = new WeakMap();
     scanAll();
@@ -183,6 +187,27 @@
     );
   }
 
+  function isStructuredEmojiTime(text) {
+    const lines = text
+      .split(/\r?\n/u)
+      .map(line => line.trim())
+      .filter(Boolean);
+    if (lines.length !== 5) return false;
+
+    const textLine = value =>
+      /\p{Script=Latin}/u.test(value) && !isSingleEmoji(value);
+    const dateTime =
+      /^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\s+\d{1,2}:\d{2}(?::\d{2})?$/u;
+
+    return (
+      textLine(lines[0]) &&
+      isSingleEmoji(lines[1]) &&
+      textLine(lines[2]) &&
+      isSingleEmoji(lines[3]) &&
+      dateTime.test(lines[4])
+    );
+  }
+
   function normalizeForMatch(text) {
     return text
       .normalize('NFKC')
@@ -216,6 +241,11 @@
 
       if (node instanceof HTMLImageElement) {
         text += node.getAttribute('alt') ?? '';
+        continue;
+      }
+
+      if (node instanceof HTMLBRElement) {
+        text += '\n';
         continue;
       }
 
@@ -261,7 +291,15 @@
     const singleEmoji = singleEmojiEnabled && isSingleEmoji(text);
     const emojiEnglishEmoji =
       emojiEnglishEmojiEnabled && isEmojiEnglishEmoji(text);
-    if (!nameSpam && !contentSpam && !singleEmoji && !emojiEnglishEmoji) return;
+    const structuredEmojiTime =
+      structuredEmojiTimeEnabled && isStructuredEmojiTime(text);
+    if (
+      !nameSpam &&
+      !contentSpam &&
+      !singleEmoji &&
+      !emojiEnglishEmoji &&
+      !structuredEmojiTime
+    ) return;
 
     el.style.opacity = '0.35';
     const reasons = [];
@@ -269,6 +307,7 @@
     if (contentSpam) reasons.push('内容命中关键词');
     if (singleEmoji) reasons.push('单 Emoji 内容');
     if (emojiEnglishEmoji) reasons.push('Emoji + 英文 + Emoji');
+    if (structuredEmojiTime) reasons.push('文字 + Emoji + 文字 + Emoji + 时间');
     blockUser(username, el, {
       displayName: nameText,
       reason: reasons.join('；'),
