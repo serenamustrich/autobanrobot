@@ -8,10 +8,10 @@ Twitter/X spam-account blocker for Chromium browsers.
 
 ## Repository branches / 仓库分支
 
-- [`main`](https://github.com/serenamustrich/autobanrobot/tree/main): Chrome and Microsoft Edge extension source. This branch contains only the Chromium release line.
+- [`main`](https://github.com/serenamustrich/autobanrobot/tree/main): the single shared Chromium codebase for both Chrome and Microsoft Edge. Chrome and Edge use the same source files, manifest, features, and release package; they are not separate implementations.
 - [`safari`](https://github.com/serenamustrich/autobanrobot/tree/safari): Safari adaptation and packaging source. Safari-specific code is maintained in the `safari/` directory on that branch.
 
-- [`main`](https://github.com/serenamustrich/autobanrobot/tree/main)：Chrome 与 Microsoft Edge 扩展源码，仅维护 Chromium 版本。
+- [`main`](https://github.com/serenamustrich/autobanrobot/tree/main)：Chrome 与 Microsoft Edge 共用的同一套 Chromium 源码。两者使用完全相同的代码、Manifest、功能和发布包，不是两个独立实现。
 - [`safari`](https://github.com/serenamustrich/autobanrobot/tree/safari)：Safari 适配与打包源码；Safari 专用代码统一维护在该分支的 `safari/` 目录。
 
 ## Release notes / 更新说明
