@@ -8,6 +8,36 @@ Twitter/X spam-account blocker for Chromium browsers.
 
 ## Release notes / 更新说明
 
+### v1.2.0 — 2026-07-29
+
+Transient on-page blocking statistics.
+
+- Added matched and successfully blocked counts to the existing bottom-right successful-block notification.
+- The combined notification disappears automatically after four seconds; no additional or persistent widget is created.
+- Matching the same account in multiple posts is counted only once.
+
+新增非驻留式网页内屏蔽统计：
+
+- 在 Twitter/X 页面右下角现有的“屏蔽成功”提示中展示已匹配和已成功屏蔽数量。
+- 合并后的提示在四秒后自动消失，不增加额外弹窗或常驻组件。
+- 同一账号在多条推文中重复命中时只计数一次。
+
+### v1.1.1 — 2026-07-29
+
+Emoji extraction compatibility fix.
+
+- Fixed single-emoji posts not being detected when Twitter/X renders the emoji as an `<img>` element instead of a text node.
+- Tweet text extraction now preserves DOM order while combining ordinary text nodes with image `alt` values.
+- Added support for accessible emoji elements rendered with `role="img"` or `data-emoji`.
+- The single-emoji rule remains strict: sentences containing an emoji and posts containing multiple emojis do not match this rule.
+
+Emoji 提取兼容性修复：
+
+- 修复 Twitter/X 将 Emoji 渲染为 `<img>` 而非普通文本节点时，单 Emoji 内容无法识别的问题。
+- 正文提取现在按照 DOM 顺序合并普通文本节点和图片的 `alt` 内容。
+- 增加对带有 `role="img"` 或 `data-emoji` 的可访问 Emoji 元素的兼容。
+- 单 Emoji 规则仍保持严格：句子中夹带 Emoji 或包含多个 Emoji 的内容不会命中该规则。
+
 ### v1.1.0 — 2026-07-28
 
 Reliability and rate-limit protection update.

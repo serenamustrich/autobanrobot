@@ -27,14 +27,16 @@
   const blocked = new Set();
   const blocking = new Set();
   const matchedElements = new Map();
+  const matchedAccounts = new Set();
   let processedSignatures = new WeakMap();
   let scanScheduled = false;
   let blockQueueRunning = false;
+  let successfulBlockCount = 0;
   const _f = window.fetch.bind(window);
   const MAX_BLOCK_ATTEMPTS = 3;
   const BLOCK_INTERVAL_MS = 500;
 
-  function toast(msg, ok = true) {
+  function toast(msg, ok = true, showStats = false) {
     const show = () => {
       const el = document.createElement('div');
       el.style.cssText = `
@@ -43,7 +45,18 @@
         padding:10px 16px;border-radius:10px;font-size:13px;
         font-family:-apple-system,sans-serif;
         box-shadow:0 2px 12px rgba(0,0,0,.5);max-width:300px;word-break:break-all;`;
-      el.textContent = msg;
+      const message = document.createElement('div');
+      message.textContent = msg;
+      el.appendChild(message);
+      if (showStats) {
+        const stats = document.createElement('div');
+        stats.style.cssText = `
+          margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.28);
+          font-size:11px;opacity:.92;`;
+        stats.textContent =
+          `已匹配 ${matchedAccounts.size} · 已屏蔽 ${successfulBlockCount}`;
+        el.appendChild(stats);
+      }
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 4000);
     };
@@ -108,7 +121,8 @@
 
             if (res.ok) {
               blocked.add(username);
-              toast(`✅ 已屏蔽 @${username}`);
+              successfulBlockCount++;
+              toast(`✅ 已屏蔽 @${username}`, true, true);
               updateMatchedElements(username, '0.12', `[已屏蔽] @${username}`);
               window.dispatchEvent(new CustomEvent('__twblocker_blocked__'));
               return;
@@ -158,6 +172,7 @@
   }
 
   function blockUser(username, el) {
+    matchedAccounts.add(username);
     if (!matchedElements.has(username)) matchedElements.set(username, new Set());
     matchedElements.get(username).add(el);
     if (blocked.has(username) || blocking.has(username)) return;
@@ -189,8 +204,41 @@
     });
   }
 
+  function extractTweetText(root) {
+    if (!root) return '';
+
+    let text = '';
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT
+    );
+
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (node.nodeType === Node.TEXT_NODE) {
+        text += node.nodeValue ?? '';
+        continue;
+      }
+
+      if (node instanceof HTMLImageElement) {
+        text += node.getAttribute('alt') ?? '';
+        continue;
+      }
+
+      if (
+        node instanceof Element &&
+        node.matches('[data-emoji][aria-label], [role="img"][aria-label]')
+      ) {
+        text += node.getAttribute('aria-label') ?? '';
+      }
+    }
+
+    return text;
+  }
+
   function processTweet(el) {
-    const text = el.querySelector('[data-testid="tweetText"]')?.textContent ?? '';
+    const tweetText = el.querySelector('[data-testid="tweetText"]');
+    const text = extractTweetText(tweetText);
     const nameBlock = el.querySelector('[data-testid="User-Name"]');
     if (!nameBlock) return;
 
