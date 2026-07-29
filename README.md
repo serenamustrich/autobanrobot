@@ -18,6 +18,22 @@ Twitter/X spam-account blocker for Chromium browsers.
 
 ## Release notes / 更新说明
 
+### v1.5.1 — 2026-07-29
+
+Rule-switch persistence fix.
+
+- Rule switches now save immediately when toggled; closing the popup no longer discards their new state.
+- Replaced checkbox controls with clearer animated slider switches.
+- The keyword Save button continues to save keywords and the current rule states together.
+- Repeated setting changes reuse one confirmation timer to avoid stale confirmation messages.
+
+修复规则开关状态无法可靠保留的问题：
+
+- 开关切换时立即写入扩展设置，关闭弹窗不会再丢失刚刚选择的状态。
+- 将勾选框替换为状态更直观的动画滑块开关。
+- 关键词“保存”按钮仍会同时保存关键词与当前全部规则状态。
+- 连续修改设置时复用同一个保存提示计时器，避免旧提示状态互相干扰。
+
 ### v1.5.0 — 2026-07-29
 
 Structured multiline spam-pattern detection.
