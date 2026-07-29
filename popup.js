@@ -25,24 +25,42 @@ document.getElementById('save').addEventListener('click', () => {
   const kws = document.getElementById('keywords').value
     .split('\n').map(s => s.trim()).filter(Boolean);
 
-  const emojiEnglishEmojiEnabled =
-    document.getElementById('emojiEnglishEmojiEnabled').checked;
-  const singleEmojiEnabled =
-    document.getElementById('singleEmojiEnabled').checked;
-  const structuredEmojiTimeEnabled =
-    document.getElementById('structuredEmojiTimeEnabled').checked;
-
   chrome.storage.local.set({
     keywords: kws,
-    emojiEnglishEmojiEnabled,
-    singleEmojiEnabled,
-    structuredEmojiTimeEnabled
+    ...readRuleSettings()
   }, () => {
-    const saved = document.getElementById('saved');
-    saved.style.display = 'block';
-    setTimeout(() => { saved.style.display = 'none'; }, 2000);
+    showSaved();
   });
 });
+
+[
+  'singleEmojiEnabled',
+  'emojiEnglishEmojiEnabled',
+  'structuredEmojiTimeEnabled'
+].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => {
+    chrome.storage.local.set(readRuleSettings(), showSaved);
+  });
+});
+
+function readRuleSettings() {
+  return {
+    singleEmojiEnabled:
+      document.getElementById('singleEmojiEnabled').checked,
+    emojiEnglishEmojiEnabled:
+      document.getElementById('emojiEnglishEmojiEnabled').checked,
+    structuredEmojiTimeEnabled:
+      document.getElementById('structuredEmojiTimeEnabled').checked
+  };
+}
+
+let savedTimer = null;
+function showSaved() {
+  const saved = document.getElementById('saved');
+  saved.style.display = 'block';
+  clearTimeout(savedTimer);
+  savedTimer = setTimeout(() => { saved.style.display = 'none'; }, 2000);
+}
 
 function renderBlockHistory(value) {
   const history = Array.isArray(value) ? value : [];
