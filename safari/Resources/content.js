@@ -5,11 +5,13 @@ extensionAPI.storage.local.get(['keywords']).then(r => {
 
 extensionAPI.storage.local.get([
   'emojiEnglishEmojiEnabled',
-  'singleEmojiEnabled'
+  'singleEmojiEnabled',
+  'structuredEmojiTimeEnabled'
 ]).then(r => {
   dispatchSettings({
     emojiEnglishEmojiEnabled: r.emojiEnglishEmojiEnabled !== false,
-    singleEmojiEnabled: r.singleEmojiEnabled !== false
+    singleEmojiEnabled: r.singleEmojiEnabled !== false,
+    structuredEmojiTimeEnabled: r.structuredEmojiTimeEnabled !== false
   });
 });
 
@@ -18,7 +20,11 @@ extensionAPI.storage.onChanged.addListener(changes => {
   if (changes.keywords) {
     dispatchKeywords(Array.isArray(changes.keywords.newValue) ? changes.keywords.newValue : []);
   }
-  if (changes.emojiEnglishEmojiEnabled || changes.singleEmojiEnabled) {
+  if (
+    changes.emojiEnglishEmojiEnabled ||
+    changes.singleEmojiEnabled ||
+    changes.structuredEmojiTimeEnabled
+  ) {
     const settings = {};
     if (changes.emojiEnglishEmojiEnabled) {
       settings.emojiEnglishEmojiEnabled =
@@ -27,6 +33,10 @@ extensionAPI.storage.onChanged.addListener(changes => {
     if (changes.singleEmojiEnabled) {
       settings.singleEmojiEnabled =
         changes.singleEmojiEnabled.newValue !== false;
+    }
+    if (changes.structuredEmojiTimeEnabled) {
+      settings.structuredEmojiTimeEnabled =
+        changes.structuredEmojiTimeEnabled.newValue !== false;
     }
     dispatchSettings(settings);
   }
