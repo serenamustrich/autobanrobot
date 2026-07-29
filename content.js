@@ -3,10 +3,15 @@ chrome.storage.local.get(['keywords'], r => {
   dispatchKeywords(Array.isArray(r.keywords) ? r.keywords : []);
 });
 
-chrome.storage.local.get(['emojiEnglishEmojiEnabled', 'singleEmojiEnabled'], r => {
+chrome.storage.local.get([
+  'emojiEnglishEmojiEnabled',
+  'singleEmojiEnabled',
+  'structuredEmojiTimeEnabled'
+], r => {
   dispatchSettings({
     emojiEnglishEmojiEnabled: r.emojiEnglishEmojiEnabled !== false,
-    singleEmojiEnabled: r.singleEmojiEnabled !== false
+    singleEmojiEnabled: r.singleEmojiEnabled !== false,
+    structuredEmojiTimeEnabled: r.structuredEmojiTimeEnabled !== false
   });
 });
 
@@ -15,7 +20,11 @@ chrome.storage.onChanged.addListener(changes => {
   if (changes.keywords) {
     dispatchKeywords(Array.isArray(changes.keywords.newValue) ? changes.keywords.newValue : []);
   }
-  if (changes.emojiEnglishEmojiEnabled || changes.singleEmojiEnabled) {
+  if (
+    changes.emojiEnglishEmojiEnabled ||
+    changes.singleEmojiEnabled ||
+    changes.structuredEmojiTimeEnabled
+  ) {
     const settings = {};
     if (changes.emojiEnglishEmojiEnabled) {
       settings.emojiEnglishEmojiEnabled =
@@ -24,6 +33,10 @@ chrome.storage.onChanged.addListener(changes => {
     if (changes.singleEmojiEnabled) {
       settings.singleEmojiEnabled =
         changes.singleEmojiEnabled.newValue !== false;
+    }
+    if (changes.structuredEmojiTimeEnabled) {
+      settings.structuredEmojiTimeEnabled =
+        changes.structuredEmojiTimeEnabled.newValue !== false;
     }
     dispatchSettings(settings);
   }

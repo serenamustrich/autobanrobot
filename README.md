@@ -18,6 +18,24 @@ Twitter/X spam-account blocker for Chromium browsers.
 
 ## Release notes / 更新说明
 
+### v1.5.0 — 2026-07-29
+
+Structured multiline spam-pattern detection.
+
+- Added an independently configurable `Text → Emoji → Text → Emoji → Date/time` rule for five-line spam posts.
+- The rule requires exactly five non-empty lines and validates the entire post structure.
+- Both text lines must contain Latin text, both Emoji lines must contain exactly one complete Emoji, and the final line must be a date and time.
+- Added explicit `<br>` extraction so visual line breaks in Twitter/X posts are preserved during matching.
+- The new rule is enabled by default and can be switched off independently without affecting the other built-in rules.
+
+新增结构化多行垃圾内容识别：
+
+- 新增独立开关的“文字 → Emoji → 文字 → Emoji → 日期时间”五段式规则。
+- 规则要求整条内容严格由五个非空行组成，避免普通多行内容因局部相似而误判。
+- 两个文字行必须包含拉丁文字，两个 Emoji 行必须分别只有一个完整 Emoji，最后一行必须为日期时间。
+- 新增 `<br>` 换行提取兼容，确保 Twitter/X 页面中视觉换行能够参与规则判断。
+- 新规则默认开启，可单独关闭，不会影响其他内置规则。
+
 ### v1.4.0 — 2026-07-29
 
 Safari support, unified branding, and independently configurable built-in rules.
@@ -163,7 +181,7 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 - 当用户名、显示名称或发布内容命中关键词时，自动屏蔽对应账号。
 - 当发布内容去除空白后只有一个完整 Emoji 时，自动屏蔽对应账号。
 - 支持在扩展弹窗中添加自定义关键词，保存后立即重新扫描当前页面。
-- “仅单个 Emoji”与“Emoji + 拉丁文字 + Emoji”规则均提供独立开关。
+- “仅单个 Emoji”、“Emoji + 拉丁文字 + Emoji”与“五段式 Emoji 时间”规则均提供独立开关。
 - 仅将经过 X 关系状态确认成功的账号写入本地 Ban 清单。
 - 当前登录用户正在关注或互关的账号不会被自动屏蔽。
 - 内置常见垃圾推广关键词，并记录成功屏蔽数量。
@@ -181,7 +199,7 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 
 点击工具栏中的扩展图标即可编辑关键词，每行填写一个。扩展使用当前 Twitter/X 登录会话执行真实屏蔽操作。关键词过于宽泛可能造成误屏蔽，请谨慎配置。本项目与 X Corp. 无关。
 
-弹窗可以分别开关“仅单个 Emoji”和“Emoji + 英文 + Emoji”规则，并查看由本扩展执行且经过 X 关系接口确认成功的 Ban 清单。该清单不是 X 账号全部历史屏蔽列表。
+弹窗可以分别开关“仅单个 Emoji”、“Emoji + 英文 + Emoji”和“五段式 Emoji 时间”规则，并查看由本扩展执行且经过 X 关系接口确认成功的 Ban 清单。该清单不是 X 账号全部历史屏蔽列表。
 
 ### 初始屏蔽词预设
 
