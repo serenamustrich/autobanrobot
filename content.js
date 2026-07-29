@@ -3,9 +3,10 @@ chrome.storage.local.get(['keywords'], r => {
   dispatchKeywords(Array.isArray(r.keywords) ? r.keywords : []);
 });
 
-chrome.storage.local.get(['emojiEnglishEmojiEnabled'], r => {
+chrome.storage.local.get(['emojiEnglishEmojiEnabled', 'singleEmojiEnabled'], r => {
   dispatchSettings({
-    emojiEnglishEmojiEnabled: r.emojiEnglishEmojiEnabled !== false
+    emojiEnglishEmojiEnabled: r.emojiEnglishEmojiEnabled !== false,
+    singleEmojiEnabled: r.singleEmojiEnabled !== false
   });
 });
 
@@ -14,10 +15,17 @@ chrome.storage.onChanged.addListener(changes => {
   if (changes.keywords) {
     dispatchKeywords(Array.isArray(changes.keywords.newValue) ? changes.keywords.newValue : []);
   }
-  if (changes.emojiEnglishEmojiEnabled) {
-    dispatchSettings({
-      emojiEnglishEmojiEnabled: changes.emojiEnglishEmojiEnabled.newValue !== false
-    });
+  if (changes.emojiEnglishEmojiEnabled || changes.singleEmojiEnabled) {
+    const settings = {};
+    if (changes.emojiEnglishEmojiEnabled) {
+      settings.emojiEnglishEmojiEnabled =
+        changes.emojiEnglishEmojiEnabled.newValue !== false;
+    }
+    if (changes.singleEmojiEnabled) {
+      settings.singleEmojiEnabled =
+        changes.singleEmojiEnabled.newValue !== false;
+    }
+    dispatchSettings(settings);
   }
 });
 

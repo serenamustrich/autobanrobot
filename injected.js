@@ -1,6 +1,7 @@
 (() => {
   let SPAM = [];
   let emojiEnglishEmojiEnabled = true;
+  let singleEmojiEnabled = true;
 
   window.addEventListener('__twblocker_keywords__', e => {
     SPAM = e.detail?.kws ?? SPAM;
@@ -8,7 +9,12 @@
     scanAll();
   });
   window.addEventListener('__twblocker_settings__', e => {
-    emojiEnglishEmojiEnabled = e.detail?.emojiEnglishEmojiEnabled !== false;
+    if (typeof e.detail?.emojiEnglishEmojiEnabled === 'boolean') {
+      emojiEnglishEmojiEnabled = e.detail.emojiEnglishEmojiEnabled;
+    }
+    if (typeof e.detail?.singleEmojiEnabled === 'boolean') {
+      singleEmojiEnabled = e.detail.singleEmojiEnabled;
+    }
     processedSignatures = new WeakMap();
     scanAll();
   });
@@ -252,7 +258,7 @@
 
     const nameSpam = hasKeyword(nameText) || hasKeyword(username);
     const contentSpam = hasKeyword(text);
-    const singleEmoji = isSingleEmoji(text);
+    const singleEmoji = singleEmojiEnabled && isSingleEmoji(text);
     const emojiEnglishEmoji =
       emojiEnglishEmojiEnabled && isEmojiEnglishEmoji(text);
     if (!nameSpam && !contentSpam && !singleEmoji && !emojiEnglishEmoji) return;

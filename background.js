@@ -29,9 +29,18 @@ async function initializeKeywords() {
 }
 
 async function initializeSettings() {
-  const stored = await chrome.storage.local.get(['emojiEnglishEmojiEnabled']);
-  if (typeof stored.emojiEnglishEmojiEnabled === 'boolean') return;
-  await chrome.storage.local.set({ emojiEnglishEmojiEnabled: true });
+  const stored = await chrome.storage.local.get([
+    'emojiEnglishEmojiEnabled',
+    'singleEmojiEnabled'
+  ]);
+  const defaults = {};
+  if (typeof stored.emojiEnglishEmojiEnabled !== 'boolean') {
+    defaults.emojiEnglishEmojiEnabled = true;
+  }
+  if (typeof stored.singleEmojiEnabled !== 'boolean') {
+    defaults.singleEmojiEnabled = true;
+  }
+  if (Object.keys(defaults).length) await chrome.storage.local.set(defaults);
 }
 
 function scheduleQueue(delayMs = 0) {
