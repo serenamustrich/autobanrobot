@@ -1,5 +1,7 @@
 # AutoBanRobot
 
+<img src="icon.png" alt="AutoBanRobot cat assistant icon" width="160">
+
 Twitter/X spam-account blocker for Chromium browsers.
 
 [中文](#中文) · [English](#english) · [Español](#español) · [日本語](#日本語) · [한국어](#한국어) · [Deutsch](#deutsch) · [Français](#français) · [Русский](#русский) · [Italiano](#italiano)
@@ -15,6 +17,26 @@ Twitter/X spam-account blocker for Chromium browsers.
 - [`safari`](https://github.com/serenamustrich/autobanrobot/tree/safari)：Safari 适配与打包源码；Safari 专用代码统一维护在该分支的 `safari/` 目录。
 
 ## Release notes / 更新说明
+
+### v1.4.0 — 2026-07-29
+
+Safari support, unified branding, and independently configurable built-in rules.
+
+- Added a dedicated macOS Safari adaptation and Xcode packaging project on the `safari` branch.
+- Chrome and Microsoft Edge continue to share the exact same Chromium implementation on `main`.
+- Added a visible, independent switch for the strict single-Emoji rule. It remains enabled by default for existing users.
+- Saving either built-in rule switch takes effect immediately and triggers a fresh scan of the current page.
+- Switching one built-in rule no longer changes the state of the other.
+- Adopted the same full-bleed cat-assistant icon across Chrome, Edge, and Safari.
+
+新增 Safari 支持、统一品牌图标及可独立配置的内置规则：
+
+- 在 `safari` 分支新增 macOS Safari 专用适配代码与 Xcode 打包工程。
+- Chrome 与 Microsoft Edge 继续在 `main` 分支共用完全相同的 Chromium 实现。
+- 为严格的“仅单个 Emoji”规则增加独立且可见的开关；现有用户默认保持开启。
+- 保存任一内置规则开关后立即生效，并重新扫描当前页面。
+- 切换其中一个内置规则时，不会再改变另一个规则的状态。
+- Chrome、Edge 与 Safari 统一使用同一枚铺满画布的猫咪助手图标。
 
 ### v1.3.0 — 2026-07-29
 
@@ -141,7 +163,7 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 - 当用户名、显示名称或发布内容命中关键词时，自动屏蔽对应账号。
 - 当发布内容去除空白后只有一个完整 Emoji 时，自动屏蔽对应账号。
 - 支持在扩展弹窗中添加自定义关键词，保存后立即重新扫描当前页面。
-- 支持独立开关的“Emoji + 拉丁文字 + Emoji”垃圾内容规则。
+- “仅单个 Emoji”与“Emoji + 拉丁文字 + Emoji”规则均提供独立开关。
 - 仅将经过 X 关系状态确认成功的账号写入本地 Ban 清单。
 - 当前登录用户正在关注或互关的账号不会被自动屏蔽。
 - 内置常见垃圾推广关键词，并记录成功屏蔽数量。
@@ -159,7 +181,7 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 
 点击工具栏中的扩展图标即可编辑关键词，每行填写一个。扩展使用当前 Twitter/X 登录会话执行真实屏蔽操作。关键词过于宽泛可能造成误屏蔽，请谨慎配置。本项目与 X Corp. 无关。
 
-弹窗还可以开关“Emoji + 英文 + Emoji”规则，并查看由本扩展执行且经过 X 关系接口确认成功的 Ban 清单。该清单不是 X 账号全部历史屏蔽列表。
+弹窗可以分别开关“仅单个 Emoji”和“Emoji + 英文 + Emoji”规则，并查看由本扩展执行且经过 X 关系接口确认成功的 Ban 清单。该清单不是 X 账号全部历史屏蔽列表。
 
 ### 初始屏蔽词预设
 

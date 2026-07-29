@@ -1,6 +1,7 @@
 chrome.storage.local.get([
   'blockCount',
   'keywords',
+  'singleEmojiEnabled',
   'emojiEnglishEmojiEnabled',
   'blockHistory',
   'pendingBlockQueue'
@@ -10,6 +11,8 @@ chrome.storage.local.get([
     (Array.isArray(r.keywords) ? r.keywords : []).join('\n');
   document.getElementById('emojiEnglishEmojiEnabled').checked =
     r.emojiEnglishEmojiEnabled !== false;
+  document.getElementById('singleEmojiEnabled').checked =
+    r.singleEmojiEnabled !== false;
   document.getElementById('queueCount').textContent =
     Array.isArray(r.pendingBlockQueue) ? r.pendingBlockQueue.length : 0;
   renderBlockHistory(r.blockHistory);
@@ -21,8 +24,14 @@ document.getElementById('save').addEventListener('click', () => {
 
   const emojiEnglishEmojiEnabled =
     document.getElementById('emojiEnglishEmojiEnabled').checked;
+  const singleEmojiEnabled =
+    document.getElementById('singleEmojiEnabled').checked;
 
-  chrome.storage.local.set({ keywords: kws, emojiEnglishEmojiEnabled }, () => {
+  chrome.storage.local.set({
+    keywords: kws,
+    emojiEnglishEmojiEnabled,
+    singleEmojiEnabled
+  }, () => {
     const saved = document.getElementById('saved');
     saved.style.display = 'block';
     setTimeout(() => { saved.style.display = 'none'; }, 2000);
