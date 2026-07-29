@@ -8,6 +8,40 @@ Twitter/X spam-account blocker for Chromium browsers.
 
 ## Release notes / 更新说明
 
+### v1.3.0 — 2026-07-29
+
+Configurable pattern detection, verified blocks, and local Ban history.
+
+- Added an optional `Emoji + Latin text + Emoji` rule for spam patterns such as `💝charming✌`, `🍹refined🙈`, and `🖼athletic💞`.
+- The new pattern must cover the entire post. Ordinary sentences that merely contain an emoji do not match.
+- Added a settings-popup switch for enabling or disabling this rule; it is enabled by default.
+- Added a mandatory pre-block relationship check. Accounts followed by the authenticated user, including mutual follows, are always exempt even when a rule matches.
+- If the relationship cannot be confirmed, AutoBanRobot fails closed and does not submit a block request.
+- Moved blocking from the page script to a persistent Manifest V3 background queue. Matches are recorded immediately and processed asynchronously, one account at a time.
+- The original timeline or profile page may be closed or changed while queued jobs continue. Pending jobs survive browser restarts and resume after Twitter/X authentication becomes available.
+- The queue keeps a minimum 500 ms interval between accounts and exposes its pending count in the extension popup.
+- Bearer and CSRF credentials remain in session-only storage; persistent queue records never contain authentication credentials.
+- Block API responses are no longer considered successful based only on HTTP `2xx`. AutoBanRobot now requires an explicit `blocking=true` relationship and uses a follow-up relationship check when necessary.
+- Unconfirmed blocks are reported as failures, restored visually, excluded from counters, and never added to history.
+- Added a local list of up to 500 uniquely confirmed accounts blocked by AutoBanRobot, including account, time, match reason, and content excerpt.
+- Ban history entries link to the corresponding X profile and can be cleared without changing X block status.
+
+新增可配置模式识别、屏蔽结果确认及本地 Ban 清单：
+
+- 新增可选的“Emoji + 拉丁文字 + Emoji”规则，可识别 `💝charming✌`、`🍹refined🙈`、`🖼athletic💞` 等模式。
+- 该模式必须覆盖整条内容，普通句子中仅夹带 Emoji 不会命中。
+- 设置弹窗新增独立开关，默认开启，可随时关闭。
+- 在提交屏蔽前强制检查关注关系；当前登录用户正在关注的账号（包括互关账号）即使命中规则也始终跳过。
+- 如果关注关系暂时无法确认，AutoBanRobot 会采用安全策略，不提交屏蔽请求。
+- 将屏蔽执行从页面脚本迁移到 Manifest V3 持久化后台队列；命中后立即记录，再由后台逐个异步处理。
+- 原时间线或用户页面可以关闭或切换，已排队任务仍会继续；浏览器重启后，任务会在 Twitter/X 登录凭证重新可用时恢复。
+- 后台队列在账号之间保持至少 500 毫秒间隔，弹窗会展示待处理数量。
+- Bearer 和 CSRF 仅保存在会话级存储中，持久化任务记录不包含任何登录凭证。
+- 不再仅凭 HTTP `2xx` 判定屏蔽成功；现在要求服务端明确返回 `blocking=true`，必要时调用关系接口二次核验。
+- 未确认的屏蔽会按失败处理、恢复页面显示、不计入数量，也不会写入 Ban 清单。
+- 新增 AutoBanRobot 本地已确认屏蔽清单，最多保留 500 个唯一账号，并记录账号、时间、命中原因和内容摘要。
+- 清单可打开对应 X 账号主页，也可清空本地记录；清空记录不会解除 X 上的屏蔽。
+
 ### v1.2.1 — 2026-07-29
 
 Page-scoped notification statistics.
@@ -99,6 +133,9 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 - 当用户名、显示名称或发布内容命中关键词时，自动屏蔽对应账号。
 - 当发布内容去除空白后只有一个完整 Emoji 时，自动屏蔽对应账号。
 - 支持在扩展弹窗中添加自定义关键词，保存后立即重新扫描当前页面。
+- 支持独立开关的“Emoji + 拉丁文字 + Emoji”垃圾内容规则。
+- 仅将经过 X 关系状态确认成功的账号写入本地 Ban 清单。
+- 当前登录用户正在关注或互关的账号不会被自动屏蔽。
 - 内置常见垃圾推广关键词，并记录成功屏蔽数量。
 - 同时支持 `twitter.com` 和 `x.com`。
 
@@ -113,6 +150,8 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 ### 使用与注意事项
 
 点击工具栏中的扩展图标即可编辑关键词，每行填写一个。扩展使用当前 Twitter/X 登录会话执行真实屏蔽操作。关键词过于宽泛可能造成误屏蔽，请谨慎配置。本项目与 X Corp. 无关。
+
+弹窗还可以开关“Emoji + 英文 + Emoji”规则，并查看由本扩展执行且经过 X 关系接口确认成功的 Ban 清单。该清单不是 X 账号全部历史屏蔽列表。
 
 ### 初始屏蔽词预设
 
@@ -130,6 +169,8 @@ AutoBanRobot is a Twitter/X spam-account blocker for Chromium-based browsers.
 - Blocks an account when its username, display name, or post content matches a keyword.
 - Blocks an account when the post, after whitespace is removed, consists of exactly one complete emoji.
 - Supports custom keywords from the extension popup and immediately rescans the current page after saving.
+- Supports an optional `Emoji + Latin text + Emoji` spam-pattern rule.
+- Keeps a local history of accounts whose blocked relationship was confirmed by X.
 - Includes built-in spam keywords and keeps a successful-block counter.
 - Works on both `twitter.com` and `x.com`.
 

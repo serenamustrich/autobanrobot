@@ -1,24 +1,24 @@
 (() => {
   let SPAM = [];
+  let emojiEnglishEmojiEnabled = true;
 
   window.addEventListener('__twblocker_keywords__', e => {
     SPAM = e.detail?.kws ?? SPAM;
     processedSignatures = new WeakMap();
     scanAll();
   });
-  let bearer = null;
-  const pendingBlocks = new Map();
-  const queuedBlocks = new Map();
+  window.addEventListener('__twblocker_settings__', e => {
+    emojiEnglishEmojiEnabled = e.detail?.emojiEnglishEmojiEnabled !== false;
+    processedSignatures = new WeakMap();
+    scanAll();
+  });
   const blocked = new Set();
-  const blocking = new Set();
+  const exemptAccounts = new Set();
+  const queuedAccounts = new Set();
   const matchedElements = new Map();
   let processedSignatures = new WeakMap();
   let scanScheduled = false;
-  let blockQueueRunning = false;
   let pageStats = createPageStats();
-  const _f = window.fetch.bind(window);
-  const MAX_BLOCK_ATTEMPTS = 3;
-  const BLOCK_INTERVAL_MS = 500;
 
   function currentPageKey() {
     return `${location.pathname}${location.search}`;
@@ -67,24 +67,6 @@
     document.body ? show() : document.addEventListener('DOMContentLoaded', show);
   }
 
-  // 接收来自 content.js 的 bearer token（background 层抓到的）
-  window.addEventListener('__twblocker_bearer__', e => {
-    const token = e.detail?.token;
-    if (!token) return;
-    const isNew = !bearer;
-    bearer = token;
-    if (isNew) {
-      toast('🔑 Token 已就绪，开始封号');
-      const pending = [...pendingBlocks.entries()];
-      pendingBlocks.clear();
-      pending.forEach(([username, job]) => enqueueBlock(username, job));
-    }
-  });
-
-  function wait(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
   function updateMatchedElements(username, opacity, title = '') {
     matchedElements.get(username)?.forEach(el => {
       if (!el?.isConnected) return;
@@ -93,106 +75,106 @@
     });
   }
 
-  function shouldRetry(status) {
-    return status === 408 || status === 425 || status === 429 || status >= 500;
-  }
-
-  async function doBlock(username, job) {
-    if (blocked.has(username) || blocking.has(username)) return;
-    blocking.add(username);
-
-    let lastError = '';
-    try {
-      for (let attempt = 1; attempt <= MAX_BLOCK_ATTEMPTS; attempt++) {
-        const csrfRaw = document.cookie.match(/ct0=([^;]+)/)?.[1];
-        if (!csrfRaw) {
-          lastError = '无 CSRF token';
-        } else {
-          const csrf = decodeURIComponent(csrfRaw);
-          try {
-            const res = await _f(`https://${location.hostname}/i/api/1.1/blocks/create.json`, {
-              method: 'POST',
-              headers: {
-                'authorization': bearer,
-                'x-csrf-token': csrf,
-                'content-type': 'application/x-www-form-urlencoded',
-                'x-twitter-active-user': 'yes',
-                'x-twitter-auth-type': 'OAuth2Session',
-              },
-              body: `screen_name=${encodeURIComponent(username)}`,
-              credentials: 'include',
-            });
-
-            if (res.ok) {
-              blocked.add(username);
-              job.stats.successfulBlockCount++;
-              toast(`✅ 已屏蔽 @${username}`, true, job.stats);
-              updateMatchedElements(username, '0.12', `[已屏蔽] @${username}`);
-              window.dispatchEvent(new CustomEvent('__twblocker_blocked__'));
-              return;
-            }
-
-            const body = await res.text().catch(() => '');
-            lastError = `HTTP ${res.status}: ${body.slice(0, 60)}`;
-            if (!shouldRetry(res.status)) break;
-          } catch (e) {
-            lastError = `异常: ${e.message}`;
-          }
-        }
-
-        if (attempt < MAX_BLOCK_ATTEMPTS) {
-          await wait(750 * (2 ** (attempt - 1)));
-        }
-      }
-    } finally {
-      blocking.delete(username);
-    }
-
-    toast(`❌ @${username} ${lastError}`, false);
-    updateMatchedElements(username, '1');
-  }
-
-  async function drainBlockQueue() {
-    if (blockQueueRunning || !bearer) return;
-    blockQueueRunning = true;
-
-    try {
-      while (queuedBlocks.size && bearer) {
-        const [username, job] = queuedBlocks.entries().next().value;
-        queuedBlocks.delete(username);
-        await doBlock(username, job);
-        if (queuedBlocks.size) await wait(BLOCK_INTERVAL_MS);
-      }
-    } finally {
-      blockQueueRunning = false;
-      if (queuedBlocks.size && bearer) drainBlockQueue();
-    }
-  }
-
-  function enqueueBlock(username, job) {
-    if (blocked.has(username) || blocking.has(username) || queuedBlocks.has(username)) return;
-    queuedBlocks.set(username, job);
-    drainBlockQueue();
-  }
-
-  function blockUser(username, el) {
+  function blockUser(username, el, match) {
     const stats = syncPageStats();
     stats.matchedAccounts.add(username);
     if (!matchedElements.has(username)) matchedElements.set(username, new Set());
     matchedElements.get(username).add(el);
-    if (blocked.has(username) || blocking.has(username)) return;
-    const job = { el, stats };
-    if (!bearer) {
-      pendingBlocks.set(username, job);
-    } else {
-      enqueueBlock(username, job);
-    }
+    if (
+      blocked.has(username) ||
+      exemptAccounts.has(username) ||
+      queuedAccounts.has(username)
+    ) return;
+    queuedAccounts.add(username);
+    const csrfRaw = document.cookie.match(/ct0=([^;]+)/)?.[1];
+    window.dispatchEvent(new CustomEvent('__twblocker_enqueue__', {
+      detail: {
+        username,
+        csrf: csrfRaw ? decodeURIComponent(csrfRaw) : '',
+        hostname: location.hostname,
+        pageKey: stats.key,
+        pageUrl: location.href,
+        displayName: match.displayName,
+        reason: match.reason,
+        content: match.content
+      }
+    }));
   }
+
+  window.addEventListener('__twblocker_block_result__', event => {
+    const result = event.detail;
+    if (!result?.username) return;
+    queuedAccounts.delete(result.username);
+    const samePage = result.pageKey === currentPageKey();
+
+    if (result.state === 'success') {
+      blocked.add(result.username);
+      if (!samePage) return;
+      const stats = syncPageStats();
+      stats.successfulBlockCount++;
+      updateMatchedElements(
+        result.username,
+        '0.12',
+        `[已屏蔽] @${result.username}`
+      );
+      toast(`✅ 已屏蔽 @${result.username}`, true, stats);
+      return;
+    }
+
+    if (result.state === 'skipped') {
+      exemptAccounts.add(result.username);
+      if (!samePage) return;
+      updateMatchedElements(
+        result.username,
+        '1',
+        `[已跳过：${result.message}] @${result.username}`
+      );
+      toast(`⏭️ 已跳过 @${result.username}：${result.message}`);
+      return;
+    }
+
+    if (result.state === 'already-blocked') {
+      blocked.add(result.username);
+      if (!samePage) return;
+      updateMatchedElements(
+        result.username,
+        '0.12',
+        `[已屏蔽] @${result.username}`
+      );
+      toast(`ℹ️ @${result.username} 已经处于屏蔽状态`);
+      return;
+    }
+
+    if (!samePage) return;
+    updateMatchedElements(result.username, '1');
+    toast(`❌ @${result.username} ${result.message || '后台屏蔽失败'}`, false);
+  });
 
   function isSingleEmoji(text) {
     const s = text.replace(/\s/g, '');
     if (!s) return false;
     return /^(?:\p{Extended_Pictographic}\u{FE0F}?(?:\p{Emoji_Modifier})?(?:\u{200D}\p{Extended_Pictographic}\u{FE0F}?(?:\p{Emoji_Modifier})?)*|[\u{1F1E0}-\u{1F1FF}]{2}|[0-9#*]\u{FE0F}?\u{20E3})$/u.test(s);
+  }
+
+  const emojiSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
+  function isEmojiGrapheme(value) {
+    return isSingleEmoji(value);
+  }
+
+  function isEmojiEnglishEmoji(text) {
+    const normalized = text.trim();
+    if (!normalized) return false;
+
+    const graphemes = [...emojiSegmenter.segment(normalized)].map(item => item.segment);
+    if (graphemes.length < 3) return false;
+    if (!isEmojiGrapheme(graphemes[0]) || !isEmojiGrapheme(graphemes.at(-1))) return false;
+
+    const middle = graphemes.slice(1, -1).join('');
+    return (
+      /\p{Script=Latin}/u.test(middle) &&
+      /^[\p{Script=Latin}\p{Mark}\p{Number}\s'’.,!?&+\-_/]+$/u.test(middle)
+    );
   }
 
   function normalizeForMatch(text) {
@@ -262,14 +244,30 @@
       el.title = `[已屏蔽] @${username}`;
       return;
     }
+    if (exemptAccounts.has(username)) {
+      el.style.opacity = '1';
+      el.title = `[已跳过：你正在关注该账号] @${username}`;
+      return;
+    }
 
     const nameSpam = hasKeyword(nameText) || hasKeyword(username);
     const contentSpam = hasKeyword(text);
     const singleEmoji = isSingleEmoji(text);
-    if (!nameSpam && !contentSpam && !singleEmoji) return;
+    const emojiEnglishEmoji =
+      emojiEnglishEmojiEnabled && isEmojiEnglishEmoji(text);
+    if (!nameSpam && !contentSpam && !singleEmoji && !emojiEnglishEmoji) return;
 
     el.style.opacity = '0.35';
-    blockUser(username, el);
+    const reasons = [];
+    if (nameSpam) reasons.push('用户名或显示名称命中关键词');
+    if (contentSpam) reasons.push('内容命中关键词');
+    if (singleEmoji) reasons.push('单 Emoji 内容');
+    if (emojiEnglishEmoji) reasons.push('Emoji + 英文 + Emoji');
+    blockUser(username, el, {
+      displayName: nameText,
+      reason: reasons.join('；'),
+      content: text.slice(0, 160)
+    });
   }
 
   function scanAll() {
