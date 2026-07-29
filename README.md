@@ -6,6 +6,14 @@ Twitter/X spam-account blocker for Chromium browsers.
 
 > This extension performs real account blocks through the logged-in Twitter/X session. Review your keyword list before enabling it.
 
+## Repository branches / 仓库分支
+
+- [`main`](https://github.com/serenamustrich/autobanrobot/tree/main): Chrome and Microsoft Edge extension source. This branch contains only the Chromium release line.
+- [`safari`](https://github.com/serenamustrich/autobanrobot/tree/safari): Safari adaptation and packaging source. Safari-specific code is maintained in the `safari/` directory on that branch.
+
+- [`main`](https://github.com/serenamustrich/autobanrobot/tree/main)：Chrome 与 Microsoft Edge 扩展源码，仅维护 Chromium 版本。
+- [`safari`](https://github.com/serenamustrich/autobanrobot/tree/safari)：Safari 适配与打包源码；Safari 专用代码统一维护在该分支的 `safari/` 目录。
+
 ## Release notes / 更新说明
 
 ### v1.3.0 — 2026-07-29
