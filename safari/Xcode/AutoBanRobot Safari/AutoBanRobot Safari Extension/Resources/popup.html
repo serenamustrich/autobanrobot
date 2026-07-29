@@ -24,10 +24,26 @@
     button:hover { background: #1a8cd8; }
     .saved { font-size: 11px; color: #00ba7c; margin-top: 4px; display: none; }
     .toggle {
-      display:flex;align-items:flex-start;gap:8px;margin:8px 0;
+      display:flex;align-items:flex-start;gap:9px;margin:10px 0;
       font-size:12px;color:#0f1419;line-height:1.35;cursor:pointer;
     }
-    .toggle input { margin:2px 0 0; }
+    .toggle input {
+      position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;
+    }
+    .switch-ui {
+      position:relative;flex:0 0 auto;width:34px;height:20px;margin-top:1px;
+      border-radius:999px;background:#cfd9de;transition:background .18s ease;
+    }
+    .switch-ui::after {
+      content:"";position:absolute;width:16px;height:16px;left:2px;top:2px;
+      border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);
+      transition:transform .18s ease;
+    }
+    .toggle input:checked + .switch-ui { background:#1d9bf0; }
+    .toggle input:checked + .switch-ui::after { transform:translateX(14px); }
+    .toggle input:focus-visible + .switch-ui {
+      outline:2px solid #1d9bf0;outline-offset:2px;
+    }
     .hint { color:#71767b;font-size:10px;margin-top:2px; }
     .history-head { display:flex;align-items:center;justify-content:space-between; }
     .history-head button {
@@ -59,6 +75,7 @@
   <textarea id="keywords" placeholder="同城&#10;上门"></textarea>
   <label class="toggle">
     <input id="singleEmojiEnabled" type="checkbox">
+    <span class="switch-ui" aria-hidden="true"></span>
     <span>
       启用“仅单个 Emoji”规则
       <div class="hint">只匹配整条内容仅有一个完整 Emoji</div>
@@ -66,6 +83,7 @@
   </label>
   <label class="toggle">
     <input id="emojiEnglishEmojiEnabled" type="checkbox">
+    <span class="switch-ui" aria-hidden="true"></span>
     <span>
       启用“Emoji + 英文 + Emoji”规则
       <div class="hint">例如：💝charming✌</div>
@@ -73,6 +91,7 @@
   </label>
   <label class="toggle">
     <input id="structuredEmojiTimeEnabled" type="checkbox">
+    <span class="switch-ui" aria-hidden="true"></span>
     <span>
       启用“五段式 Emoji 时间”规则
       <div class="hint">文字 → Emoji → 文字 → Emoji → 日期时间</div>
