@@ -3,13 +3,21 @@
 Safari 版本与 Chrome/Edge 版本使用同一枚猫咪助手图标；`Resources/icon.png`
 与仓库根目录的 `icon.png` 保持完全一致。
 
-当前版本：`1.5.1`。三个内置内容规则——“仅单个 Emoji”、
+当前版本：`1.5.2`。三个内置内容规则——“仅单个 Emoji”、
 “Emoji + 英文 + Emoji”及“五段式 Emoji 时间”——均可在扩展弹窗中
 独立启用或停用，保存后立即生效。
 
 This directory contains the macOS Safari adaptation of AutoBanRobot. It is maintained only on the repository’s `safari` branch.
 
 本目录是 AutoBanRobot 的 macOS Safari 适配版本，仅在仓库的 `safari` 分支维护。
+
+## License / 许可
+
+本项目采用 [PolyForm Noncommercial License 1.0.0](../LICENSE)：
+源码公开并允许协议范围内的非商业使用；商业使用须另行取得项目所有者授权。
+
+This project uses the [PolyForm Noncommercial License 1.0.0](../LICENSE).
+Commercial use requires a separate license from the project owner.
 
 ## Support boundary / 支持范围
 
