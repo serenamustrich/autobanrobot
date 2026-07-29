@@ -18,6 +18,20 @@ Twitter/X spam-account blocker for Chromium browsers.
 
 ## Release notes / 更新说明
 
+### v1.5.2 — 2026-07-29
+
+License policy update.
+
+- Replaced the MIT License with the PolyForm Noncommercial License 1.0.0.
+- Source code remains publicly readable, modifiable, and distributable for permitted noncommercial purposes.
+- Commercial use is not permitted without a separate license from the project owner.
+
+许可策略更新：
+
+- 将 MIT License 替换为 PolyForm Noncommercial License 1.0.0。
+- 源代码继续公开，并允许在协议规定的非商业用途范围内查看、修改和分发。
+- 未经项目所有者另行授权，不得用于商业用途。
+
 ### v1.5.1 — 2026-07-29
 
 Rule-switch persistence fix.
@@ -371,4 +385,9 @@ Scarica o clona il repository, abilita la modalità sviluppatore nella pagina de
 
 ## License
 
-[MIT](LICENSE)
+[PolyForm Noncommercial License 1.0.0](LICENSE)
+
+Source is publicly available for permitted noncommercial use. Commercial use
+requires a separate license from the project owner.
+
+本项目源码公开，可依照协议用于非商业目的。任何商业使用均须另行取得项目所有者授权。
