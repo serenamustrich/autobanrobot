@@ -8,6 +8,26 @@ Twitter/X spam-account blocker for Chromium browsers.
 
 ## Release notes / 更新说明
 
+### v1.2.1 — 2026-07-29
+
+Page-scoped notification statistics.
+
+- Changed matched and blocked counts from extension-session totals to statistics scoped to the current Twitter/X URL.
+- Counts reset automatically when navigating between Home, Search, user profiles, post details, or other routes without a full page reload.
+- A queued block originating from a previous route cannot be counted in the newly opened page.
+- Successful-block notifications now explicitly label the values as current-page statistics.
+- Moved the initial keyword preset to `default-keywords.json`; it is copied to extension storage only when no saved keyword list exists.
+- Preset entries are fully editable and deletable. An intentionally empty keyword list remains empty and is never restored or forcibly merged by runtime code.
+
+当前页面范围统计优化：
+
+- 将“已匹配 / 已屏蔽”从扩展页面脚本运行期间累计值改为当前 Twitter/X URL 页面独立统计。
+- 在主页、搜索、用户主页、推文详情等路由之间无刷新切换时，统计自动重新开始。
+- 旧页面进入队列的屏蔽任务即使稍后完成，也不会计入新页面。
+- 屏蔽成功提示明确标注为“当前页面”统计。
+- 将初始屏蔽词预设移至 `default-keywords.json`，仅在不存在已保存关键词列表时写入扩展存储。
+- 所有预设词均可编辑和删除；用户主动保存空列表后会保持为空，运行时代码不会恢复或强制合并预设。
+
 ### v1.2.0 — 2026-07-29
 
 Transient on-page blocking statistics.
@@ -93,6 +113,12 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 ### 使用与注意事项
 
 点击工具栏中的扩展图标即可编辑关键词，每行填写一个。扩展使用当前 Twitter/X 登录会话执行真实屏蔽操作。关键词过于宽泛可能造成误屏蔽，请谨慎配置。本项目与 X Corp. 无关。
+
+### 初始屏蔽词预设
+
+`免费过夜`、`主页联系`、`主页匹配`、`免费破处`、`同城`、`上门`、`刷了半天`、`看主页`、`点我头像`、`处男免费`、`处男无偿`、`体制内老师`、`她太涩了`、`sao货`
+
+该列表只在首次初始化时写入设置，之后可以在扩展弹窗中任意修改或全部删除。
 
 ## English
 

@@ -3,6 +3,21 @@ const bearerReady = chrome.storage.session.get(['bearer']).then(result => {
   if (!bearer) bearer = result.bearer ?? null;
 });
 
+async function initializeKeywords() {
+  const stored = await chrome.storage.local.get(['keywords']);
+  if (Array.isArray(stored.keywords)) return;
+
+  const response = await fetch(chrome.runtime.getURL('default-keywords.json'));
+  const keywords = await response.json();
+  await chrome.storage.local.set({ keywords });
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+  initializeKeywords().catch(error => {
+    console.error('Failed to initialize keyword preset:', error);
+  });
+});
+
 chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {
     const auth = details.requestHeaders?.find(

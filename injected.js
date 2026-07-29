@@ -1,20 +1,5 @@
 (() => {
-  let SPAM = [
-    '免费过夜',
-    '主页联系',
-    '主页匹配',
-    '免费破处',
-    '同城',
-    '上门',
-    '刷了半天',
-    '看主页',
-    '点我头像',
-    '处男免费',
-    '处男无偿',
-    '体制内老师',
-    '她太涩了',
-    'sao货'
-  ];
+  let SPAM = [];
 
   window.addEventListener('__twblocker_keywords__', e => {
     SPAM = e.detail?.kws ?? SPAM;
@@ -27,16 +12,35 @@
   const blocked = new Set();
   const blocking = new Set();
   const matchedElements = new Map();
-  const matchedAccounts = new Set();
   let processedSignatures = new WeakMap();
   let scanScheduled = false;
   let blockQueueRunning = false;
-  let successfulBlockCount = 0;
+  let pageStats = createPageStats();
   const _f = window.fetch.bind(window);
   const MAX_BLOCK_ATTEMPTS = 3;
   const BLOCK_INTERVAL_MS = 500;
 
-  function toast(msg, ok = true, showStats = false) {
+  function currentPageKey() {
+    return `${location.pathname}${location.search}`;
+  }
+
+  function createPageStats() {
+    return {
+      key: currentPageKey(),
+      matchedAccounts: new Set(),
+      successfulBlockCount: 0
+    };
+  }
+
+  function syncPageStats() {
+    if (pageStats.key === currentPageKey()) return pageStats;
+    pageStats = createPageStats();
+    matchedElements.clear();
+    processedSignatures = new WeakMap();
+    return pageStats;
+  }
+
+  function toast(msg, ok = true, stats = null) {
     const show = () => {
       const el = document.createElement('div');
       el.style.cssText = `
@@ -48,14 +52,14 @@
       const message = document.createElement('div');
       message.textContent = msg;
       el.appendChild(message);
-      if (showStats) {
-        const stats = document.createElement('div');
-        stats.style.cssText = `
+      if (stats && stats === syncPageStats()) {
+        const statsEl = document.createElement('div');
+        statsEl.style.cssText = `
           margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.28);
           font-size:11px;opacity:.92;`;
-        stats.textContent =
-          `已匹配 ${matchedAccounts.size} · 已屏蔽 ${successfulBlockCount}`;
-        el.appendChild(stats);
+        statsEl.textContent =
+          `当前页面：已匹配 ${pageStats.matchedAccounts.size} · 已屏蔽 ${pageStats.successfulBlockCount}`;
+        el.appendChild(statsEl);
       }
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 4000);
@@ -73,7 +77,7 @@
       toast('🔑 Token 已就绪，开始封号');
       const pending = [...pendingBlocks.entries()];
       pendingBlocks.clear();
-      pending.forEach(([username, el]) => enqueueBlock(username, el));
+      pending.forEach(([username, job]) => enqueueBlock(username, job));
     }
   });
 
@@ -93,7 +97,7 @@
     return status === 408 || status === 425 || status === 429 || status >= 500;
   }
 
-  async function doBlock(username, el) {
+  async function doBlock(username, job) {
     if (blocked.has(username) || blocking.has(username)) return;
     blocking.add(username);
 
@@ -121,8 +125,8 @@
 
             if (res.ok) {
               blocked.add(username);
-              successfulBlockCount++;
-              toast(`✅ 已屏蔽 @${username}`, true, true);
+              job.stats.successfulBlockCount++;
+              toast(`✅ 已屏蔽 @${username}`, true, job.stats);
               updateMatchedElements(username, '0.12', `[已屏蔽] @${username}`);
               window.dispatchEvent(new CustomEvent('__twblocker_blocked__'));
               return;
@@ -154,9 +158,9 @@
 
     try {
       while (queuedBlocks.size && bearer) {
-        const [username, el] = queuedBlocks.entries().next().value;
+        const [username, job] = queuedBlocks.entries().next().value;
         queuedBlocks.delete(username);
-        await doBlock(username, el);
+        await doBlock(username, job);
         if (queuedBlocks.size) await wait(BLOCK_INTERVAL_MS);
       }
     } finally {
@@ -165,21 +169,23 @@
     }
   }
 
-  function enqueueBlock(username, el) {
+  function enqueueBlock(username, job) {
     if (blocked.has(username) || blocking.has(username) || queuedBlocks.has(username)) return;
-    queuedBlocks.set(username, el);
+    queuedBlocks.set(username, job);
     drainBlockQueue();
   }
 
   function blockUser(username, el) {
-    matchedAccounts.add(username);
+    const stats = syncPageStats();
+    stats.matchedAccounts.add(username);
     if (!matchedElements.has(username)) matchedElements.set(username, new Set());
     matchedElements.get(username).add(el);
     if (blocked.has(username) || blocking.has(username)) return;
+    const job = { el, stats };
     if (!bearer) {
-      pendingBlocks.set(username, el);
+      pendingBlocks.set(username, job);
     } else {
-      enqueueBlock(username, el);
+      enqueueBlock(username, job);
     }
   }
 
@@ -267,6 +273,7 @@
   }
 
   function scanAll() {
+    syncPageStats();
     ['[data-testid="tweet"]', 'article[role="article"]']
       .forEach(sel => document.querySelectorAll(sel).forEach(processTweet));
   }
