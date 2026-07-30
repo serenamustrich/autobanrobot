@@ -14,36 +14,54 @@
         <img src="/icon.png" alt="" width="76" height="76">
         <div>
           <p class="eyebrow">AUTOBANROBOT CONTROL ROOM</p>
-          <h1>实时 Ban 清单</h1>
-          <p class="subtitle">仅展示经过 Twitter/X 确认成功并上传到服务器的屏蔽记录。</p>
+          <h1 data-i18n="heroTitle">实时 Ban 清单</h1>
+          <p class="subtitle" data-i18n="subtitle">仅展示经过 X 确认成功并上传到服务器的屏蔽记录。</p>
         </div>
       </div>
-      <div class="connection" id="connection">
-        <span class="connection-dot"></span>
-        <span id="connectionText">正在连接实时数据</span>
+      <div class="hero-actions">
+        <nav class="language-switcher" aria-label="Language">
+          <button type="button" data-lang="zh-CN">中文</button>
+          <button type="button" data-lang="en">EN</button>
+          <button type="button" data-lang="es">ES</button>
+          <button type="button" data-lang="ja">日本語</button>
+          <button type="button" data-lang="ko">한국어</button>
+          <button type="button" data-lang="de">DE</button>
+          <button type="button" data-lang="fr">FR</button>
+          <button type="button" data-lang="ru">RU</button>
+          <button type="button" data-lang="it">IT</button>
+        </nav>
+        <div class="connection" id="connection">
+          <span class="connection-dot"></span>
+          <span id="connectionText" data-i18n="connecting">正在连接实时数据</span>
+        </div>
       </div>
     </header>
 
     <nav class="page-tabs" aria-label="页面">
-      <button class="page-tab active" type="button" data-page="bans">Ban 清单</button>
-      <button class="page-tab" type="button" data-page="keywords">关键词分析</button>
+      <button class="page-tab active" type="button" data-page="bans" data-i18n="banTab">Ban 清单</button>
+      <button class="page-tab" type="button" data-page="keywords" data-i18n="keywordTab">关键词分析</button>
     </nav>
 
     <section class="metrics" aria-label="统计">
       <article class="metric-card">
-        <span class="metric-label">累计已确认屏蔽</span>
+        <span class="metric-label" data-i18n="confirmedTotal">累计已确认屏蔽</span>
         <strong id="totalCount">—</strong>
-        <span class="metric-note">所有已接收记录</span>
+        <span class="metric-note" data-i18n="allRecords">所有已接收记录</span>
       </article>
       <article class="metric-card accent">
-        <span class="metric-label">今日新增</span>
+        <span class="metric-label" data-i18n="todayAdded">今日新增</span>
         <strong id="todayCount">—</strong>
-        <span class="metric-note">按服务器本地日期</span>
+        <span class="metric-note" data-i18n="serverDate">按服务器本地日期</span>
       </article>
       <article class="metric-card">
-        <span class="metric-label">数据状态</span>
-        <strong class="status-value" id="statusValue">连接中</strong>
-        <span class="metric-note">Server-Sent Events</span>
+        <span class="metric-label" data-i18n="onlineUsers">插件在线用户数</span>
+        <strong id="onlineUsers">—</strong>
+        <span class="metric-note" data-i18n="onlineWindow">最近 2 分钟发送过心跳</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label" data-i18n="cumulativeUsers">插件累计用户数</span>
+        <strong id="cumulativeUsers">—</strong>
+        <span class="metric-note" data-i18n="anonymousInstalls">不同匿名安装实例</span>
       </article>
     </section>
 
@@ -51,14 +69,14 @@
       <div class="toolbar">
         <div>
           <p class="section-kicker">CONFIRMED BLOCKS</p>
-          <h2>屏蔽记录</h2>
+          <h2 data-i18n="blockRecords">屏蔽记录</h2>
         </div>
         <label class="search">
           <span class="sr-only">搜索用户名</span>
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/>
           </svg>
-          <input id="searchInput" type="search" placeholder="搜索 @username">
+          <input id="searchInput" type="search" placeholder="搜索 @username" data-i18n-placeholder="searchPlaceholder">
         </label>
       </div>
 
@@ -66,26 +84,26 @@
         <table>
           <thead>
             <tr>
-              <th>账号</th>
-              <th>命中关键词 / 规则</th>
-              <th>内容摘要</th>
-              <th>屏蔽时间</th>
+              <th data-i18n="account">账号</th>
+              <th data-i18n="matchedRule">命中关键词 / 规则</th>
+              <th data-i18n="contentSummary">内容摘要</th>
+              <th data-i18n="blockedAt">屏蔽时间</th>
             </tr>
           </thead>
           <tbody id="banRows"></tbody>
         </table>
         <div class="empty" id="emptyState" hidden>
           <div class="empty-icon">🐾</div>
-          <h3>暂时没有屏蔽记录</h3>
-          <p>插件确认 Ban 成功后，新记录会实时出现在这里。</p>
+          <h3 data-i18n="noBlocks">暂时没有屏蔽记录</h3>
+          <p data-i18n="noBlocksHint">插件确认 Ban 成功后，新记录会实时出现在这里。</p>
         </div>
       </div>
 
       <footer class="pager">
         <span id="rangeText">正在加载…</span>
         <div>
-          <button id="prevButton" type="button">上一页</button>
-          <button id="nextButton" type="button">下一页</button>
+          <button id="prevButton" type="button" data-i18n="previous">上一页</button>
+          <button id="nextButton" type="button" data-i18n="next">下一页</button>
         </div>
       </footer>
     </section>
@@ -94,27 +112,27 @@
       <div class="toolbar">
         <div>
           <p class="section-kicker">KEYWORD INTELLIGENCE</p>
-          <h2>关键词排行榜</h2>
+          <h2 data-i18n="keywordRanking">关键词排行榜</h2>
         </div>
-        <p class="ranking-note">按设置次数优先排序，数据随 Ban 记录实时更新</p>
+        <p class="ranking-note" data-i18n="rankingNote">按设置次数优先排序，数据随 Ban 记录实时更新</p>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>排名</th>
-              <th>关键词</th>
-              <th>被设置次数</th>
-              <th>命中次数</th>
-              <th>Ban 账号数</th>
+              <th data-i18n="rank">排名</th>
+              <th data-i18n="keyword">关键词</th>
+              <th data-i18n="configuredCount">被设置次数</th>
+              <th data-i18n="hitCount">命中次数</th>
+              <th data-i18n="banAccounts">Ban 账号数</th>
             </tr>
           </thead>
           <tbody id="keywordRows"></tbody>
         </table>
         <div class="empty" id="keywordEmpty" hidden>
           <div class="empty-icon">🔎</div>
-          <h3>暂无关键词统计</h3>
-          <p>收到包含关键词配置快照的 Ban 数据后会自动生成排名。</p>
+          <h3 data-i18n="noKeywords">暂无关键词统计</h3>
+          <p data-i18n="noKeywordsHint">收到包含关键词配置快照的 Ban 数据后会自动生成排名。</p>
         </div>
       </div>
     </section>

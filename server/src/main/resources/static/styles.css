@@ -41,6 +41,38 @@ button, input { font: inherit; }
   margin-bottom: 28px;
 }
 
+.hero-actions {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.language-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  max-width: 460px;
+}
+
+.language-switcher button {
+  padding: 4px 7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.language-switcher button:hover,
+.language-switcher button.active {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, .9);
+  color: var(--blue-deep);
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -98,7 +130,7 @@ h2 { margin-bottom: 0; font-size: 24px; letter-spacing: -.02em; }
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 18px;
   margin-bottom: 22px;
 }
@@ -171,7 +203,6 @@ h2 { margin-bottom: 0; font-size: 24px; letter-spacing: -.02em; }
   line-height: 1;
   letter-spacing: -.035em;
 }
-.metric-card .status-value { font-size: 25px; }
 .metric-note { color: #9aa6b6; font-size: 12px; }
 
 .panel {
@@ -328,6 +359,8 @@ tbody tr:hover { background: #f8fbfe; }
 @media (max-width: 780px) {
   .shell { width: min(100% - 24px, 1240px); padding-top: 24px; }
   .hero, .toolbar { align-items: stretch; flex-direction: column; }
+  .hero-actions { align-items: stretch; }
+  .language-switcher { justify-content: flex-start; }
   .metrics { grid-template-columns: 1fr; }
   .connection { align-self: flex-start; }
   .search { width: 100%; }

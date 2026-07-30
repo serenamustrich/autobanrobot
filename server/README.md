@@ -33,3 +33,9 @@ MySQL 5.7 database remains supported.
 - `GET /api/bans`: paginated list; supports `page`, `size`, and `query`.
 - `GET /api/bans/stats`: total and today counts.
 - `GET /api/bans/stream`: Server-Sent Events stream for the dashboard.
+- `POST /api/clients/heartbeat`: record one anonymous plugin installation heartbeat.
+- `GET /api/clients/stats`: online and cumulative anonymous plugin users.
+
+The dashboard supports Chinese, English, Spanish, Japanese, Korean, German,
+French, Russian, and Italian. A client counts as online when its latest
+heartbeat was received within two minutes.
