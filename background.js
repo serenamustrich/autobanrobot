@@ -5,12 +5,12 @@ const MAX_BLOCK_HISTORY = 500;
 const BLOCK_INTERVAL_MS = 500;
 const UPLOAD_QUEUE_KEY = 'pendingBanUploadQueue';
 const UPLOAD_ALARM = 'autobanrobot-upload-ban-events';
-const UPLOAD_ENDPOINT = 'http://127.0.0.1:59999/api/bans';
+const UPLOAD_ENDPOINT = 'https://ban.richccy.com/api/bans';
 const UPLOAD_RETRY_BASE_MS = 15_000;
 const UPLOAD_RETRY_MAX_MS = 5 * 60_000;
 const UPDATE_ALARM = 'autobanrobot-check-github-release';
 const HEARTBEAT_ALARM = 'autobanrobot-plugin-heartbeat';
-const HEARTBEAT_ENDPOINT = 'http://127.0.0.1:59999/api/clients/heartbeat';
+const HEARTBEAT_ENDPOINT = 'https://ban.richccy.com/api/clients/heartbeat';
 const INSTALLATION_ID_KEY = 'anonymousInstallationId';
 const LATEST_RELEASE_API =
   'https://api.github.com/repos/serenamustrich/autobanrobot/releases/latest';
