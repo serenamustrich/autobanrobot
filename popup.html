@@ -22,7 +22,30 @@
       border-radius: 6px; font-size: 12px; cursor: pointer;
     }
     button:hover { background: #1a8cd8; }
+    button.secondary {
+      background:#fff;color:#1d9bf0;border:1px solid #1d9bf0;
+    }
+    button.secondary:hover { background:#eef7ff; }
     .saved { font-size: 11px; color: #00ba7c; margin-top: 4px; display: none; }
+    .popular-status {
+      min-height:15px;margin-top:4px;color:#71767b;font-size:10px;
+    }
+    .update-card {
+      padding:9px;border:1px solid #eff3f4;border-radius:8px;background:#f7f9f9;
+    }
+    .update-row { display:flex;align-items:center;justify-content:space-between;gap:8px; }
+    .update-version { font-size:11px;color:#0f1419; }
+    .update-status { margin-top:4px;font-size:10px;color:#71767b;line-height:1.4; }
+    .update-actions { display:flex;gap:6px;margin-top:7px; }
+    .update-actions button, .update-actions a {
+      box-sizing:border-box;flex:1;margin:0;padding:5px;text-align:center;
+      border-radius:6px;font-size:11px;text-decoration:none;cursor:pointer;
+    }
+    .update-actions button {
+      color:#1d9bf0;background:#fff;border:1px solid #1d9bf0;
+    }
+    .update-actions a { color:#fff;background:#1d9bf0;border:1px solid #1d9bf0; }
+    .update-actions a[hidden] { display:none; }
     .toggle {
       display:flex;align-items:flex-start;gap:9px;margin:10px 0;
       font-size:12px;color:#0f1419;line-height:1.35;cursor:pointer;
@@ -73,6 +96,10 @@
   <hr>
   <div class="section-label">关键词（每行一个）：</div>
   <textarea id="keywords" placeholder="同城&#10;上门"></textarea>
+  <button class="secondary" id="loadPopular" type="button">加载热门关键词</button>
+  <div class="popular-status" id="popularStatus">
+    仅在点击时从服务端读取；加载后需确认并保存
+  </div>
   <label class="toggle">
     <input id="singleEmojiEnabled" type="checkbox">
     <span class="switch-ui" aria-hidden="true"></span>
@@ -99,6 +126,19 @@
   </label>
   <button id="save">保存</button>
   <div class="saved" id="saved">✓ 已保存，立即生效</div>
+  <hr>
+  <div class="section-label">插件更新</div>
+  <div class="update-card">
+    <div class="update-row">
+      <span class="update-version" id="currentVersion">当前版本 —</span>
+    </div>
+    <div class="update-status" id="updateStatus">更新文件直接来自 GitHub Releases</div>
+    <div class="update-actions">
+      <button id="checkUpdate" type="button">检查更新</button>
+      <a id="openRelease" href="https://github.com/serenamustrich/autobanrobot/releases/latest"
+         target="_blank" rel="noreferrer" hidden>下载新版本</a>
+    </div>
+  </div>
   <hr>
   <div class="history-head">
     <div class="section-label">
