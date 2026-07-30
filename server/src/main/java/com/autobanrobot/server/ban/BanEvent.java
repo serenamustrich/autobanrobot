@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -45,8 +44,11 @@ public class BanEvent {
     @Column(name = "matched_keywords", nullable = false, length = 1000)
     private String matchedKeywords;
 
-    @Lob
-    @Column(name = "configured_keywords", nullable = false)
+    @Column(
+        name = "configured_keywords",
+        nullable = false,
+        columnDefinition = "MEDIUMTEXT"
+    )
     private String configuredKeywords;
 
     @Column(nullable = false, length = 1000)
