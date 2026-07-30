@@ -18,6 +18,12 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.2 — 2026-07-30
+
+- Added the shared cat-assistant plugin icon as the server dashboard favicon
+  and Apple touch icon.
+- 服务端网页浏览器标签页及 Apple 触控图标改为与插件一致的猫咪助手 icon。
+
 ### v1.6.1 — 2026-07-30
 
 Anonymous plugin user metrics and multilingual server dashboard.
