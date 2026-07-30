@@ -12,7 +12,7 @@
   },
   "permissions": ["storage", "webRequest", "alarms"],
   "host_permissions": [
-    "http://127.0.0.1:59999/*",
+    "https://ban.richccy.com/*",
     "https://api.github.com/*",
     "https://twitter.com/*",
     "https://x.com/*"

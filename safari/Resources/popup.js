@@ -44,7 +44,7 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
   button.disabled = true;
   status.textContent = '正在从本机服务端读取热门关键词…';
   try {
-    const response = await fetch('http://127.0.0.1:59999/api/keywords?limit=50');
+    const response = await fetch('https://ban.richccy.com/api/keywords?limit=50');
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const ranking = await response.json();
     const textarea = document.getElementById('keywords');
