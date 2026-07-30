@@ -21,7 +21,8 @@ const translations = {
     todayAdded: '今日新增', serverDate: '按服务器本地日期',
     onlineUsers: '插件在线用户数', onlineWindow: '最近 2 分钟发送过心跳',
     cumulativeUsers: '插件累计用户数', anonymousInstalls: '不同匿名安装实例',
-    blockRecords: '屏蔽记录', searchPlaceholder: '搜索 @username',
+    blockRecords: '屏蔽记录', searchLabel: '搜索用户名',
+    searchPlaceholder: '搜索 @username',
     account: '账号', matchedRule: '命中关键词 / 规则',
     contentSummary: '内容摘要', blockedAt: '屏蔽时间',
     noBlocks: '暂时没有屏蔽记录',
@@ -49,7 +50,8 @@ const translations = {
     todayAdded: 'Added Today', serverDate: 'Server local date',
     onlineUsers: 'Online Plugin Users', onlineWindow: 'Heartbeat received in the last 2 minutes',
     cumulativeUsers: 'Cumulative Plugin Users', anonymousInstalls: 'Distinct anonymous installations',
-    blockRecords: 'Block Records', searchPlaceholder: 'Search @username',
+    blockRecords: 'Block Records', searchLabel: 'Search username',
+    searchPlaceholder: 'Search @username',
     account: 'Account', matchedRule: 'Matched Keyword / Rule',
     contentSummary: 'Content Summary', blockedAt: 'Blocked At',
     noBlocks: 'No block records yet',
@@ -77,7 +79,8 @@ const translations = {
     todayAdded: 'Añadidos hoy', serverDate: 'Fecha local del servidor',
     onlineUsers: 'Usuarios del plugin en línea', onlineWindow: 'Heartbeat recibido en los últimos 2 minutos',
     cumulativeUsers: 'Usuarios acumulados', anonymousInstalls: 'Instalaciones anónimas distintas',
-    blockRecords: 'Registros de bloqueo', searchPlaceholder: 'Buscar @usuario',
+    blockRecords: 'Registros de bloqueo', searchLabel: 'Buscar usuario',
+    searchPlaceholder: 'Buscar @usuario',
     account: 'Cuenta', matchedRule: 'Palabra clave / regla',
     contentSummary: 'Resumen del contenido', blockedAt: 'Hora del bloqueo',
     noBlocks: 'Aún no hay bloqueos',
@@ -105,7 +108,8 @@ const translations = {
     todayAdded: '本日の追加', serverDate: 'サーバーのローカル日付',
     onlineUsers: 'オンラインプラグインユーザー', onlineWindow: '直近 2 分以内にハートビート受信',
     cumulativeUsers: 'プラグイン累計ユーザー', anonymousInstalls: '異なる匿名インストール',
-    blockRecords: 'ブロック記録', searchPlaceholder: '@username を検索',
+    blockRecords: 'ブロック記録', searchLabel: 'ユーザー名を検索',
+    searchPlaceholder: '@username を検索',
     account: 'アカウント', matchedRule: '一致キーワード / ルール',
     contentSummary: '内容概要', blockedAt: 'ブロック時刻',
     noBlocks: 'ブロック記録はまだありません',
@@ -133,7 +137,8 @@ const translations = {
     todayAdded: '오늘 추가', serverDate: '서버 현지 날짜 기준',
     onlineUsers: '온라인 플러그인 사용자', onlineWindow: '최근 2분 이내 하트비트 수신',
     cumulativeUsers: '플러그인 누적 사용자', anonymousInstalls: '서로 다른 익명 설치',
-    blockRecords: '차단 기록', searchPlaceholder: '@username 검색',
+    blockRecords: '차단 기록', searchLabel: '사용자 이름 검색',
+    searchPlaceholder: '@username 검색',
     account: '계정', matchedRule: '일치 키워드 / 규칙',
     contentSummary: '내용 요약', blockedAt: '차단 시간',
     noBlocks: '차단 기록이 없습니다',
@@ -161,7 +166,8 @@ const translations = {
     todayAdded: 'Heute hinzugefügt', serverDate: 'Lokales Serverdatum',
     onlineUsers: 'Online-Plugin-Nutzer', onlineWindow: 'Heartbeat in den letzten 2 Minuten',
     cumulativeUsers: 'Plugin-Nutzer gesamt', anonymousInstalls: 'Unterschiedliche anonyme Installationen',
-    blockRecords: 'Sperreinträge', searchPlaceholder: '@username suchen',
+    blockRecords: 'Sperreinträge', searchLabel: 'Benutzernamen suchen',
+    searchPlaceholder: '@username suchen',
     account: 'Konto', matchedRule: 'Schlüsselwort / Regel',
     contentSummary: 'Inhaltsübersicht', blockedAt: 'Sperrzeit',
     noBlocks: 'Noch keine Sperreinträge',
@@ -189,7 +195,8 @@ const translations = {
     todayAdded: 'Ajouts du jour', serverDate: 'Date locale du serveur',
     onlineUsers: 'Utilisateurs du plugin en ligne', onlineWindow: 'Heartbeat reçu dans les 2 dernières minutes',
     cumulativeUsers: 'Utilisateurs cumulés', anonymousInstalls: 'Installations anonymes distinctes',
-    blockRecords: 'Enregistrements', searchPlaceholder: 'Rechercher @username',
+    blockRecords: 'Enregistrements', searchLabel: 'Rechercher un identifiant',
+    searchPlaceholder: 'Rechercher @username',
     account: 'Compte', matchedRule: 'Mot-clé / règle',
     contentSummary: 'Résumé du contenu', blockedAt: 'Heure du blocage',
     noBlocks: 'Aucun blocage pour le moment',
@@ -217,7 +224,8 @@ const translations = {
     todayAdded: 'Добавлено сегодня', serverDate: 'Локальная дата сервера',
     onlineUsers: 'Пользователи плагина онлайн', onlineWindow: 'Heartbeat за последние 2 минуты',
     cumulativeUsers: 'Всего пользователей плагина', anonymousInstalls: 'Уникальные анонимные установки',
-    blockRecords: 'Записи блокировок', searchPlaceholder: 'Поиск @username',
+    blockRecords: 'Записи блокировок', searchLabel: 'Поиск имени пользователя',
+    searchPlaceholder: 'Поиск @username',
     account: 'Аккаунт', matchedRule: 'Ключевое слово / правило',
     contentSummary: 'Краткое содержание', blockedAt: 'Время блокировки',
     noBlocks: 'Записей пока нет',
@@ -245,7 +253,8 @@ const translations = {
     todayAdded: 'Aggiunti oggi', serverDate: 'Data locale del server',
     onlineUsers: 'Utenti plugin online', onlineWindow: 'Heartbeat negli ultimi 2 minuti',
     cumulativeUsers: 'Utenti plugin cumulativi', anonymousInstalls: 'Installazioni anonime distinte',
-    blockRecords: 'Record dei blocchi', searchPlaceholder: 'Cerca @username',
+    blockRecords: 'Record dei blocchi', searchLabel: 'Cerca nome utente',
+    searchPlaceholder: 'Cerca @username',
     account: 'Account', matchedRule: 'Parola chiave / regola',
     contentSummary: 'Riepilogo contenuto', blockedAt: 'Ora del blocco',
     noBlocks: 'Nessun blocco registrato',
@@ -273,6 +282,7 @@ function normalizeLanguage(value) {
 let currentLanguage = normalizeLanguage(
   localStorage.getItem(LANGUAGE_KEY) || navigator.language
 );
+let connectionTextKey = 'connecting';
 
 function t(key, values = {}) {
   let text = translations[currentLanguage]?.[key] ??
@@ -297,6 +307,8 @@ function applyLanguage(language) {
   document.querySelectorAll('[data-lang]').forEach(button => {
     button.classList.toggle('active', button.dataset.lang === currentLanguage);
   });
+  document.getElementById('connectionText').textContent =
+    t(connectionTextKey);
   renderPager();
 }
 
@@ -415,7 +427,8 @@ function renderPager() {
 function setConnection(mode, textKey) {
   elements.connection.classList.remove('live', 'offline');
   if (mode) elements.connection.classList.add(mode);
-  elements.connectionText.textContent = t(textKey);
+  connectionTextKey = textKey;
+  elements.connectionText.textContent = t(connectionTextKey);
 }
 
 function connectStream() {
