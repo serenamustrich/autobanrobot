@@ -20,6 +20,9 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ### v1.6.2 — 2026-07-30
 
+- Switched Ban uploads, anonymous heartbeats, and popular-keyword loading from
+  the local test endpoint to the production HTTPS endpoint at
+  `https://ban.richccy.com`.
 - Added the shared cat-assistant plugin icon as the server dashboard favicon
   and Apple touch icon.
 - Fixed Ban uploads being rejected by MySQL 5.7 when the complete configured
@@ -31,6 +34,8 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 - 修复全部插件关键词快照超过 MySQL 5.7 原字段容量时，Ban 上传被拒绝的问题。
 - 已失败记录仍保留在插件持久化上传队列中，服务端字段修复后会自动补传。
 - 每分钟心跳成功后也会立即唤醒上传队列，缩短积压记录的恢复等待时间。
+- Ban 上传、匿名心跳和热门关键词加载已从本机测试地址统一切换到正式 HTTPS
+  服务 `https://ban.richccy.com`。
 
 ### v1.6.1 — 2026-07-30
 
