@@ -106,6 +106,7 @@
         pageUrl: location.href,
         displayName: match.displayName,
         reason: match.reason,
+        matchedKeywords: match.matchedKeywords,
         content: match.content
       }
     }));
@@ -215,12 +216,16 @@
       .replace(/[\s\u200B-\u200D\u2060\uFEFF]/gu, '');
   }
 
-  function hasKeyword(text) {
+  function matchingKeywords(text) {
     const normalizedText = normalizeForMatch(text);
-    return SPAM.some(keyword => {
+    return SPAM.filter(keyword => {
       const normalizedKeyword = normalizeForMatch(keyword);
       return normalizedKeyword && normalizedText.includes(normalizedKeyword);
     });
+  }
+
+  function hasKeyword(text) {
+    return matchingKeywords(text).length > 0;
   }
 
   function extractTweetText(root) {
@@ -286,8 +291,11 @@
       return;
     }
 
-    const nameSpam = hasKeyword(nameText) || hasKeyword(username);
-    const contentSpam = hasKeyword(text);
+    const nameMatches = matchingKeywords(`${nameText}\n${username}`);
+    const contentMatches = matchingKeywords(text);
+    const matchedKeywords = [...new Set([...nameMatches, ...contentMatches])];
+    const nameSpam = nameMatches.length > 0;
+    const contentSpam = contentMatches.length > 0;
     const singleEmoji = singleEmojiEnabled && isSingleEmoji(text);
     const emojiEnglishEmoji =
       emojiEnglishEmojiEnabled && isEmojiEnglishEmoji(text);
@@ -311,6 +319,7 @@
     blockUser(username, el, {
       displayName: nameText,
       reason: reasons.join('；'),
+      matchedKeywords,
       content: text.slice(0, 160)
     });
   }

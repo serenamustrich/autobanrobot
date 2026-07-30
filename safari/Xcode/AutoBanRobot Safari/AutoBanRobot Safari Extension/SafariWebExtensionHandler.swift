@@ -2,7 +2,7 @@
 //  SafariWebExtensionHandler.swift
 //  AutoBanRobot Safari Extension
 //
-//  Created by 陈初玥 on 2026/7/29.
+//  Created by 陈初玥 on 2026/7/30.
 //
 
 import SafariServices

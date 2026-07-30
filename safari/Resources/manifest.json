@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AutoBanRobot for Safari",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Automatically detect and block Twitter/X spam accounts in Safari.",
   "icons": {
     "16": "icon.png",
@@ -12,6 +12,8 @@
   },
   "permissions": ["storage", "webRequest", "alarms"],
   "host_permissions": [
+    "http://127.0.0.1:59999/*",
+    "https://api.github.com/*",
     "https://twitter.com/*",
     "https://x.com/*"
   ],

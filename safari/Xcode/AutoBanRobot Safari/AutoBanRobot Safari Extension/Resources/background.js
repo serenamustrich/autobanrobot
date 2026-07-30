@@ -3,12 +3,22 @@ const QUEUE_ALARM = 'autobanrobot-process-queue';
 const MAX_ATTEMPTS = 3;
 const MAX_BLOCK_HISTORY = 500;
 const BLOCK_INTERVAL_MS = 500;
+const UPLOAD_QUEUE_KEY = 'pendingBanUploadQueue';
+const UPLOAD_ALARM = 'autobanrobot-upload-ban-events';
+const UPLOAD_ENDPOINT = 'http://127.0.0.1:59999/api/bans';
+const UPLOAD_RETRY_BASE_MS = 15_000;
+const UPLOAD_RETRY_MAX_MS = 5 * 60_000;
+const UPDATE_ALARM = 'autobanrobot-check-github-release';
+const LATEST_RELEASE_API =
+  'https://api.github.com/repos/serenamustrich/autobanrobot/releases/latest';
 
 let bearer = null;
 let csrf = null;
 let queueProcessing = false;
 let queueOperation = Promise.resolve();
 let queueScheduleId = 0;
+let uploadProcessing = false;
+let uploadScheduleId = 0;
 
 const authReady = extensionAPI.storage.session.get(['bearer', 'csrf']).then(result => {
   bearer = result.bearer ?? null;
@@ -61,14 +71,84 @@ function scheduleQueue(delayMs = 0) {
   }, delay);
 }
 
+function scheduleUpload(delayMs = 0) {
+  const delay = Math.max(delayMs, 100);
+  const scheduleId = ++uploadScheduleId;
+  extensionAPI.alarms.create(UPLOAD_ALARM, { when: Date.now() + delay });
+  setTimeout(() => {
+    if (scheduleId !== uploadScheduleId) return;
+    uploadScheduleId++;
+    extensionAPI.alarms.clear(UPLOAD_ALARM);
+    processUploadQueue();
+  }, delay);
+}
+
+function scheduleUpdateChecks() {
+  extensionAPI.alarms.create(UPDATE_ALARM, {
+    delayInMinutes: 1,
+    periodInMinutes: 12 * 60
+  });
+}
+
+function compareVersions(left, right) {
+  const a = left.split('.').map(value => Number.parseInt(value, 10) || 0);
+  const b = right.split('.').map(value => Number.parseInt(value, 10) || 0);
+  const length = Math.max(a.length, b.length);
+  for (let index = 0; index < length; index++) {
+    if ((a[index] ?? 0) !== (b[index] ?? 0)) {
+      return (a[index] ?? 0) > (b[index] ?? 0) ? 1 : -1;
+    }
+  }
+  return 0;
+}
+
+async function checkForUpdate() {
+  const currentVersion = extensionAPI.runtime.getManifest().version;
+  try {
+    const response = await fetch(LATEST_RELEASE_API, {
+      headers: { accept: 'application/vnd.github+json' }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const release = await response.json();
+    const latestVersion = String(release.tag_name ?? '').replace(/^v/i, '');
+    const updateInfo = {
+      checkedAt: new Date().toISOString(),
+      currentVersion,
+      latestVersion,
+      available:
+        Boolean(latestVersion) &&
+        compareVersions(latestVersion, currentVersion) > 0,
+      releaseUrl: release.html_url ?? ''
+    };
+    await extensionAPI.storage.local.set({ updateInfo });
+    return updateInfo;
+  } catch (error) {
+    const updateInfo = {
+      checkedAt: new Date().toISOString(),
+      currentVersion,
+      error: error.message
+    };
+    await extensionAPI.storage.local.set({ updateInfo });
+    return updateInfo;
+  }
+}
+
 extensionAPI.runtime.onInstalled.addListener(() => {
   Promise.all([initializeKeywords(), initializeSettings()]).catch(error => {
     console.error('Failed to initialize extension settings:', error);
   });
   scheduleQueue();
+  scheduleUpload();
+  scheduleUpdateChecks();
+  checkForUpdate();
 });
 
-extensionAPI.runtime.onStartup.addListener(() => scheduleQueue());
+extensionAPI.runtime.onStartup.addListener(() => {
+  scheduleQueue();
+  scheduleUpload();
+  scheduleUpdateChecks();
+  checkForUpdate();
+});
 
 extensionAPI.webRequest.onBeforeSendHeaders.addListener(
   details => {
@@ -206,12 +286,21 @@ async function broadcastResult(job, state, message = '') {
 }
 
 async function recordSuccess(job) {
-  const stored = await extensionAPI.storage.local.get(['blockCount', 'blockHistory']);
+  const stored = await extensionAPI.storage.local.get([
+    'blockCount',
+    'blockHistory',
+    'keywords'
+  ]);
   const history = Array.isArray(stored.blockHistory) ? stored.blockHistory : [];
   const record = {
+    clientEventId: crypto.randomUUID(),
     username: job.username,
     displayName: job.displayName,
     reason: job.reason,
+    matchedKeywords: Array.isArray(job.matchedKeywords)
+      ? job.matchedKeywords
+      : [],
+    configuredKeywords: Array.isArray(stored.keywords) ? stored.keywords : [],
     content: job.content,
     pageUrl: job.pageUrl,
     blockedAt: new Date().toISOString()
@@ -223,6 +312,67 @@ async function recordSuccess(job) {
       ...history.filter(item => item.username !== job.username)
     ].slice(0, MAX_BLOCK_HISTORY)
   });
+  await enqueueBanUpload(record);
+}
+
+async function enqueueBanUpload(record) {
+  const stored = await extensionAPI.storage.local.get([UPLOAD_QUEUE_KEY]);
+  const queue = Array.isArray(stored[UPLOAD_QUEUE_KEY])
+    ? stored[UPLOAD_QUEUE_KEY]
+    : [];
+  if (!queue.some(item => item.clientEventId === record.clientEventId)) {
+    queue.push({ ...record, uploadAttempts: 0 });
+    await extensionAPI.storage.local.set({ [UPLOAD_QUEUE_KEY]: queue });
+  }
+  scheduleUpload();
+}
+
+async function processUploadQueue() {
+  if (uploadProcessing) return;
+  uploadProcessing = true;
+  try {
+    const stored = await extensionAPI.storage.local.get([UPLOAD_QUEUE_KEY]);
+    const queue = Array.isArray(stored[UPLOAD_QUEUE_KEY])
+      ? stored[UPLOAD_QUEUE_KEY]
+      : [];
+    if (!queue.length) return;
+
+    const record = queue[0];
+    try {
+      const response = await fetch(UPLOAD_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-autoban-client': 'browser-extension'
+        },
+        body: JSON.stringify({
+          clientEventId: record.clientEventId,
+          username: record.username,
+          displayName: record.displayName,
+          reason: record.reason,
+          matchedKeywords: record.matchedKeywords,
+          configuredKeywords: record.configuredKeywords,
+          content: record.content,
+          pageUrl: record.pageUrl,
+          blockedAt: record.blockedAt
+        })
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      queue.shift();
+      await extensionAPI.storage.local.set({ [UPLOAD_QUEUE_KEY]: queue });
+      if (queue.length) scheduleUpload(250);
+    } catch {
+      record.uploadAttempts = (record.uploadAttempts ?? 0) + 1;
+      await extensionAPI.storage.local.set({ [UPLOAD_QUEUE_KEY]: queue });
+      const retryDelay = Math.min(
+        UPLOAD_RETRY_BASE_MS * 2 ** Math.min(record.uploadAttempts - 1, 5),
+        UPLOAD_RETRY_MAX_MS
+      );
+      scheduleUpload(retryDelay);
+    }
+  } finally {
+    uploadProcessing = false;
+  }
 }
 
 async function processQueue() {
@@ -275,12 +425,18 @@ async function enqueueBlock(job, sender) {
     existing.sourceTabId = sender.tab?.id ?? existing.sourceTabId;
     existing.pageKey = job.pageKey ?? existing.pageKey;
     existing.pageUrl = job.pageUrl ?? existing.pageUrl;
+    existing.matchedKeywords = Array.isArray(job.matchedKeywords)
+      ? job.matchedKeywords
+      : existing.matchedKeywords;
     await extensionAPI.storage.local.set({ [QUEUE_KEY]: queue });
   } else {
     queue.push({
       username: job.username,
       displayName: job.displayName ?? '',
       reason: job.reason ?? '',
+      matchedKeywords: Array.isArray(job.matchedKeywords)
+        ? job.matchedKeywords
+        : [],
       content: job.content ?? '',
       pageUrl: job.pageUrl ?? '',
       pageKey: job.pageKey ?? '',
@@ -300,6 +456,13 @@ extensionAPI.alarms.onAlarm.addListener(alarm => {
     queueScheduleId++;
     withQueueLock(processQueue);
   }
+  if (alarm.name === UPLOAD_ALARM) {
+    uploadScheduleId++;
+    processUploadQueue();
+  }
+  if (alarm.name === UPDATE_ALARM) {
+    checkForUpdate();
+  }
 });
 
 extensionAPI.runtime.onMessage.addListener((message, sender) => {
@@ -309,5 +472,10 @@ extensionAPI.runtime.onMessage.addListener((message, sender) => {
   }
   if (message.type === 'PROCESS_BLOCK_QUEUE') {
     return withQueueLock(processQueue).then(() => ({ ok: true }));
+  }
+  if (message.type === 'CHECK_FOR_UPDATE') {
+    return checkForUpdate()
+      .then(updateInfo => ({ ok: true, updateInfo }))
+      .catch(error => ({ ok: false, error: error.message }));
   }
 });

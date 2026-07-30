@@ -2,7 +2,7 @@
 
 <img src="icon.png" alt="AutoBanRobot cat assistant icon" width="160">
 
-Twitter/X spam-account blocker for Chromium browsers.
+Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 [中文](#中文) · [English](#english) · [Español](#español) · [日本語](#日本語) · [한국어](#한국어) · [Deutsch](#deutsch) · [Français](#français) · [Русский](#русский) · [Italiano](#italiano)
 
@@ -17,6 +17,44 @@ Twitter/X spam-account blocker for Chromium browsers.
 - [`safari`](https://github.com/serenamustrich/autobanrobot/tree/safari)：Safari 适配与打包源码；Safari 专用代码统一维护在该分支的 `safari/` 目录。
 
 ## Release notes / 更新说明
+
+### v1.6.0 — 2026-07-30
+
+Data synchronization, analytics dashboard, popular keywords, and GitHub-based
+update discovery.
+
+- Added a persistent, independent upload queue for confirmed Ban events. A slow
+  or unavailable server never pauses the actual Ban queue, and unsent records
+  resume automatically after the browser restarts.
+- Each event includes the blocked username, display name, match reason, exact
+  matched keywords, the complete user-configured keyword list, content excerpt,
+  source page, and confirmed block time.
+- Added a Spring Boot JAR service on port `59999`, backed exclusively by MySQL
+  5.7.44-compatible persistence, with an embedded live Ban list and keyword
+  analytics dashboard.
+- Keyword rankings show configuration count, hit count, and distinct blocked
+  account count. The extension can load popular keywords into the editor, but
+  never saves or applies them until the user confirms.
+- Added automatic checks of GitHub Releases every 12 hours and a manual
+  “Check for updates” action. Update files come directly from GitHub and do not
+  consume the AutoBanRobot server.
+- Fixed exact matched keywords being omitted from the page-to-background event,
+  and separated upload scheduling from the serialized 500 ms Ban queue.
+
+新增数据同步、分析看板、热门关键词与 GitHub 更新检查：
+
+- 新增独立且持久化的 Ban 数据上传队列；服务端缓慢或离线不会阻塞实际
+  Ban 队列，未发送记录在浏览器重启后继续自动补传。
+- 每条记录同步被屏蔽账号、账号名称、命中原因、实际命中关键词、用户设置的
+  全部关键词、被屏蔽时内容、来源页面及确认屏蔽时间。
+- 新增固定使用 `59999` 端口的 Spring Boot JAR 服务端，仅使用兼容
+  MySQL 5.7.44 的持久化方案，并在 JAR 内置实时 Ban 清单与关键词分析页面。
+- 关键词排名展示被设置次数、命中次数和不同 Ban 账号数；插件可将热门词加载
+  到编辑框，但必须由用户确认并保存，服务端不能强制下发或修改规则。
+- 新增每 12 小时自动检查 GitHub Releases 以及手动“检查更新”入口；
+  更新文件直接由 GitHub 提供，不消耗 AutoBanRobot 服务端资源。
+- 修复页面识别结果漏传实际命中关键词的问题，并将上传调度与 500 毫秒串行
+  Ban 队列完全分离。
 
 ### v1.5.2 — 2026-07-29
 
@@ -215,6 +253,9 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 - 仅将经过 X 关系状态确认成功的账号写入本地 Ban 清单。
 - 当前登录用户正在关注或互关的账号不会被自动屏蔽。
 - 内置常见垃圾推广关键词，并记录成功屏蔽数量。
+- 已确认 Ban 事件可异步同步到本机 JAR 服务端，并在关键词分析页查看排名。
+- 可手动加载热门关键词，确认保存后才会应用；服务端不能强制修改插件规则。
+- 自动从 GitHub Releases 检查新版本，不经过数据服务端。
 - 同时支持 `twitter.com` 和 `x.com`。
 
 ### 安装
@@ -250,6 +291,9 @@ AutoBanRobot is a Twitter/X spam-account blocker for Chromium-based browsers.
 - Supports an optional `Emoji + Latin text + Emoji` spam-pattern rule.
 - Keeps a local history of accounts whose blocked relationship was confirmed by X.
 - Includes built-in spam keywords and keeps a successful-block counter.
+- Asynchronously syncs confirmed Ban events to the local JAR dashboard.
+- Loads popular keywords for review without applying them automatically.
+- Checks GitHub Releases directly for new versions.
 - Works on both `twitter.com` and `x.com`.
 
 ### Installation
@@ -275,6 +319,9 @@ AutoBanRobot es una extensión para navegadores basados en Chromium que bloquea 
 - Bloquea una cuenta cuando el contenido, sin espacios, contiene exactamente un solo emoji completo.
 - Permite añadir palabras clave personalizadas y vuelve a analizar la página inmediatamente después de guardarlas.
 - Incluye palabras clave antispam y un contador de bloqueos realizados.
+- Sincroniza de forma asíncrona los bloqueos confirmados con el panel JAR local.
+- Permite revisar palabras clave populares antes de guardarlas.
+- Comprueba nuevas versiones directamente en GitHub Releases.
 - Funciona en `twitter.com` y `x.com`.
 
 ### Instalación y uso
@@ -292,6 +339,9 @@ AutoBanRobot は、Chromium 系ブラウザー向けの Twitter/X スパムア�
 - 空白を除いた投稿内容が完全な Emoji 1個だけの場合もブロックします。
 - ポップアップからキーワードを追加でき、保存すると現在のページを直ちに再スキャンします。
 - スパム用の組み込みキーワードとブロック件数表示を備えています。
+- 確認済み Ban をローカル JAR ダッシュボードへ非同期で同期します。
+- 人気キーワードは確認後にのみ保存・適用されます。
+- GitHub Releases から新しいバージョンを直接確認します。
 - `twitter.com` と `x.com` の両方に対応します。
 
 ### インストールと注意
@@ -309,6 +359,9 @@ AutoBanRobot은 Chromium 기반 브라우저에서 동작하는 Twitter/X 스팸
 - 공백을 제거한 게시물 내용이 완전한 이모지 하나뿐인 경우에도 차단합니다.
 - 팝업에서 사용자 키워드를 추가할 수 있으며 저장 즉시 현재 페이지를 다시 검사합니다.
 - 기본 스팸 키워드와 성공한 차단 횟수 표시를 제공합니다.
+- 확인된 Ban 기록을 로컬 JAR 대시보드에 비동기로 동기화합니다.
+- 인기 키워드는 사용자가 확인하고 저장한 뒤에만 적용됩니다.
+- GitHub Releases에서 새 버전을 직접 확인합니다.
 - `twitter.com`과 `x.com`을 모두 지원합니다.
 
 ### 설치 및 주의사항
@@ -326,6 +379,9 @@ AutoBanRobot ist eine Erweiterung für Chromium-Browser, die Spam-Konten auf Twi
 - Blockiert ein Konto, wenn der Beitrag nach dem Entfernen von Leerzeichen aus genau einem vollständigen Emoji besteht.
 - Unterstützt eigene Schlüsselwörter und durchsucht die aktuelle Seite nach dem Speichern sofort erneut.
 - Enthält integrierte Spam-Schlüsselwörter und einen Zähler erfolgreicher Blockierungen.
+- Synchronisiert bestätigte Bans asynchron mit dem lokalen JAR-Dashboard.
+- Lädt beliebte Schlüsselwörter nur zur Prüfung; gespeichert werden sie erst nach Bestätigung.
+- Prüft neue Versionen direkt über GitHub Releases.
 - Funktioniert auf `twitter.com` und `x.com`.
 
 ### Installation und Hinweis
@@ -343,6 +399,9 @@ AutoBanRobot est une extension pour navigateurs Chromium qui bloque automatiquem
 - Bloque un compte lorsque le contenu, une fois les espaces retirés, contient exactement un seul emoji complet.
 - Accepte des mots-clés personnalisés et réanalyse immédiatement la page après leur enregistrement.
 - Inclut des mots-clés antispam et un compteur de blocages réussis.
+- Synchronise de façon asynchrone les blocages confirmés avec le tableau de bord JAR local.
+- Charge les mots-clés populaires pour vérification sans les appliquer automatiquement.
+- Recherche les nouvelles versions directement dans GitHub Releases.
 - Fonctionne sur `twitter.com` et `x.com`.
 
 ### Installation et avertissement
@@ -360,6 +419,9 @@ AutoBanRobot — расширение для браузеров на базе Ch
 - Блокирует аккаунт, если после удаления пробелов публикация состоит ровно из одного полноценного эмодзи.
 - Поддерживает пользовательские ключевые слова и сразу повторно проверяет текущую страницу после сохранения.
 - Содержит встроенные антиспам-слова и счётчик успешных блокировок.
+- Асинхронно синхронизирует подтверждённые блокировки с локальной JAR-панелью.
+- Загружает популярные ключевые слова для проверки, не применяя их автоматически.
+- Проверяет новые версии напрямую через GitHub Releases.
 - Работает на `twitter.com` и `x.com`.
 
 ### Установка и предупреждение
@@ -377,6 +439,9 @@ AutoBanRobot è un’estensione per browser Chromium che blocca automaticamente 
 - Blocca un account quando il contenuto, rimossi gli spazi, è composto esattamente da una sola emoji completa.
 - Supporta parole chiave personalizzate e riesamina subito la pagina corrente dopo il salvataggio.
 - Include parole chiave antispam integrate e un contatore dei blocchi riusciti.
+- Sincronizza in modo asincrono i Ban confermati con il pannello JAR locale.
+- Carica le parole chiave popolari per la revisione senza applicarle automaticamente.
+- Controlla le nuove versioni direttamente tramite GitHub Releases.
 - Funziona su `twitter.com` e `x.com`.
 
 ### Installazione e avvertenza
