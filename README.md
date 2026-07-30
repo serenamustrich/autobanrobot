@@ -18,6 +18,32 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.1 — 2026-07-30
+
+Anonymous plugin user metrics and multilingual server dashboard.
+
+- Replaced the dashboard's generic data-status card with real online plugin
+  users and cumulative plugin users.
+- Each installation creates one random anonymous installation ID. No Twitter/X
+  identity, username, cookie, or authentication credential is used for user
+  counting.
+- Plugins send one heartbeat per minute. An installation is online when the
+  server received its heartbeat during the last two minutes.
+- Added complete dashboard switching for Chinese, English, Spanish, Japanese,
+  Korean, German, French, Russian, and Italian. The selected language is saved
+  in the browser.
+- Changed the Chinese dashboard subtitle to “仅展示经过 X 确认成功并上传到服务器的屏蔽记录。”
+
+新增匿名插件用户统计及服务端网页九语言切换：
+
+- 将原“数据状态”卡片替换为真实的“插件在线用户数”和“插件累计用户数”。
+- 每个安装实例只生成一个随机匿名 ID；用户统计不会使用 Twitter/X 身份、
+  用户名、Cookie 或登录凭证。
+- 插件每分钟发送一次心跳，最近两分钟内收到心跳的安装实例计为在线。
+- 服务端网页完整支持中文、英语、西班牙语、日语、韩语、德语、法语、俄语和
+  意大利语切换，并在浏览器中保存用户选择。
+- 中文副标题改为“仅展示经过 X 确认成功并上传到服务器的屏蔽记录。”
+
 ### v1.6.0 — 2026-07-30
 
 Data synchronization, analytics dashboard, popular keywords, and GitHub-based
@@ -256,6 +282,7 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 - 已确认 Ban 事件可异步同步到本机 JAR 服务端，并在关键词分析页查看排名。
 - 可手动加载热门关键词，确认保存后才会应用；服务端不能强制修改插件规则。
 - 自动从 GitHub Releases 检查新版本，不经过数据服务端。
+- 服务端网页支持九语言切换，并展示匿名插件在线用户数和累计用户数。
 - 同时支持 `twitter.com` 和 `x.com`。
 
 ### 安装
@@ -294,6 +321,7 @@ AutoBanRobot is a Twitter/X spam-account blocker for Chromium-based browsers.
 - Asynchronously syncs confirmed Ban events to the local JAR dashboard.
 - Loads popular keywords for review without applying them automatically.
 - Checks GitHub Releases directly for new versions.
+- Shows anonymous online and cumulative plugin users on a nine-language dashboard.
 - Works on both `twitter.com` and `x.com`.
 
 ### Installation
@@ -322,6 +350,7 @@ AutoBanRobot es una extensión para navegadores basados en Chromium que bloquea 
 - Sincroniza de forma asíncrona los bloqueos confirmados con el panel JAR local.
 - Permite revisar palabras clave populares antes de guardarlas.
 - Comprueba nuevas versiones directamente en GitHub Releases.
+- Muestra usuarios anónimos en línea y acumulados en un panel de nueve idiomas.
 - Funciona en `twitter.com` y `x.com`.
 
 ### Instalación y uso
@@ -342,6 +371,7 @@ AutoBanRobot は、Chromium 系ブラウザー向けの Twitter/X スパムア�
 - 確認済み Ban をローカル JAR ダッシュボードへ非同期で同期します。
 - 人気キーワードは確認後にのみ保存・適用されます。
 - GitHub Releases から新しいバージョンを直接確認します。
+- 9 言語対応ダッシュボードに匿名のオンライン・累計ユーザー数を表示します。
 - `twitter.com` と `x.com` の両方に対応します。
 
 ### インストールと注意
@@ -362,6 +392,7 @@ AutoBanRobot은 Chromium 기반 브라우저에서 동작하는 Twitter/X 스팸
 - 확인된 Ban 기록을 로컬 JAR 대시보드에 비동기로 동기화합니다.
 - 인기 키워드는 사용자가 확인하고 저장한 뒤에만 적용됩니다.
 - GitHub Releases에서 새 버전을 직접 확인합니다.
+- 9개 언어 대시보드에서 익명 온라인 및 누적 사용자 수를 표시합니다.
 - `twitter.com`과 `x.com`을 모두 지원합니다.
 
 ### 설치 및 주의사항
@@ -382,6 +413,7 @@ AutoBanRobot ist eine Erweiterung für Chromium-Browser, die Spam-Konten auf Twi
 - Synchronisiert bestätigte Bans asynchron mit dem lokalen JAR-Dashboard.
 - Lädt beliebte Schlüsselwörter nur zur Prüfung; gespeichert werden sie erst nach Bestätigung.
 - Prüft neue Versionen direkt über GitHub Releases.
+- Zeigt anonyme Online- und Gesamtnutzer in einem Dashboard mit neun Sprachen.
 - Funktioniert auf `twitter.com` und `x.com`.
 
 ### Installation und Hinweis
@@ -402,6 +434,7 @@ AutoBanRobot est une extension pour navigateurs Chromium qui bloque automatiquem
 - Synchronise de façon asynchrone les blocages confirmés avec le tableau de bord JAR local.
 - Charge les mots-clés populaires pour vérification sans les appliquer automatiquement.
 - Recherche les nouvelles versions directement dans GitHub Releases.
+- Affiche les utilisateurs anonymes en ligne et cumulés dans un tableau de bord en neuf langues.
 - Fonctionne sur `twitter.com` et `x.com`.
 
 ### Installation et avertissement
@@ -422,6 +455,7 @@ AutoBanRobot — расширение для браузеров на базе Ch
 - Асинхронно синхронизирует подтверждённые блокировки с локальной JAR-панелью.
 - Загружает популярные ключевые слова для проверки, не применяя их автоматически.
 - Проверяет новые версии напрямую через GitHub Releases.
+- Показывает анонимных онлайн- и суммарных пользователей на панели с девятью языками.
 - Работает на `twitter.com` и `x.com`.
 
 ### Установка и предупреждение
@@ -442,6 +476,7 @@ AutoBanRobot è un’estensione per browser Chromium che blocca automaticamente 
 - Sincronizza in modo asincrono i Ban confermati con il pannello JAR locale.
 - Carica le parole chiave popolari per la revisione senza applicarle automaticamente.
 - Controlla le nuove versioni direttamente tramite GitHub Releases.
+- Mostra utenti anonimi online e cumulativi in un pannello disponibile in nove lingue.
 - Funziona su `twitter.com` e `x.com`.
 
 ### Installazione e avvertenza

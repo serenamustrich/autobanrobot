@@ -9,6 +9,9 @@ const UPLOAD_ENDPOINT = 'http://127.0.0.1:59999/api/bans';
 const UPLOAD_RETRY_BASE_MS = 15_000;
 const UPLOAD_RETRY_MAX_MS = 5 * 60_000;
 const UPDATE_ALARM = 'autobanrobot-check-github-release';
+const HEARTBEAT_ALARM = 'autobanrobot-plugin-heartbeat';
+const HEARTBEAT_ENDPOINT = 'http://127.0.0.1:59999/api/clients/heartbeat';
+const INSTALLATION_ID_KEY = 'anonymousInstallationId';
 const LATEST_RELEASE_API =
   'https://api.github.com/repos/serenamustrich/autobanrobot/releases/latest';
 
@@ -88,6 +91,41 @@ function scheduleUpdateChecks() {
   });
 }
 
+function scheduleHeartbeat() {
+  chrome.alarms.create(HEARTBEAT_ALARM, {
+    delayInMinutes: 1,
+    periodInMinutes: 1
+  });
+}
+
+async function getInstallationId() {
+  const stored = await chrome.storage.local.get([INSTALLATION_ID_KEY]);
+  if (typeof stored[INSTALLATION_ID_KEY] === 'string' &&
+      stored[INSTALLATION_ID_KEY]) {
+    return stored[INSTALLATION_ID_KEY];
+  }
+  const installationId = crypto.randomUUID();
+  await chrome.storage.local.set({ [INSTALLATION_ID_KEY]: installationId });
+  return installationId;
+}
+
+async function sendHeartbeat() {
+  const installationId = await getInstallationId();
+  const response = await fetch(HEARTBEAT_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-autoban-client': 'browser-extension'
+    },
+    body: JSON.stringify({
+      installationId,
+      platform: 'chrome-edge',
+      version: chrome.runtime.getManifest().version
+    })
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+}
+
 function compareVersions(left, right) {
   const a = left.split('.').map(value => Number.parseInt(value, 10) || 0);
   const b = right.split('.').map(value => Number.parseInt(value, 10) || 0);
@@ -139,6 +177,8 @@ chrome.runtime.onInstalled.addListener(() => {
   scheduleUpload();
   scheduleUpdateChecks();
   checkForUpdate();
+  scheduleHeartbeat();
+  sendHeartbeat().catch(() => {});
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -146,6 +186,8 @@ chrome.runtime.onStartup.addListener(() => {
   scheduleUpload();
   scheduleUpdateChecks();
   checkForUpdate();
+  scheduleHeartbeat();
+  sendHeartbeat().catch(() => {});
 });
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
@@ -460,6 +502,9 @@ chrome.alarms.onAlarm.addListener(alarm => {
   }
   if (alarm.name === UPDATE_ALARM) {
     checkForUpdate();
+  }
+  if (alarm.name === HEARTBEAT_ALARM) {
+    sendHeartbeat().catch(() => {});
   }
 });
 
