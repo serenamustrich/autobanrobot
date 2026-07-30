@@ -1,7 +1,6 @@
 package com.autobanrobot.server.ban;
 
 import com.autobanrobot.server.keyword.KeywordAnalyticsService;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -50,21 +49,15 @@ public class BanEventService {
             now
         );
 
-        try {
-            BanEventResponse saved = BanEventResponse.from(repository.saveAndFlush(event));
-            keywordAnalytics.record(
-                saved.id(),
-                saved.username(),
-                request.configuredKeywords(),
-                request.matchedKeywords()
-            );
-            stream.publish(saved);
-            return saved;
-        } catch (DataIntegrityViolationException duplicate) {
-            return repository.findByClientEventId(request.clientEventId())
-                .map(BanEventResponse::from)
-                .orElseThrow(() -> duplicate);
-        }
+        BanEventResponse saved = BanEventResponse.from(repository.saveAndFlush(event));
+        keywordAnalytics.record(
+            saved.id(),
+            saved.username(),
+            request.configuredKeywords(),
+            request.matchedKeywords()
+        );
+        stream.publish(saved);
+        return saved;
     }
 
     @Transactional(readOnly = true)

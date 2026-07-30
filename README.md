@@ -22,7 +22,15 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 - Added the shared cat-assistant plugin icon as the server dashboard favicon
   and Apple touch icon.
+- Fixed Ban uploads being rejected by MySQL 5.7 when the complete configured
+  keyword snapshot exceeded the previous text-column capacity.
+- Failed uploads remain in the extension's persistent queue and are retried
+  automatically after the server schema is corrected. A successful one-minute
+  heartbeat also wakes the upload queue, shortening backlog recovery.
 - 服务端网页浏览器标签页及 Apple 触控图标改为与插件一致的猫咪助手 icon。
+- 修复全部插件关键词快照超过 MySQL 5.7 原字段容量时，Ban 上传被拒绝的问题。
+- 已失败记录仍保留在插件持久化上传队列中，服务端字段修复后会自动补传。
+- 每分钟心跳成功后也会立即唤醒上传队列，缩短积压记录的恢复等待时间。
 
 ### v1.6.1 — 2026-07-30
 

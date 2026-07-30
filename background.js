@@ -124,6 +124,7 @@ async function sendHeartbeat() {
     })
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  processUploadQueue();
 }
 
 function compareVersions(left, right) {
