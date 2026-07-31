@@ -73,6 +73,40 @@ button, input { font: inherit; }
   color: var(--blue-deep);
 }
 
+.hero-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.release-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(23, 32, 51, .16);
+  transition: transform .16s ease, background .16s ease;
+}
+
+.release-link:hover {
+  background: var(--blue-deep);
+  transform: translateY(-1px);
+}
+
+.release-link svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -369,6 +403,7 @@ tbody tr:hover { background: #f8fbfe; }
   .hero, .toolbar { align-items: stretch; flex-direction: column; }
   .hero-actions { align-items: stretch; }
   .language-switcher { justify-content: flex-start; }
+  .hero-status-row { justify-content: flex-start; }
   .metrics { grid-template-columns: 1fr; }
   .connection { align-self: flex-start; }
   .search { width: 100%; }
