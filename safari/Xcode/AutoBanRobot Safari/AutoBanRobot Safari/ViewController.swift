@@ -2,7 +2,7 @@
 //  ViewController.swift
 //  AutoBanRobot Safari
 //
-//  Created by 陈初玥 on 2026/7/30.
+//  Created by 陈初玥 on 2026/7/31.
 //
 
 import Cocoa
