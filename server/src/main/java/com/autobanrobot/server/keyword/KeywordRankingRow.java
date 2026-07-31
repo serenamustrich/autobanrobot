@@ -4,9 +4,5 @@ public interface KeywordRankingRow {
 
     String getKeyword();
 
-    long getConfiguredCount();
-
     long getHitCount();
-
-    long getBanAccountCount();
 }

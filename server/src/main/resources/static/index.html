@@ -83,7 +83,7 @@
       </div>
 
       <div class="table-wrap">
-        <table>
+        <table class="ban-table">
           <thead>
             <tr>
               <th data-i18n="account">账号</th>
@@ -111,30 +111,83 @@
     </section>
 
     <section class="panel page-view" id="keywordsPage" hidden>
-      <div class="toolbar">
-        <div>
-          <p class="section-kicker">KEYWORD INTELLIGENCE</p>
-          <h2 data-i18n="keywordRanking">关键词排行榜</h2>
+      <div class="analytics-section">
+        <div class="toolbar">
+          <div>
+            <p class="section-kicker">SYNC PREVIEW</p>
+            <h2 data-i18n="syncPreview">可同步热门关键词</h2>
+          </div>
+          <p class="ranking-note" data-i18n="syncPreviewNote">插件“加载热门关键词”将获取以下内容</p>
         </div>
-        <p class="ranking-note" data-i18n="rankingNote">按设置次数优先排序，数据随 Ban 记录实时更新</p>
+        <div class="table-wrap analytics-table">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="rank">排名</th>
+                <th data-i18n="syncTerm">同步屏蔽词</th>
+                <th data-i18n="source">来源</th>
+                <th data-i18n="count">次数</th>
+              </tr>
+            </thead>
+            <tbody id="popularRows"></tbody>
+          </table>
+          <div class="empty" id="popularEmpty" hidden>
+            <div class="empty-icon">📥</div>
+            <h3 data-i18n="noPopularTerms">暂无可同步内容</h3>
+          </div>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th data-i18n="rank">排名</th>
-              <th data-i18n="keyword">关键词</th>
-              <th data-i18n="configuredCount">被设置次数</th>
-              <th data-i18n="hitCount">命中次数</th>
-              <th data-i18n="banAccounts">Ban 账号数</th>
-            </tr>
-          </thead>
-          <tbody id="keywordRows"></tbody>
-        </table>
-        <div class="empty" id="keywordEmpty" hidden>
-          <div class="empty-icon">🔎</div>
-          <h3 data-i18n="noKeywords">暂无关键词统计</h3>
-          <p data-i18n="noKeywordsHint">收到包含关键词配置快照的 Ban 数据后会自动生成排名。</p>
+
+      <div class="analytics-section">
+        <div class="toolbar">
+          <div>
+            <p class="section-kicker">KEYWORD HITS</p>
+            <h2 data-i18n="keywordRanking">关键词命中排行</h2>
+          </div>
+          <p class="ranking-note" data-i18n="rankingNote">按命中次数排序，数据随 Ban 记录实时更新</p>
+        </div>
+        <div class="table-wrap analytics-table">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="rank">排名</th>
+                <th data-i18n="keyword">关键词</th>
+                <th data-i18n="hitCount">命中次数</th>
+              </tr>
+            </thead>
+            <tbody id="keywordRows"></tbody>
+          </table>
+          <div class="empty" id="keywordEmpty" hidden>
+            <div class="empty-icon">🔎</div>
+            <h3 data-i18n="noKeywords">暂无关键词统计</h3>
+            <p data-i18n="noKeywordsHint">关键词命中并完成 Ban 后会自动生成排名。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-section">
+        <div class="toolbar">
+          <div>
+            <p class="section-kicker">MENTION INTELLIGENCE</p>
+            <h2 data-i18n="mentionRanking">@账号提及排行</h2>
+          </div>
+          <p class="ranking-note" data-i18n="mentionNote">统计已 Ban 垃圾内容中出现的 @账号</p>
+        </div>
+        <div class="table-wrap analytics-table">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="rank">排名</th>
+                <th data-i18n="mentionedAccount">被提及账号</th>
+                <th data-i18n="mentionCount">提及次数</th>
+              </tr>
+            </thead>
+            <tbody id="mentionRows"></tbody>
+          </table>
+          <div class="empty" id="mentionEmpty" hidden>
+            <div class="empty-icon">＠</div>
+            <h3 data-i18n="noMentions">暂无 @账号统计</h3>
+          </div>
         </div>
       </div>
     </section>
@@ -161,9 +214,26 @@
     <tr>
       <td><span class="rank"></span></td>
       <td><strong class="keyword"></strong></td>
-      <td><span class="configured-count ranking-number"></span></td>
       <td><span class="hit-count ranking-number"></span></td>
-      <td><span class="account-count ranking-number"></span></td>
+    </tr>
+  </template>
+
+  <template id="popularRowTemplate">
+    <tr>
+      <td><span class="rank"></span></td>
+      <td><strong class="term"></strong></td>
+      <td><span class="source"></span></td>
+      <td><span class="count ranking-number"></span></td>
+    </tr>
+  </template>
+
+  <template id="mentionRowTemplate">
+    <tr>
+      <td><span class="rank"></span></td>
+      <td>
+        <a class="mentioned-account" target="_blank" rel="noreferrer"></a>
+      </td>
+      <td><span class="mention-count ranking-number"></span></td>
     </tr>
   </template>
 

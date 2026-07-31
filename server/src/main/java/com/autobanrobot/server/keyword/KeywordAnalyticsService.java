@@ -23,17 +23,14 @@ public class KeywordAnalyticsService {
     public void record(
         Long banEventId,
         String username,
-        List<String> configuredKeywords,
         List<String> matchedKeywords
     ) {
         Set<String> matched = normalize(matchedKeywords);
-        Set<String> configured = normalize(configuredKeywords);
-        configured.addAll(matched);
-        repository.saveAll(configured.stream()
+        repository.saveAll(matched.stream()
             .map(keyword -> new BanEventKeyword(
                 banEventId,
                 keyword,
-                matched.contains(keyword),
+                true,
                 username
             ))
             .toList());
@@ -49,9 +46,7 @@ public class KeywordAnalyticsService {
                 return new KeywordRankingResponse(
                     index + 1,
                     row.getKeyword(),
-                    row.getConfiguredCount(),
-                    row.getHitCount(),
-                    row.getBanAccountCount()
+                    row.getHitCount()
                 );
             })
             .toList();

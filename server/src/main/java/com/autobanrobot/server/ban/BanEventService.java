@@ -1,6 +1,7 @@
 package com.autobanrobot.server.ban;
 
 import com.autobanrobot.server.keyword.KeywordAnalyticsService;
+import com.autobanrobot.server.mention.MentionAnalyticsService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -17,15 +18,18 @@ public class BanEventService {
     private final BanEventRepository repository;
     private final BanEventStream stream;
     private final KeywordAnalyticsService keywordAnalytics;
+    private final MentionAnalyticsService mentionAnalytics;
 
     public BanEventService(
         BanEventRepository repository,
         BanEventStream stream,
-        KeywordAnalyticsService keywordAnalytics
+        KeywordAnalyticsService keywordAnalytics,
+        MentionAnalyticsService mentionAnalytics
     ) {
         this.repository = repository;
         this.stream = stream;
         this.keywordAnalytics = keywordAnalytics;
+        this.mentionAnalytics = mentionAnalytics;
     }
 
     @Transactional
@@ -53,9 +57,9 @@ public class BanEventService {
         keywordAnalytics.record(
             saved.id(),
             saved.username(),
-            request.configuredKeywords(),
             request.matchedKeywords()
         );
+        mentionAnalytics.record(saved.id(), request.content());
         stream.publish(saved);
         return saved;
     }

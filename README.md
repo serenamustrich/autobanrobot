@@ -18,6 +18,26 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.3 — 2026-07-31
+
+- Removed the misleading configured-keyword count and Ban-account count from
+  keyword analytics. Keyword ranking now shows hit count only.
+- Added an `@account` mention ranking derived from content posted by confirmed
+  blocked spam accounts, including automatic history backfill.
+- Added a clear synchronization preview showing the exact popular terms
+  offered to the extension and whether each term comes from a keyword hit,
+  an `@account` mention, or both.
+- Popular-term loading now includes frequently mentioned `@accounts`, allowing
+  the extension to match spam accounts that repeatedly promote the same target.
+- Removed the misleading “configured count” and retained full configured
+  keyword snapshots only as Ban-event evidence.
+- 关键词排行只显示实际命中次数，不再展示容易误解的“被设置次数”和 Ban
+  账号数。
+- 新增已确认垃圾内容的 `@账号` 提及排行，并自动回填现有历史数据。
+- 网页明确展示插件实际可同步的热门屏蔽词及其来源；高频被提及账号会以
+  `@username` 形式加入热门词。
+- 完整关键词快照仍随 Ban 记录保存，但不再用于排行榜统计。
+
 ### v1.6.2 — 2026-07-30
 
 - Switched Ban uploads, anonymous heartbeats, and popular-keyword loading from
