@@ -30,11 +30,17 @@ const translations = {
     previous: '上一页', next: '下一页',
     range: '第 {start}–{end} 条，共 {total} 条',
     keywordRanking: '关键词排行榜',
-    rankingNote: '按设置次数优先排序，数据随 Ban 记录实时更新',
-    rank: '排名', keyword: '关键词', configuredCount: '被设置次数',
-    hitCount: '命中次数', banAccounts: 'Ban 账号数',
+    rankingNote: '按命中次数排序，数据随 Ban 记录实时更新',
+    rank: '排名', keyword: '关键词', hitCount: '命中次数',
     noKeywords: '暂无关键词统计',
-    noKeywordsHint: '收到包含关键词配置快照的 Ban 数据后会自动生成排名。',
+    noKeywordsHint: '关键词命中并完成 Ban 后会自动生成排名。',
+    syncPreview: '可同步热门关键词', syncPreviewNote: '插件“加载热门关键词”将获取以下内容',
+    syncTerm: '同步屏蔽词', source: '来源', count: '次数',
+    keywordSource: '关键词命中', mentionSource: '@账号提及', combinedSource: '关键词命中 + @提及',
+    noPopularTerms: '暂无可同步内容', mentionRanking: '@账号提及排行',
+    mentionNote: '统计已 Ban 垃圾内容中出现的 @账号',
+    mentionedAccount: '被提及账号', mentionCount: '提及次数',
+    noMentions: '暂无 @账号统计',
     structuredRule: '结构化规则'
   },
   en: {
@@ -59,11 +65,17 @@ const translations = {
     previous: 'Previous', next: 'Next',
     range: '{start}–{end} of {total}',
     keywordRanking: 'Keyword Ranking',
-    rankingNote: 'Sorted by configuration count and updated with Ban records',
-    rank: 'Rank', keyword: 'Keyword', configuredCount: 'Configured',
-    hitCount: 'Hits', banAccounts: 'Ban Accounts',
+    rankingNote: 'Sorted by hit count and updated with Ban records',
+    rank: 'Rank', keyword: 'Keyword', hitCount: 'Hits',
     noKeywords: 'No keyword statistics',
-    noKeywordsHint: 'Rankings appear after Ban data includes a keyword snapshot.',
+    noKeywordsHint: 'Rankings appear after a keyword match results in a Ban.',
+    syncPreview: 'Popular Terms Available to Sync', syncPreviewNote: 'The plugin loads exactly these terms',
+    syncTerm: 'Synced Block Term', source: 'Source', count: 'Count',
+    keywordSource: 'Keyword hit', mentionSource: '@account mention', combinedSource: 'Keyword hit + @mention',
+    noPopularTerms: 'No terms available to sync', mentionRanking: '@Account Mention Ranking',
+    mentionNote: 'Accounts mentioned in content posted by confirmed spam accounts',
+    mentionedAccount: 'Mentioned Account', mentionCount: 'Mentions',
+    noMentions: 'No @account statistics',
     structuredRule: 'Structured rule'
   },
   es: {
@@ -88,11 +100,17 @@ const translations = {
     previous: 'Anterior', next: 'Siguiente',
     range: '{start}–{end} de {total}',
     keywordRanking: 'Clasificación de palabras clave',
-    rankingNote: 'Ordenada por veces configurada y actualizada con los bloqueos',
-    rank: 'Puesto', keyword: 'Palabra clave', configuredCount: 'Configuraciones',
-    hitCount: 'Coincidencias', banAccounts: 'Cuentas bloqueadas',
+    rankingNote: 'Ordenada por coincidencias y actualizada con los bloqueos',
+    rank: 'Puesto', keyword: 'Palabra clave', hitCount: 'Coincidencias',
     noKeywords: 'Sin estadísticas de palabras clave',
-    noKeywordsHint: 'La clasificación aparece al recibir una instantánea de palabras clave.',
+    noKeywordsHint: 'La clasificación aparece cuando una coincidencia genera un bloqueo.',
+    syncPreview: 'Términos populares para sincronizar', syncPreviewNote: 'El plugin cargará exactamente estos términos',
+    syncTerm: 'Término de bloqueo', source: 'Origen', count: 'Cantidad',
+    keywordSource: 'Coincidencia', mentionSource: 'Mención de @cuenta', combinedSource: 'Coincidencia + mención',
+    noPopularTerms: 'No hay términos para sincronizar', mentionRanking: 'Clasificación de menciones',
+    mentionNote: 'Cuentas mencionadas por contenido de spam bloqueado',
+    mentionedAccount: 'Cuenta mencionada', mentionCount: 'Menciones',
+    noMentions: 'Sin estadísticas de menciones',
     structuredRule: 'Regla estructurada'
   },
   ja: {
@@ -117,11 +135,17 @@ const translations = {
     previous: '前へ', next: '次へ',
     range: '{total} 件中 {start}–{end} 件',
     keywordRanking: 'キーワードランキング',
-    rankingNote: '設定回数順。Ban 記録に合わせて更新されます',
-    rank: '順位', keyword: 'キーワード', configuredCount: '設定回数',
-    hitCount: '一致回数', banAccounts: 'Ban アカウント数',
+    rankingNote: '一致回数順。Ban 記録に合わせて更新されます',
+    rank: '順位', keyword: 'キーワード', hitCount: '一致回数',
     noKeywords: 'キーワード統計はありません',
-    noKeywordsHint: 'キーワード設定を含む Ban データ受信後に表示されます。',
+    noKeywordsHint: 'キーワード一致による Ban の受信後に表示されます。',
+    syncPreview: '同期可能な人気キーワード', syncPreviewNote: 'プラグインは以下の項目を読み込みます',
+    syncTerm: '同期ブロック語', source: '取得元', count: '回数',
+    keywordSource: 'キーワード一致', mentionSource: '@アカウント言及', combinedSource: '一致 + @言及',
+    noPopularTerms: '同期可能な項目はありません', mentionRanking: '@アカウント言及ランキング',
+    mentionNote: 'Ban 済みスパム内容に登場する @アカウント',
+    mentionedAccount: '言及アカウント', mentionCount: '言及回数',
+    noMentions: '@アカウント統計はありません',
     structuredRule: '構造化ルール'
   },
   ko: {
@@ -146,11 +170,17 @@ const translations = {
     previous: '이전', next: '다음',
     range: '전체 {total}개 중 {start}–{end}',
     keywordRanking: '키워드 순위',
-    rankingNote: '설정 횟수 우선 정렬, Ban 기록에 따라 갱신',
-    rank: '순위', keyword: '키워드', configuredCount: '설정 횟수',
-    hitCount: '일치 횟수', banAccounts: 'Ban 계정 수',
+    rankingNote: '일치 횟수순 정렬, Ban 기록에 따라 갱신',
+    rank: '순위', keyword: '키워드', hitCount: '일치 횟수',
     noKeywords: '키워드 통계가 없습니다',
-    noKeywordsHint: '키워드 스냅샷이 포함된 Ban 데이터를 받으면 표시됩니다.',
+    noKeywordsHint: '키워드 일치로 발생한 Ban을 받으면 표시됩니다.',
+    syncPreview: '동기화 가능한 인기 키워드', syncPreviewNote: '플러그인이 아래 항목을 그대로 불러옵니다',
+    syncTerm: '동기화 차단어', source: '출처', count: '횟수',
+    keywordSource: '키워드 일치', mentionSource: '@계정 언급', combinedSource: '일치 + @언급',
+    noPopularTerms: '동기화할 항목이 없습니다', mentionRanking: '@계정 언급 순위',
+    mentionNote: '차단된 스팸 내용에 등장한 @계정',
+    mentionedAccount: '언급된 계정', mentionCount: '언급 횟수',
+    noMentions: '@계정 통계가 없습니다',
     structuredRule: '구조화 규칙'
   },
   de: {
@@ -175,11 +205,17 @@ const translations = {
     previous: 'Zurück', next: 'Weiter',
     range: '{start}–{end} von {total}',
     keywordRanking: 'Schlüsselwort-Rangliste',
-    rankingNote: 'Nach Konfigurationen sortiert und mit Ban-Daten aktualisiert',
-    rank: 'Rang', keyword: 'Schlüsselwort', configuredCount: 'Konfiguriert',
-    hitCount: 'Treffer', banAccounts: 'Ban-Konten',
+    rankingNote: 'Nach Treffern sortiert und mit Ban-Daten aktualisiert',
+    rank: 'Rang', keyword: 'Schlüsselwort', hitCount: 'Treffer',
     noKeywords: 'Keine Schlüsselwortstatistik',
-    noKeywordsHint: 'Die Rangliste erscheint nach Empfang eines Schlüsselwort-Snapshots.',
+    noKeywordsHint: 'Die Rangliste erscheint, wenn ein Treffer zu einem Ban führt.',
+    syncPreview: 'Synchronisierbare beliebte Begriffe', syncPreviewNote: 'Das Plugin lädt genau diese Begriffe',
+    syncTerm: 'Synchronisierter Sperrbegriff', source: 'Quelle', count: 'Anzahl',
+    keywordSource: 'Schlüsselworttreffer', mentionSource: '@Konto-Erwähnung', combinedSource: 'Treffer + @Erwähnung',
+    noPopularTerms: 'Keine Begriffe zum Synchronisieren', mentionRanking: '@Konto-Erwähnungen',
+    mentionNote: 'In gesperrten Spam-Inhalten erwähnte Konten',
+    mentionedAccount: 'Erwähntes Konto', mentionCount: 'Erwähnungen',
+    noMentions: 'Keine @Konto-Statistik',
     structuredRule: 'Strukturierte Regel'
   },
   fr: {
@@ -204,11 +240,17 @@ const translations = {
     previous: 'Précédent', next: 'Suivant',
     range: '{start}–{end} sur {total}',
     keywordRanking: 'Classement des mots-clés',
-    rankingNote: 'Trié par nombre de configurations et actualisé avec les blocages',
-    rank: 'Rang', keyword: 'Mot-clé', configuredCount: 'Configurations',
-    hitCount: 'Correspondances', banAccounts: 'Comptes bloqués',
+    rankingNote: 'Trié par correspondances et actualisé avec les blocages',
+    rank: 'Rang', keyword: 'Mot-clé', hitCount: 'Correspondances',
     noKeywords: 'Aucune statistique de mot-clé',
-    noKeywordsHint: 'Le classement apparaît après réception d’un instantané des mots-clés.',
+    noKeywordsHint: 'Le classement apparaît lorsqu’une correspondance produit un blocage.',
+    syncPreview: 'Termes populaires synchronisables', syncPreviewNote: 'Le plugin charge exactement ces termes',
+    syncTerm: 'Terme de blocage', source: 'Source', count: 'Nombre',
+    keywordSource: 'Correspondance', mentionSource: 'Mention de @compte', combinedSource: 'Correspondance + mention',
+    noPopularTerms: 'Aucun terme à synchroniser', mentionRanking: 'Classement des mentions',
+    mentionNote: 'Comptes mentionnés dans les contenus spam bloqués',
+    mentionedAccount: 'Compte mentionné', mentionCount: 'Mentions',
+    noMentions: 'Aucune statistique de mention',
     structuredRule: 'Règle structurée'
   },
   ru: {
@@ -233,11 +275,17 @@ const translations = {
     previous: 'Назад', next: 'Далее',
     range: '{start}–{end} из {total}',
     keywordRanking: 'Рейтинг ключевых слов',
-    rankingNote: 'Сортировка по числу настроек, обновление по данным Ban',
-    rank: 'Место', keyword: 'Ключевое слово', configuredCount: 'Настроено',
-    hitCount: 'Совпадения', banAccounts: 'Ban-аккаунты',
+    rankingNote: 'Сортировка по совпадениям, обновление по данным Ban',
+    rank: 'Место', keyword: 'Ключевое слово', hitCount: 'Совпадения',
     noKeywords: 'Нет статистики ключевых слов',
-    noKeywordsHint: 'Рейтинг появится после получения снимка ключевых слов.',
+    noKeywordsHint: 'Рейтинг появится, когда совпадение приведёт к блокировке.',
+    syncPreview: 'Популярные термины для синхронизации', syncPreviewNote: 'Плагин загрузит именно эти термины',
+    syncTerm: 'Термин блокировки', source: 'Источник', count: 'Количество',
+    keywordSource: 'Совпадение', mentionSource: 'Упоминание @аккаунта', combinedSource: 'Совпадение + упоминание',
+    noPopularTerms: 'Нет терминов для синхронизации', mentionRanking: 'Рейтинг упоминаний',
+    mentionNote: 'Аккаунты в заблокированном спам-контенте',
+    mentionedAccount: 'Упомянутый аккаунт', mentionCount: 'Упоминания',
+    noMentions: 'Нет статистики упоминаний',
     structuredRule: 'Структурированное правило'
   },
   it: {
@@ -262,11 +310,17 @@ const translations = {
     previous: 'Precedente', next: 'Successivo',
     range: '{start}–{end} di {total}',
     keywordRanking: 'Classifica parole chiave',
-    rankingNote: 'Ordinata per configurazioni e aggiornata con i record Ban',
-    rank: 'Posizione', keyword: 'Parola chiave', configuredCount: 'Configurazioni',
-    hitCount: 'Corrispondenze', banAccounts: 'Account Ban',
+    rankingNote: 'Ordinata per corrispondenze e aggiornata con i record Ban',
+    rank: 'Posizione', keyword: 'Parola chiave', hitCount: 'Corrispondenze',
     noKeywords: 'Nessuna statistica',
-    noKeywordsHint: 'La classifica appare dopo la ricezione di uno snapshot delle parole chiave.',
+    noKeywordsHint: 'La classifica appare quando una corrispondenza genera un Ban.',
+    syncPreview: 'Termini popolari sincronizzabili', syncPreviewNote: 'Il plugin caricherà esattamente questi termini',
+    syncTerm: 'Termine di blocco', source: 'Origine', count: 'Conteggio',
+    keywordSource: 'Corrispondenza', mentionSource: 'Menzione @account', combinedSource: 'Corrispondenza + menzione',
+    noPopularTerms: 'Nessun termine da sincronizzare', mentionRanking: 'Classifica menzioni',
+    mentionNote: 'Account menzionati nei contenuti spam bloccati',
+    mentionedAccount: 'Account menzionato', mentionCount: 'Menzioni',
+    noMentions: 'Nessuna statistica delle menzioni',
     structuredRule: 'Regola strutturata'
   }
 };
@@ -334,6 +388,18 @@ const keywordElements = {
   template: document.getElementById('keywordRowTemplate')
 };
 
+const popularElements = {
+  rows: document.getElementById('popularRows'),
+  empty: document.getElementById('popularEmpty'),
+  template: document.getElementById('popularRowTemplate')
+};
+
+const mentionElements = {
+  rows: document.getElementById('mentionRows'),
+  empty: document.getElementById('mentionEmpty'),
+  template: document.getElementById('mentionRowTemplate')
+};
+
 async function fetchJson(url) {
   const response = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -373,14 +439,49 @@ async function loadKeywords() {
     const row = keywordElements.template.content.cloneNode(true);
     row.querySelector('.rank').textContent = `#${item.rank}`;
     row.querySelector('.keyword').textContent = item.keyword;
-    row.querySelector('.configured-count').textContent =
-      item.configuredCount.toLocaleString();
     row.querySelector('.hit-count').textContent =
       item.hitCount.toLocaleString();
-    row.querySelector('.account-count').textContent =
-      item.banAccountCount.toLocaleString();
     keywordElements.rows.appendChild(row);
   });
+}
+
+async function loadPopularTerms() {
+  const items = await fetchJson('/api/popular-terms?limit=200');
+  popularElements.rows.replaceChildren();
+  popularElements.empty.hidden = items.length !== 0;
+  items.forEach(item => {
+    const row = popularElements.template.content.cloneNode(true);
+    row.querySelector('.rank').textContent = `#${item.rank}`;
+    row.querySelector('.term').textContent = item.term;
+    const sourceKey = item.source === 'mention'
+      ? 'mentionSource'
+      : item.source === 'keyword_and_mention'
+        ? 'combinedSource'
+        : 'keywordSource';
+    row.querySelector('.source').textContent = t(sourceKey);
+    row.querySelector('.count').textContent = item.count.toLocaleString();
+    popularElements.rows.appendChild(row);
+  });
+}
+
+async function loadMentions() {
+  const items = await fetchJson('/api/mentions?limit=200');
+  mentionElements.rows.replaceChildren();
+  mentionElements.empty.hidden = items.length !== 0;
+  items.forEach(item => {
+    const row = mentionElements.template.content.cloneNode(true);
+    row.querySelector('.rank').textContent = `#${item.rank}`;
+    const account = row.querySelector('.mentioned-account');
+    account.href = `https://x.com/${encodeURIComponent(item.username)}`;
+    account.textContent = `@${item.username}`;
+    row.querySelector('.mention-count').textContent =
+      item.mentionCount.toLocaleString();
+    mentionElements.rows.appendChild(row);
+  });
+}
+
+async function loadAnalytics() {
+  await Promise.all([loadKeywords(), loadPopularTerms(), loadMentions()]);
 }
 
 function renderRows(items) {
@@ -439,7 +540,7 @@ function connectStream() {
   stream.addEventListener('ban', async event => {
     const record = JSON.parse(event.data);
     if (!state.query && state.page === 0) {
-      await Promise.all([loadPage(), loadStats(), loadKeywords()]);
+      await Promise.all([loadPage(), loadStats(), loadAnalytics()]);
     } else if (
       state.query &&
       record.username.toLocaleLowerCase().includes(state.query.toLocaleLowerCase())
@@ -468,7 +569,7 @@ document.querySelectorAll('.page-tab').forEach(button => {
 document.querySelectorAll('[data-lang]').forEach(button => {
   button.addEventListener('click', async () => {
     applyLanguage(button.dataset.lang);
-    await Promise.all([loadPage(), loadKeywords()]);
+    await Promise.all([loadPage(), loadAnalytics()]);
   });
 });
 
@@ -494,7 +595,7 @@ elements.next.addEventListener('click', async () => {
   await loadPage();
 });
 
-Promise.all([loadPage(), loadStats(), loadKeywords(), loadUserStats()])
+Promise.all([loadPage(), loadStats(), loadAnalytics(), loadUserStats()])
   .then(connectStream)
   .catch(error => {
     console.error(error);

@@ -11,15 +11,11 @@ public interface BanEventKeywordRepository extends JpaRepository<BanEventKeyword
     @Query("""
         select
             keyword.keyword as keyword,
-            count(keyword.id) as configuredCount,
-            sum(case when keyword.matched = true then 1 else 0 end) as hitCount,
-            count(distinct case when keyword.matched = true then keyword.username else null end)
-                as banAccountCount
+            count(keyword.id) as hitCount
         from BanEventKeyword keyword
+        where keyword.matched = true
         group by keyword.keyword
-        order by count(keyword.id) desc,
-            sum(case when keyword.matched = true then 1 else 0 end) desc,
-            keyword.keyword asc
+        order by count(keyword.id) desc, keyword.keyword asc
         """)
     List<KeywordRankingRow> findRanking(Pageable pageable);
 }

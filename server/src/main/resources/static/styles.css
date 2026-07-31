@@ -213,6 +213,14 @@ h2 { margin-bottom: 0; font-size: 24px; letter-spacing: -.02em; }
   box-shadow: var(--shadow);
 }
 
+.analytics-section + .analytics-section {
+  border-top: 1px solid var(--line);
+}
+
+.analytics-table {
+  min-height: 180px;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -364,5 +372,5 @@ tbody tr:hover { background: #f8fbfe; }
   .metrics { grid-template-columns: 1fr; }
   .connection { align-self: flex-start; }
   .search { width: 100%; }
-  th:nth-child(3), td:nth-child(3) { display: none; }
+  .ban-table th:nth-child(3), .ban-table td:nth-child(3) { display: none; }
 }
