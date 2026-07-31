@@ -42,23 +42,25 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
   const button = document.getElementById('loadPopular');
   const status = document.getElementById('popularStatus');
   button.disabled = true;
-  status.textContent = '正在从本机服务端读取热门关键词…';
+  status.textContent = '正在从线上服务读取可同步热门关键词…';
   try {
-    const response = await fetch('https://ban.richccy.com/api/keywords?limit=50');
+    const response = await fetch(
+      'https://ban.richccy.com/api/popular-terms?limit=50'
+    );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const ranking = await response.json();
     const textarea = document.getElementById('keywords');
     const current = textarea.value
       .split('\n').map(value => value.trim()).filter(Boolean);
     const popular = Array.isArray(ranking)
-      ? ranking.map(item => item.keyword).filter(Boolean)
+      ? ranking.map(item => item.term).filter(Boolean)
       : [];
     const merged = [...new Set([...current, ...popular])];
     textarea.value = merged.join('\n');
     status.textContent =
       `已加载 ${popular.length} 个热门词，新增 ${merged.length - current.length} 个；请确认后点击保存`;
   } catch {
-    status.textContent = '无法连接本机服务端，请确认 JAR 已在 59999 端口运行';
+    status.textContent = '无法连接线上热门关键词服务，请稍后重试';
   } finally {
     button.disabled = false;
   }
