@@ -20,6 +20,9 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ### v1.6.4 — 2026-07-31
 
+- The server dashboard now preserves the active page in the URL hash and local
+  storage. Refreshing `#keywords` stays on Keyword Analytics instead of
+  returning to the Ban list.
 - Expanded the structured Emoji rule from `Emoji + English + Emoji` to
   `Emoji + any non-empty content + Emoji`.
 - Mixed Chinese, Latin letters, numbers, punctuation, and additional Emoji are
@@ -29,6 +32,8 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 - 将原“Emoji + 英文 + Emoji”规则扩展为“Emoji + 任意非空内容 + Emoji”。
 - 首尾为 Emoji 时，中间可包含中文、字母、数字、标点或其他 Emoji。
 - 沿用现有滑块设置键，升级不会重置用户已保存的开关状态。
+- 服务端网页会保存当前标签页；在关键词分析页刷新后仍停留在关键词分析，
+  不再跳回 Ban 清单。
 
 ### v1.6.3 — 2026-07-31
 

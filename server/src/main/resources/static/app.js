@@ -7,6 +7,7 @@ const state = {
 };
 
 const LANGUAGE_KEY = 'autobanrobot-dashboard-language';
+const PAGE_KEY = 'autobanrobot-dashboard-page';
 const translations = {
   'zh-CN': {
     pageTitle: 'AutoBanRobot · Ban 清单',
@@ -564,15 +565,30 @@ function connectStream() {
   };
 }
 
-document.querySelectorAll('.page-tab').forEach(button => {
-  button.addEventListener('click', () => {
-    document.querySelectorAll('.page-tab').forEach(tab => {
-      tab.classList.toggle('active', tab === button);
-    });
-    document.getElementById('bansPage').hidden = button.dataset.page !== 'bans';
-    document.getElementById('keywordsPage').hidden =
-      button.dataset.page !== 'keywords';
+function applyPage(page, updateUrl = true, replaceUrl = false) {
+  const selectedPage = page === 'keywords' ? 'keywords' : 'bans';
+  document.querySelectorAll('.page-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.page === selectedPage);
   });
+  document.getElementById('bansPage').hidden = selectedPage !== 'bans';
+  document.getElementById('keywordsPage').hidden = selectedPage !== 'keywords';
+  localStorage.setItem(PAGE_KEY, selectedPage);
+  if (updateUrl) {
+    const url = `#${selectedPage}`;
+    if (replaceUrl) {
+      history.replaceState(null, '', url);
+    } else {
+      history.pushState(null, '', url);
+    }
+  }
+}
+
+document.querySelectorAll('.page-tab').forEach(button => {
+  button.addEventListener('click', () => applyPage(button.dataset.page));
+});
+
+window.addEventListener('popstate', () => {
+  applyPage(location.hash.slice(1), false);
 });
 
 document.querySelectorAll('[data-lang]').forEach(button => {
@@ -615,4 +631,8 @@ setInterval(() => {
   loadUserStats().catch(error => console.error('用户统计刷新失败', error));
 }, 15_000);
 
+const initialPage = ['bans', 'keywords'].includes(location.hash.slice(1))
+  ? location.hash.slice(1)
+  : localStorage.getItem(PAGE_KEY);
+applyPage(initialPage, true, true);
 applyLanguage(currentLanguage);
