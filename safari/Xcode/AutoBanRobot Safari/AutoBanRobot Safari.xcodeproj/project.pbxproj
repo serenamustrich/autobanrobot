@@ -7,45 +7,45 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		641A3E71301C48480047C53D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641A3E70301C48480047C53D /* AppDelegate.swift */; };
-		641A3E75301C48480047C53D /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E73301C48480047C53D /* Main.html */; };
-		641A3E77301C48480047C53D /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E76301C48480047C53D /* Icon.png */; };
-		641A3E79301C48480047C53D /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E78301C48480047C53D /* Style.css */; };
-		641A3E7B301C48480047C53D /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E7A301C48480047C53D /* Script.js */; };
-		641A3E7D301C48480047C53D /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641A3E7C301C48480047C53D /* ViewController.swift */; };
-		641A3E80301C48480047C53D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E7E301C48480047C53D /* Main.storyboard */; };
-		641A3E82301C48490047C53D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E81301C48490047C53D /* Assets.xcassets */; };
-		641A3E89301C48490047C53D /* AutoBanRobot Safari Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 641A3E88301C48490047C53D /* AutoBanRobot Safari Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		641A3E8E301C48490047C53D /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 641A3E8D301C48490047C53D /* SafariWebExtensionHandler.swift */; };
-		641A3EA3301C48490047C53D /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E9A301C48490047C53D /* icon.png */; };
-		641A3EA4301C48490047C53D /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E9B301C48490047C53D /* popup.js */; };
-		641A3EA5301C48490047C53D /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E9C301C48490047C53D /* background.js */; };
-		641A3EA6301C48490047C53D /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E9D301C48490047C53D /* popup.html */; };
-		641A3EA7301C48490047C53D /* injected.js in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E9E301C48490047C53D /* injected.js */; };
-		641A3EA8301C48490047C53D /* default-keywords.json in Resources */ = {isa = PBXBuildFile; fileRef = 641A3E9F301C48490047C53D /* default-keywords.json */; };
-		641A3EA9301C48490047C53D /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 641A3EA0301C48490047C53D /* manifest.json */; };
-		641A3EAA301C48490047C53D /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 641A3EA1301C48490047C53D /* content.js */; };
-		641A3EAB301C48490047C53D /* api.js in Resources */ = {isa = PBXBuildFile; fileRef = 641A3EA2301C48490047C53D /* api.js */; };
+		640F413D301C5D4700BD5F93 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 640F413C301C5D4700BD5F93 /* AppDelegate.swift */; };
+		640F4141301C5D4700BD5F93 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 640F413F301C5D4700BD5F93 /* Main.html */; };
+		640F4143301C5D4700BD5F93 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 640F4142301C5D4700BD5F93 /* Icon.png */; };
+		640F4145301C5D4700BD5F93 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 640F4144301C5D4700BD5F93 /* Style.css */; };
+		640F4147301C5D4700BD5F93 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 640F4146301C5D4700BD5F93 /* Script.js */; };
+		640F4149301C5D4700BD5F93 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 640F4148301C5D4700BD5F93 /* ViewController.swift */; };
+		640F414C301C5D4700BD5F93 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 640F414A301C5D4700BD5F93 /* Main.storyboard */; };
+		640F414E301C5D4800BD5F93 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 640F414D301C5D4800BD5F93 /* Assets.xcassets */; };
+		640F4155301C5D4800BD5F93 /* AutoBanRobot Safari Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 640F4154301C5D4800BD5F93 /* AutoBanRobot Safari Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		640F415A301C5D4800BD5F93 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 640F4159301C5D4800BD5F93 /* SafariWebExtensionHandler.swift */; };
+		640F416F301C5D4800BD5F93 /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 640F4166301C5D4800BD5F93 /* icon.png */; };
+		640F4170301C5D4800BD5F93 /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = 640F4167301C5D4800BD5F93 /* popup.js */; };
+		640F4171301C5D4800BD5F93 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 640F4168301C5D4800BD5F93 /* background.js */; };
+		640F4172301C5D4800BD5F93 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = 640F4169301C5D4800BD5F93 /* popup.html */; };
+		640F4173301C5D4800BD5F93 /* injected.js in Resources */ = {isa = PBXBuildFile; fileRef = 640F416A301C5D4800BD5F93 /* injected.js */; };
+		640F4174301C5D4800BD5F93 /* default-keywords.json in Resources */ = {isa = PBXBuildFile; fileRef = 640F416B301C5D4800BD5F93 /* default-keywords.json */; };
+		640F4175301C5D4800BD5F93 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 640F416C301C5D4800BD5F93 /* manifest.json */; };
+		640F4176301C5D4800BD5F93 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 640F416D301C5D4800BD5F93 /* content.js */; };
+		640F4177301C5D4800BD5F93 /* api.js in Resources */ = {isa = PBXBuildFile; fileRef = 640F416E301C5D4800BD5F93 /* api.js */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		641A3E8A301C48490047C53D /* PBXContainerItemProxy */ = {
+		640F4156301C5D4800BD5F93 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 641A3E65301C48480047C53D /* Project object */;
+			containerPortal = 640F4131301C5D4700BD5F93 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 641A3E87301C48490047C53D;
+			remoteGlobalIDString = 640F4153301C5D4800BD5F93;
 			remoteInfo = "AutoBanRobot Safari Extension";
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		641A3E95301C48490047C53D /* Embed Foundation Extensions */ = {
+		640F4161301C5D4800BD5F93 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				641A3E89301C48490047C53D /* AutoBanRobot Safari Extension.appex in Embed Foundation Extensions */,
+				640F4155301C5D4800BD5F93 /* AutoBanRobot Safari Extension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -53,39 +53,39 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		641A3E6D301C48480047C53D /* AutoBanRobot Safari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "AutoBanRobot Safari.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		641A3E70301C48480047C53D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		641A3E74301C48480047C53D /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
-		641A3E76301C48480047C53D /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
-		641A3E78301C48480047C53D /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
-		641A3E7A301C48480047C53D /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
-		641A3E7C301C48480047C53D /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		641A3E7F301C48480047C53D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		641A3E81301C48490047C53D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		641A3E83301C48490047C53D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		641A3E88301C48490047C53D /* AutoBanRobot Safari Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "AutoBanRobot Safari Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
-		641A3E8D301C48490047C53D /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
-		641A3E8F301C48490047C53D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		641A3E9A301C48490047C53D /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = icon.png; path = Resources/icon.png; sourceTree = "<group>"; };
-		641A3E9B301C48490047C53D /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = popup.js; path = Resources/popup.js; sourceTree = "<group>"; };
-		641A3E9C301C48490047C53D /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = Resources/background.js; sourceTree = "<group>"; };
-		641A3E9D301C48490047C53D /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = popup.html; path = Resources/popup.html; sourceTree = "<group>"; };
-		641A3E9E301C48490047C53D /* injected.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = injected.js; path = Resources/injected.js; sourceTree = "<group>"; };
-		641A3E9F301C48490047C53D /* default-keywords.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "default-keywords.json"; path = "Resources/default-keywords.json"; sourceTree = "<group>"; };
-		641A3EA0301C48490047C53D /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = Resources/manifest.json; sourceTree = "<group>"; };
-		641A3EA1301C48490047C53D /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = Resources/content.js; sourceTree = "<group>"; };
-		641A3EA2301C48490047C53D /* api.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = api.js; path = Resources/api.js; sourceTree = "<group>"; };
+		640F4139301C5D4700BD5F93 /* AutoBanRobot Safari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "AutoBanRobot Safari.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		640F413C301C5D4700BD5F93 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		640F4140301C5D4700BD5F93 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		640F4142301C5D4700BD5F93 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		640F4144301C5D4700BD5F93 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		640F4146301C5D4700BD5F93 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		640F4148301C5D4700BD5F93 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		640F414B301C5D4700BD5F93 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		640F414D301C5D4800BD5F93 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		640F414F301C5D4800BD5F93 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		640F4154301C5D4800BD5F93 /* AutoBanRobot Safari Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "AutoBanRobot Safari Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		640F4159301C5D4800BD5F93 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		640F415B301C5D4800BD5F93 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		640F4166301C5D4800BD5F93 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = icon.png; path = Resources/icon.png; sourceTree = "<group>"; };
+		640F4167301C5D4800BD5F93 /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = popup.js; path = Resources/popup.js; sourceTree = "<group>"; };
+		640F4168301C5D4800BD5F93 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = Resources/background.js; sourceTree = "<group>"; };
+		640F4169301C5D4800BD5F93 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = popup.html; path = Resources/popup.html; sourceTree = "<group>"; };
+		640F416A301C5D4800BD5F93 /* injected.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = injected.js; path = Resources/injected.js; sourceTree = "<group>"; };
+		640F416B301C5D4800BD5F93 /* default-keywords.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "default-keywords.json"; path = "Resources/default-keywords.json"; sourceTree = "<group>"; };
+		640F416C301C5D4800BD5F93 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = Resources/manifest.json; sourceTree = "<group>"; };
+		640F416D301C5D4800BD5F93 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = Resources/content.js; sourceTree = "<group>"; };
+		640F416E301C5D4800BD5F93 /* api.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = api.js; path = Resources/api.js; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		641A3E6A301C48480047C53D /* Frameworks */ = {
+		640F4136301C5D4700BD5F93 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		641A3E85301C48490047C53D /* Frameworks */ = {
+		640F4151301C5D4800BD5F93 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -95,70 +95,70 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		641A3E64301C48480047C53D = {
+		640F4130301C5D4700BD5F93 = {
 			isa = PBXGroup;
 			children = (
-				641A3E6F301C48480047C53D /* AutoBanRobot Safari */,
-				641A3E8C301C48490047C53D /* AutoBanRobot Safari Extension */,
-				641A3E6E301C48480047C53D /* Products */,
+				640F413B301C5D4700BD5F93 /* AutoBanRobot Safari */,
+				640F4158301C5D4800BD5F93 /* AutoBanRobot Safari Extension */,
+				640F413A301C5D4700BD5F93 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		641A3E6E301C48480047C53D /* Products */ = {
+		640F413A301C5D4700BD5F93 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				641A3E6D301C48480047C53D /* AutoBanRobot Safari.app */,
-				641A3E88301C48490047C53D /* AutoBanRobot Safari Extension.appex */,
+				640F4139301C5D4700BD5F93 /* AutoBanRobot Safari.app */,
+				640F4154301C5D4800BD5F93 /* AutoBanRobot Safari Extension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		641A3E6F301C48480047C53D /* AutoBanRobot Safari */ = {
+		640F413B301C5D4700BD5F93 /* AutoBanRobot Safari */ = {
 			isa = PBXGroup;
 			children = (
-				641A3E70301C48480047C53D /* AppDelegate.swift */,
-				641A3E7C301C48480047C53D /* ViewController.swift */,
-				641A3E7E301C48480047C53D /* Main.storyboard */,
-				641A3E81301C48490047C53D /* Assets.xcassets */,
-				641A3E83301C48490047C53D /* Info.plist */,
-				641A3E72301C48480047C53D /* Resources */,
+				640F413C301C5D4700BD5F93 /* AppDelegate.swift */,
+				640F4148301C5D4700BD5F93 /* ViewController.swift */,
+				640F414A301C5D4700BD5F93 /* Main.storyboard */,
+				640F414D301C5D4800BD5F93 /* Assets.xcassets */,
+				640F414F301C5D4800BD5F93 /* Info.plist */,
+				640F413E301C5D4700BD5F93 /* Resources */,
 			);
 			path = "AutoBanRobot Safari";
 			sourceTree = "<group>";
 		};
-		641A3E72301C48480047C53D /* Resources */ = {
+		640F413E301C5D4700BD5F93 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				641A3E73301C48480047C53D /* Main.html */,
-				641A3E76301C48480047C53D /* Icon.png */,
-				641A3E78301C48480047C53D /* Style.css */,
-				641A3E7A301C48480047C53D /* Script.js */,
+				640F413F301C5D4700BD5F93 /* Main.html */,
+				640F4142301C5D4700BD5F93 /* Icon.png */,
+				640F4144301C5D4700BD5F93 /* Style.css */,
+				640F4146301C5D4700BD5F93 /* Script.js */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
 		};
-		641A3E8C301C48490047C53D /* AutoBanRobot Safari Extension */ = {
+		640F4158301C5D4800BD5F93 /* AutoBanRobot Safari Extension */ = {
 			isa = PBXGroup;
 			children = (
-				641A3E99301C48490047C53D /* Resources */,
-				641A3E8D301C48490047C53D /* SafariWebExtensionHandler.swift */,
-				641A3E8F301C48490047C53D /* Info.plist */,
+				640F4165301C5D4800BD5F93 /* Resources */,
+				640F4159301C5D4800BD5F93 /* SafariWebExtensionHandler.swift */,
+				640F415B301C5D4800BD5F93 /* Info.plist */,
 			);
 			path = "AutoBanRobot Safari Extension";
 			sourceTree = "<group>";
 		};
-		641A3E99301C48490047C53D /* Resources */ = {
+		640F4165301C5D4800BD5F93 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				641A3E9A301C48490047C53D /* icon.png */,
-				641A3E9B301C48490047C53D /* popup.js */,
-				641A3E9C301C48490047C53D /* background.js */,
-				641A3E9D301C48490047C53D /* popup.html */,
-				641A3E9E301C48490047C53D /* injected.js */,
-				641A3E9F301C48490047C53D /* default-keywords.json */,
-				641A3EA0301C48490047C53D /* manifest.json */,
-				641A3EA1301C48490047C53D /* content.js */,
-				641A3EA2301C48490047C53D /* api.js */,
+				640F4166301C5D4800BD5F93 /* icon.png */,
+				640F4167301C5D4800BD5F93 /* popup.js */,
+				640F4168301C5D4800BD5F93 /* background.js */,
+				640F4169301C5D4800BD5F93 /* popup.html */,
+				640F416A301C5D4800BD5F93 /* injected.js */,
+				640F416B301C5D4800BD5F93 /* default-keywords.json */,
+				640F416C301C5D4800BD5F93 /* manifest.json */,
+				640F416D301C5D4800BD5F93 /* content.js */,
+				640F416E301C5D4800BD5F93 /* api.js */,
 			);
 			name = Resources;
 			path = "AutoBanRobot Safari Extension";
@@ -167,34 +167,34 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		641A3E6C301C48480047C53D /* AutoBanRobot Safari */ = {
+		640F4138301C5D4700BD5F93 /* AutoBanRobot Safari */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 641A3E96301C48490047C53D /* Build configuration list for PBXNativeTarget "AutoBanRobot Safari" */;
+			buildConfigurationList = 640F4162301C5D4800BD5F93 /* Build configuration list for PBXNativeTarget "AutoBanRobot Safari" */;
 			buildPhases = (
-				641A3E69301C48480047C53D /* Sources */,
-				641A3E6A301C48480047C53D /* Frameworks */,
-				641A3E6B301C48480047C53D /* Resources */,
-				641A3E95301C48490047C53D /* Embed Foundation Extensions */,
+				640F4135301C5D4700BD5F93 /* Sources */,
+				640F4136301C5D4700BD5F93 /* Frameworks */,
+				640F4137301C5D4700BD5F93 /* Resources */,
+				640F4161301C5D4800BD5F93 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				641A3E8B301C48490047C53D /* PBXTargetDependency */,
+				640F4157301C5D4800BD5F93 /* PBXTargetDependency */,
 			);
 			name = "AutoBanRobot Safari";
 			packageProductDependencies = (
 			);
 			productName = "AutoBanRobot Safari";
-			productReference = 641A3E6D301C48480047C53D /* AutoBanRobot Safari.app */;
+			productReference = 640F4139301C5D4700BD5F93 /* AutoBanRobot Safari.app */;
 			productType = "com.apple.product-type.application";
 		};
-		641A3E87301C48490047C53D /* AutoBanRobot Safari Extension */ = {
+		640F4153301C5D4800BD5F93 /* AutoBanRobot Safari Extension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 641A3E92301C48490047C53D /* Build configuration list for PBXNativeTarget "AutoBanRobot Safari Extension" */;
+			buildConfigurationList = 640F415E301C5D4800BD5F93 /* Build configuration list for PBXNativeTarget "AutoBanRobot Safari Extension" */;
 			buildPhases = (
-				641A3E84301C48490047C53D /* Sources */,
-				641A3E85301C48490047C53D /* Frameworks */,
-				641A3E86301C48490047C53D /* Resources */,
+				640F4150301C5D4800BD5F93 /* Sources */,
+				640F4151301C5D4800BD5F93 /* Frameworks */,
+				640F4152301C5D4800BD5F93 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -204,120 +204,120 @@
 			packageProductDependencies = (
 			);
 			productName = "AutoBanRobot Safari Extension";
-			productReference = 641A3E88301C48490047C53D /* AutoBanRobot Safari Extension.appex */;
+			productReference = 640F4154301C5D4800BD5F93 /* AutoBanRobot Safari Extension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		641A3E65301C48480047C53D /* Project object */ = {
+		640F4131301C5D4700BD5F93 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
-					641A3E6C301C48480047C53D = {
+					640F4138301C5D4700BD5F93 = {
 						CreatedOnToolsVersion = 26.6;
 					};
-					641A3E87301C48490047C53D = {
+					640F4153301C5D4800BD5F93 = {
 						CreatedOnToolsVersion = 26.6;
 					};
 				};
 			};
-			buildConfigurationList = 641A3E68301C48480047C53D /* Build configuration list for PBXProject "AutoBanRobot Safari" */;
+			buildConfigurationList = 640F4134301C5D4700BD5F93 /* Build configuration list for PBXProject "AutoBanRobot Safari" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = 641A3E64301C48480047C53D;
+			mainGroup = 640F4130301C5D4700BD5F93;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 641A3E6E301C48480047C53D /* Products */;
+			productRefGroup = 640F413A301C5D4700BD5F93 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				641A3E6C301C48480047C53D /* AutoBanRobot Safari */,
-				641A3E87301C48490047C53D /* AutoBanRobot Safari Extension */,
+				640F4138301C5D4700BD5F93 /* AutoBanRobot Safari */,
+				640F4153301C5D4800BD5F93 /* AutoBanRobot Safari Extension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		641A3E6B301C48480047C53D /* Resources */ = {
+		640F4137301C5D4700BD5F93 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				641A3E77301C48480047C53D /* Icon.png in Resources */,
-				641A3E80301C48480047C53D /* Main.storyboard in Resources */,
-				641A3E7B301C48480047C53D /* Script.js in Resources */,
-				641A3E75301C48480047C53D /* Main.html in Resources */,
-				641A3E82301C48490047C53D /* Assets.xcassets in Resources */,
-				641A3E79301C48480047C53D /* Style.css in Resources */,
+				640F4143301C5D4700BD5F93 /* Icon.png in Resources */,
+				640F414C301C5D4700BD5F93 /* Main.storyboard in Resources */,
+				640F4147301C5D4700BD5F93 /* Script.js in Resources */,
+				640F4141301C5D4700BD5F93 /* Main.html in Resources */,
+				640F414E301C5D4800BD5F93 /* Assets.xcassets in Resources */,
+				640F4145301C5D4700BD5F93 /* Style.css in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		641A3E86301C48490047C53D /* Resources */ = {
+		640F4152301C5D4800BD5F93 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				641A3EAA301C48490047C53D /* content.js in Resources */,
-				641A3EA3301C48490047C53D /* icon.png in Resources */,
-				641A3EAB301C48490047C53D /* api.js in Resources */,
-				641A3EA9301C48490047C53D /* manifest.json in Resources */,
-				641A3EA7301C48490047C53D /* injected.js in Resources */,
-				641A3EA6301C48490047C53D /* popup.html in Resources */,
-				641A3EA5301C48490047C53D /* background.js in Resources */,
-				641A3EA4301C48490047C53D /* popup.js in Resources */,
-				641A3EA8301C48490047C53D /* default-keywords.json in Resources */,
+				640F4176301C5D4800BD5F93 /* content.js in Resources */,
+				640F416F301C5D4800BD5F93 /* icon.png in Resources */,
+				640F4177301C5D4800BD5F93 /* api.js in Resources */,
+				640F4175301C5D4800BD5F93 /* manifest.json in Resources */,
+				640F4173301C5D4800BD5F93 /* injected.js in Resources */,
+				640F4172301C5D4800BD5F93 /* popup.html in Resources */,
+				640F4171301C5D4800BD5F93 /* background.js in Resources */,
+				640F4170301C5D4800BD5F93 /* popup.js in Resources */,
+				640F4174301C5D4800BD5F93 /* default-keywords.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		641A3E69301C48480047C53D /* Sources */ = {
+		640F4135301C5D4700BD5F93 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				641A3E7D301C48480047C53D /* ViewController.swift in Sources */,
-				641A3E71301C48480047C53D /* AppDelegate.swift in Sources */,
+				640F4149301C5D4700BD5F93 /* ViewController.swift in Sources */,
+				640F413D301C5D4700BD5F93 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		641A3E84301C48490047C53D /* Sources */ = {
+		640F4150301C5D4800BD5F93 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				641A3E8E301C48490047C53D /* SafariWebExtensionHandler.swift in Sources */,
+				640F415A301C5D4800BD5F93 /* SafariWebExtensionHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		641A3E8B301C48490047C53D /* PBXTargetDependency */ = {
+		640F4157301C5D4800BD5F93 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 641A3E87301C48490047C53D /* AutoBanRobot Safari Extension */;
-			targetProxy = 641A3E8A301C48490047C53D /* PBXContainerItemProxy */;
+			target = 640F4153301C5D4800BD5F93 /* AutoBanRobot Safari Extension */;
+			targetProxy = 640F4156301C5D4800BD5F93 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		641A3E73301C48480047C53D /* Main.html */ = {
+		640F413F301C5D4700BD5F93 /* Main.html */ = {
 			isa = PBXVariantGroup;
 			children = (
-				641A3E74301C48480047C53D /* Base */,
+				640F4140301C5D4700BD5F93 /* Base */,
 			);
 			name = Main.html;
 			sourceTree = "<group>";
 		};
-		641A3E7E301C48480047C53D /* Main.storyboard */ = {
+		640F414A301C5D4700BD5F93 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
-				641A3E7F301C48480047C53D /* Base */,
+				640F414B301C5D4700BD5F93 /* Base */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -325,7 +325,7 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		641A3E90301C48490047C53D /* Debug */ = {
+		640F415C301C5D4800BD5F93 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -388,7 +388,7 @@
 			};
 			name = Debug;
 		};
-		641A3E91301C48490047C53D /* Release */ = {
+		640F415D301C5D4800BD5F93 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -443,7 +443,7 @@
 			};
 			name = Release;
 		};
-		641A3E93301C48490047C53D /* Debug */ = {
+		640F415F301C5D4800BD5F93 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -477,7 +477,7 @@
 			};
 			name = Debug;
 		};
-		641A3E94301C48490047C53D /* Release */ = {
+		640F4160301C5D4800BD5F93 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -511,7 +511,7 @@
 			};
 			name = Release;
 		};
-		641A3E97301C48490047C53D /* Debug */ = {
+		640F4163301C5D4800BD5F93 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -552,7 +552,7 @@
 			};
 			name = Debug;
 		};
-		641A3E98301C48490047C53D /* Release */ = {
+		640F4164301C5D4800BD5F93 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -596,34 +596,34 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		641A3E68301C48480047C53D /* Build configuration list for PBXProject "AutoBanRobot Safari" */ = {
+		640F4134301C5D4700BD5F93 /* Build configuration list for PBXProject "AutoBanRobot Safari" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				641A3E90301C48490047C53D /* Debug */,
-				641A3E91301C48490047C53D /* Release */,
+				640F415C301C5D4800BD5F93 /* Debug */,
+				640F415D301C5D4800BD5F93 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		641A3E92301C48490047C53D /* Build configuration list for PBXNativeTarget "AutoBanRobot Safari Extension" */ = {
+		640F415E301C5D4800BD5F93 /* Build configuration list for PBXNativeTarget "AutoBanRobot Safari Extension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				641A3E93301C48490047C53D /* Debug */,
-				641A3E94301C48490047C53D /* Release */,
+				640F415F301C5D4800BD5F93 /* Debug */,
+				640F4160301C5D4800BD5F93 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		641A3E96301C48490047C53D /* Build configuration list for PBXNativeTarget "AutoBanRobot Safari" */ = {
+		640F4162301C5D4800BD5F93 /* Build configuration list for PBXNativeTarget "AutoBanRobot Safari" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				641A3E97301C48490047C53D /* Debug */,
-				641A3E98301C48490047C53D /* Release */,
+				640F4163301C5D4800BD5F93 /* Debug */,
+				640F4164301C5D4800BD5F93 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 641A3E65301C48480047C53D /* Project object */;
+	rootObject = 640F4131301C5D4700BD5F93 /* Project object */;
 }
