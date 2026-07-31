@@ -20,6 +20,8 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ### v1.6.3 — 2026-07-31
 
+- Added a prominent multilingual GitHub Releases / plugin download entry to
+  the server dashboard header.
 - Removed the misleading configured-keyword count and Ban-account count from
   keyword analytics. Keyword ranking now shows hit count only.
 - Added an `@account` mention ranking derived from content posted by confirmed
@@ -37,6 +39,7 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 - 网页明确展示插件实际可同步的热门屏蔽词及其来源；高频被提及账号会以
   `@username` 形式加入热门词。
 - 完整关键词快照仍随 Ban 记录保存，但不再用于排行榜统计。
+- 服务端网页顶部新增多语言 GitHub Releases / 插件下载入口。
 
 ### v1.6.2 — 2026-07-30
 
