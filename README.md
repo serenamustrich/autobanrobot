@@ -18,6 +18,18 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.4 — 2026-07-31
+
+- Expanded the structured Emoji rule from `Emoji + English + Emoji` to
+  `Emoji + any non-empty content + Emoji`.
+- Mixed Chinese, Latin letters, numbers, punctuation, and additional Emoji are
+  now accepted between the leading and trailing Emoji.
+- The existing slider setting is preserved, so user preferences are not reset
+  during the upgrade.
+- 将原“Emoji + 英文 + Emoji”规则扩展为“Emoji + 任意非空内容 + Emoji”。
+- 首尾为 Emoji 时，中间可包含中文、字母、数字、标点或其他 Emoji。
+- 沿用现有滑块设置键，升级不会重置用户已保存的开关状态。
+
 ### v1.6.3 — 2026-07-31
 
 - Added a prominent multilingual GitHub Releases / plugin download entry to
@@ -339,7 +351,7 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 
 点击工具栏中的扩展图标即可编辑关键词，每行填写一个。扩展使用当前 Twitter/X 登录会话执行真实屏蔽操作。关键词过于宽泛可能造成误屏蔽，请谨慎配置。本项目与 X Corp. 无关。
 
-弹窗可以分别开关“仅单个 Emoji”、“Emoji + 英文 + Emoji”和“五段式 Emoji 时间”规则，并查看由本扩展执行且经过 X 关系接口确认成功的 Ban 清单。该清单不是 X 账号全部历史屏蔽列表。
+弹窗可以分别开关“仅单个 Emoji”、“Emoji + 任意非空内容 + Emoji”和“五段式 Emoji 时间”规则，并查看由本扩展执行且经过 X 关系接口确认成功的 Ban 清单。该清单不是 X 账号全部历史屏蔽列表。
 
 ### 初始屏蔽词预设
 

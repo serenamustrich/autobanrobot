@@ -173,7 +173,7 @@
     return isSingleEmoji(value);
   }
 
-  function isEmojiEnglishEmoji(text) {
+  function isEmojiContentEmoji(text) {
     const normalized = text.trim();
     if (!normalized) return false;
 
@@ -182,10 +182,7 @@
     if (!isEmojiGrapheme(graphemes[0]) || !isEmojiGrapheme(graphemes.at(-1))) return false;
 
     const middle = graphemes.slice(1, -1).join('');
-    return (
-      /\p{Script=Latin}/u.test(middle) &&
-      /^[\p{Script=Latin}\p{Mark}\p{Number}\s'’.,!?&+\-_/]+$/u.test(middle)
-    );
+    return middle.trim().length > 0;
   }
 
   function isStructuredEmojiTime(text) {
@@ -297,15 +294,15 @@
     const nameSpam = nameMatches.length > 0;
     const contentSpam = contentMatches.length > 0;
     const singleEmoji = singleEmojiEnabled && isSingleEmoji(text);
-    const emojiEnglishEmoji =
-      emojiEnglishEmojiEnabled && isEmojiEnglishEmoji(text);
+    const emojiContentEmoji =
+      emojiEnglishEmojiEnabled && isEmojiContentEmoji(text);
     const structuredEmojiTime =
       structuredEmojiTimeEnabled && isStructuredEmojiTime(text);
     if (
       !nameSpam &&
       !contentSpam &&
       !singleEmoji &&
-      !emojiEnglishEmoji &&
+      !emojiContentEmoji &&
       !structuredEmojiTime
     ) return;
 
@@ -314,7 +311,7 @@
     if (nameSpam) reasons.push('用户名或显示名称命中关键词');
     if (contentSpam) reasons.push('内容命中关键词');
     if (singleEmoji) reasons.push('单 Emoji 内容');
-    if (emojiEnglishEmoji) reasons.push('Emoji + 英文 + Emoji');
+    if (emojiContentEmoji) reasons.push('Emoji + 内容 + Emoji');
     if (structuredEmojiTime) reasons.push('文字 + Emoji + 文字 + Emoji + 时间');
     blockUser(username, el, {
       displayName: nameText,
