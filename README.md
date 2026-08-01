@@ -8,6 +8,15 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 > This extension performs real account blocks through the logged-in Twitter/X session. Review your keyword list before enabling it.
 
+> **Safari notice:** the Safari download contains adaptation source code and an
+> Xcode project, not a ready-to-install app. Safari users must build and package
+> it themselves with Xcode. Chrome and Microsoft Edge use the ready-to-load
+> Chromium package.
+>
+> **Safari 说明：**Safari 下载包是适配源码和 Xcode 工程，不是可直接安装的应用。
+> Safari 用户需要自行使用 Xcode 构建和打包；Chrome 与 Microsoft Edge 使用
+> 可直接加载的 Chromium 插件包。
+
 ## Repository branches / 仓库分支
 
 - [`main`](https://github.com/serenamustrich/autobanrobot/tree/main): the single shared Chromium codebase for both Chrome and Microsoft Edge. Chrome and Edge use the same source files, manifest, features, and release package; they are not separate implementations.
@@ -496,6 +505,9 @@ AutoBanRobot 是一款适用于 Chromium 浏览器的 Twitter/X 垃圾账号自�
 4. 点击“加载已解压的扩展程序”，选择本仓库目录。
 5. 登录 Twitter/X 并正常浏览。
 
+Safari 版本下载的是适配源码和 Xcode 工程，不能像 Chrome/Edge 插件一样直接加载；
+Safari 用户需要安装 Xcode，并自行构建、签名和打包 macOS App。
+
 ### 使用与注意事项
 
 点击工具栏中的扩展图标即可编辑关键词，每行填写一个。扩展使用当前 Twitter/X 登录会话执行真实屏蔽操作。关键词过于宽泛可能造成误屏蔽，请谨慎配置。本项目与 X Corp. 无关。
@@ -535,6 +547,10 @@ AutoBanRobot is a Twitter/X spam-account blocker for Chromium-based browsers.
 4. Choose “Load unpacked” and select this repository directory.
 5. Sign in to Twitter/X and browse normally.
 
+The Safari download contains adaptation source code and an Xcode project. It is
+not a ready-to-install extension; Safari users must build, sign, and package the
+containing macOS app themselves with Xcode.
+
 ### Usage and warning
 
 Open the toolbar popup to edit keywords, one per line. The extension uses your active Twitter/X session to perform real account blocks. Broad keywords may cause false positives, so review them carefully. This project is not affiliated with X Corp.
@@ -560,6 +576,8 @@ AutoBanRobot es una extensión para navegadores basados en Chromium que bloquea 
 
 Descarga o clona el repositorio, activa el modo de desarrollador en la página de extensiones de tu navegador y selecciona “Cargar descomprimida”. Abre el icono de la extensión para editar una palabra clave por línea. La extensión realiza bloqueos reales mediante tu sesión activa; revisa las reglas para evitar falsos positivos. Este proyecto no está afiliado a X Corp.
 
+La descarga para Safari contiene el código fuente adaptado y un proyecto de Xcode; no es una aplicación instalable. El usuario debe compilar, firmar y empaquetar la aplicación para macOS con Xcode.
+
 ## 日本語
 
 AutoBanRobot は、Chromium 系ブラウザー向けの Twitter/X スパムアカウント自動ブロック拡張機能です。
@@ -580,6 +598,8 @@ AutoBanRobot は、Chromium 系ブラウザー向けの Twitter/X スパムア�
 ### インストールと注意
 
 このリポジトリをダウンロードまたはクローンし、ブラウザーの拡張機能ページでデベロッパーモードを有効にして、「パッケージ化されていない拡張機能を読み込む」からフォルダーを選択してください。本拡張機能はログイン中のセッションで実際にアカウントをブロックします。誤検知を避けるため、キーワードを慎重に確認してください。本プロジェクトは X Corp. とは関係ありません。
+
+Safari 用ダウンロードは適応済みソースコードと Xcode プロジェクトであり、直接インストールできるアプリではありません。Safari ユーザーは Xcode で macOS アプリをビルド、署名、パッケージ化する必要があります。
 
 ## 한국어
 
@@ -602,6 +622,8 @@ AutoBanRobot은 Chromium 기반 브라우저에서 동작하는 Twitter/X 스팸
 
 저장소를 다운로드하거나 복제한 뒤 브라우저 확장 프로그램 페이지에서 개발자 모드를 켜고 “압축해제된 확장 프로그램을 로드합니다”를 선택하세요. 이 확장 프로그램은 로그인된 세션을 사용해 실제 계정 차단을 수행합니다. 오탐을 방지하려면 키워드를 신중하게 검토하세요. 이 프로젝트는 X Corp.와 관련이 없습니다.
 
+Safari 다운로드는 변환된 소스 코드와 Xcode 프로젝트이며 바로 설치할 수 있는 앱이 아닙니다. Safari 사용자는 Xcode로 macOS 앱을 직접 빌드, 서명 및 패키징해야 합니다.
+
 ## Deutsch
 
 AutoBanRobot ist eine Erweiterung für Chromium-Browser, die Spam-Konten auf Twitter/X automatisch blockiert.
@@ -622,6 +644,8 @@ AutoBanRobot ist eine Erweiterung für Chromium-Browser, die Spam-Konten auf Twi
 ### Installation und Hinweis
 
 Repository herunterladen oder klonen, den Entwicklermodus auf der Erweiterungsseite aktivieren und „Entpackte Erweiterung laden“ wählen. Die Erweiterung führt über die angemeldete Sitzung echte Kontoblockierungen aus. Zu allgemeine Schlüsselwörter können Fehlblockierungen verursachen. Dieses Projekt steht in keiner Verbindung zu X Corp.
+
+Der Safari-Download enthält den angepassten Quellcode und ein Xcode-Projekt, keine direkt installierbare App. Safari-Nutzer müssen die macOS-App selbst mit Xcode erstellen, signieren und paketieren.
 
 ## Français
 
@@ -644,6 +668,8 @@ AutoBanRobot est une extension pour navigateurs Chromium qui bloque automatiquem
 
 Téléchargez ou clonez le dépôt, activez le mode développeur sur la page des extensions puis choisissez « Charger l’extension non empaquetée ». L’extension effectue de véritables blocages avec votre session connectée. Vérifiez soigneusement les mots-clés afin d’éviter les faux positifs. Ce projet n’est pas affilié à X Corp.
 
+Le téléchargement Safari contient le code source adapté et un projet Xcode, et non une application directement installable. Les utilisateurs Safari doivent compiler, signer et empaqueter eux-mêmes l’application macOS avec Xcode.
+
 ## Русский
 
 AutoBanRobot — расширение для браузеров на базе Chromium, автоматически блокирующее спам-аккаунты в Twitter/X.
@@ -665,6 +691,8 @@ AutoBanRobot — расширение для браузеров на базе Ch
 
 Скачайте или клонируйте репозиторий, включите режим разработчика на странице расширений и выберите «Загрузить распакованное расширение». Расширение выполняет реальные блокировки через активный сеанс Twitter/X. Тщательно проверяйте ключевые слова, чтобы избежать ложных срабатываний. Проект не связан с X Corp.
 
+Загрузка для Safari содержит адаптированный исходный код и проект Xcode, а не готовое приложение. Пользователь Safari должен самостоятельно собрать, подписать и упаковать приложение macOS с помощью Xcode.
+
 ## Italiano
 
 AutoBanRobot è un’estensione per browser Chromium che blocca automaticamente gli account spam su Twitter/X.
@@ -685,6 +713,8 @@ AutoBanRobot è un’estensione per browser Chromium che blocca automaticamente 
 ### Installazione e avvertenza
 
 Scarica o clona il repository, abilita la modalità sviluppatore nella pagina delle estensioni e scegli “Carica estensione non pacchettizzata”. L’estensione esegue blocchi reali tramite la sessione Twitter/X attiva. Controlla attentamente le parole chiave per evitare falsi positivi. Il progetto non è affiliato a X Corp.
+
+Il download per Safari contiene il codice sorgente adattato e un progetto Xcode, non un’app pronta da installare. Gli utenti Safari devono compilare, firmare e pacchettizzare autonomamente l’app macOS con Xcode.
 
 ## License
 
