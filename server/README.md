@@ -6,7 +6,7 @@ Spring Boot JAR for receiving confirmed Ban events and serving a live dashboard.
 
 ```bash
 mvn -f server/pom.xml clean package
-java -jar server/target/autoban-server-1.1.4.jar
+java -jar server/target/autoban-server-1.2.2.jar
 ```
 
 The server requires MySQL configuration and intentionally has no embedded
@@ -20,7 +20,7 @@ Do not commit credentials. Supply them through environment variables:
 export AUTOBAN_DB_URL='jdbc:mysql://127.0.0.1:3306/autoban?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai'
 export AUTOBAN_DB_USERNAME='autoban'
 export AUTOBAN_DB_PASSWORD='replace-me'
-java -jar server/target/autoban-server-1.1.4.jar
+java -jar server/target/autoban-server-1.2.2.jar
 ```
 
 The database schema is created or updated automatically by Hibernate.
