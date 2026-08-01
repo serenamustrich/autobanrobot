@@ -5,6 +5,7 @@ chrome.storage.local.get([
   'emojiEnglishEmojiEnabled',
   'structuredEmojiTimeEnabled',
   'structuredThreeSegmentEnabled',
+  'vlogShortLinkEnabled',
   'blockHistory',
   'pendingBlockQueue',
   'updateInfo'
@@ -20,6 +21,8 @@ chrome.storage.local.get([
     r.structuredEmojiTimeEnabled !== false;
   document.getElementById('structuredThreeSegmentEnabled').checked =
     r.structuredThreeSegmentEnabled !== false;
+  document.getElementById('vlogShortLinkEnabled').checked =
+    r.vlogShortLinkEnabled !== false;
   document.getElementById('queueCount').textContent =
     Array.isArray(r.pendingBlockQueue) ? r.pendingBlockQueue.length : 0;
   renderBlockHistory(r.blockHistory);
@@ -73,7 +76,8 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
   'singleEmojiEnabled',
   'emojiEnglishEmojiEnabled',
   'structuredEmojiTimeEnabled',
-  'structuredThreeSegmentEnabled'
+  'structuredThreeSegmentEnabled',
+  'vlogShortLinkEnabled'
 ].forEach(id => {
   document.getElementById(id).addEventListener('change', () => {
     chrome.storage.local.set(readRuleSettings(), showSaved);
@@ -89,7 +93,9 @@ function readRuleSettings() {
     structuredEmojiTimeEnabled:
       document.getElementById('structuredEmojiTimeEnabled').checked,
     structuredThreeSegmentEnabled:
-      document.getElementById('structuredThreeSegmentEnabled').checked
+      document.getElementById('structuredThreeSegmentEnabled').checked,
+    vlogShortLinkEnabled:
+      document.getElementById('vlogShortLinkEnabled').checked
   };
 }
 
