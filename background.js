@@ -63,7 +63,8 @@ async function initializeSettings() {
   const stored = await chrome.storage.local.get([
     'emojiEnglishEmojiEnabled',
     'singleEmojiEnabled',
-    'structuredEmojiTimeEnabled'
+    'structuredEmojiTimeEnabled',
+    'structuredThreeSegmentEnabled'
   ]);
   const defaults = {};
   if (typeof stored.emojiEnglishEmojiEnabled !== 'boolean') {
@@ -74,6 +75,9 @@ async function initializeSettings() {
   }
   if (typeof stored.structuredEmojiTimeEnabled !== 'boolean') {
     defaults.structuredEmojiTimeEnabled = true;
+  }
+  if (typeof stored.structuredThreeSegmentEnabled !== 'boolean') {
+    defaults.structuredThreeSegmentEnabled = true;
   }
   if (Object.keys(defaults).length) await chrome.storage.local.set(defaults);
 }

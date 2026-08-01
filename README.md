@@ -18,6 +18,18 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.8 — 2026-08-01
+
+- Added an independently configurable three-segment spam rule for posts such as
+  `29 → ɞ → 63`, `01 → 🕯 → 99`, and `60 → * → 29`.
+- The rule requires exactly three non-empty lines. The first and third may
+  contain any non-empty content; the middle must be exactly one grapheme.
+- The new slider is enabled by default and retains the user's saved state.
+- 新增可独立开关的三段式垃圾内容规则，可识别 `29 → ɞ → 63`、
+  `74 → ɞ → 47` 等结构。
+- 必须恰好为三个非空行：首尾可以是任意非空内容，中间恰好为一个完整字形。
+- 新滑块默认开启，关闭后会保留用户选择，不会自动恢复。
+
 ### v1.6.7 — 2026-08-01
 
 - Fixed the browser extension error `Uncaught (in promise) Error: No SW`
