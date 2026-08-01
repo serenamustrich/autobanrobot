@@ -11,6 +11,8 @@ const UPLOAD_RETRY_MAX_MS = 5 * 60_000;
 const UPDATE_ALARM = 'autobanrobot-check-github-release';
 const HEARTBEAT_ALARM = 'autobanrobot-plugin-heartbeat';
 const HEARTBEAT_ENDPOINT = 'https://ban.richccy.com/api/clients/heartbeat';
+const RULES_ENDPOINT = 'https://ban.richccy.com/api/rules';
+const RULES_ALARM = 'autobanrobot-refresh-rules';
 const INSTALLATION_ID_KEY = 'anonymousInstallationId';
 const LATEST_RELEASE_API =
   'https://api.github.com/repos/serenamustrich/autobanrobot/releases/latest';
@@ -46,8 +48,7 @@ async function initializeSettings() {
     'emojiEnglishEmojiEnabled',
     'singleEmojiEnabled',
     'structuredEmojiTimeEnabled',
-    'structuredThreeSegmentEnabled',
-    'vlogShortLinkEnabled'
+    'structuredThreeSegmentEnabled'
   ]);
   const defaults = {};
   if (typeof stored.emojiEnglishEmojiEnabled !== 'boolean') {
@@ -62,12 +63,41 @@ async function initializeSettings() {
   if (typeof stored.structuredThreeSegmentEnabled !== 'boolean') {
     defaults.structuredThreeSegmentEnabled = true;
   }
-  if (typeof stored.vlogShortLinkEnabled !== 'boolean') {
-    defaults.vlogShortLinkEnabled = true;
-  }
   if (Object.keys(defaults).length) {
     await extensionAPI.storage.local.set(defaults);
   }
+}
+
+async function initializeRules() {
+  const stored = await extensionAPI.storage.local.get(['remoteRuleConfig']);
+  if (stored.remoteRuleConfig?.rules) return;
+  const response = await fetch(extensionAPI.runtime.getURL('default-rules.json'));
+  await extensionAPI.storage.local.set({ remoteRuleConfig: await response.json() });
+}
+
+function isValidRuleConfig(config) {
+  return Number.isSafeInteger(config?.version) &&
+    Array.isArray(config.rules) && config.rules.length <= 100 &&
+    config.rules.every(rule =>
+      typeof rule?.id === 'string' && rule.id.length <= 64 &&
+      typeof rule?.name === 'string' && rule.name.length <= 120 &&
+      typeof rule?.pattern === 'string' && rule.pattern.length <= 2000 &&
+      ['raw', 'compact', 'noSymbols'].includes(rule.normalization ?? 'raw') &&
+      typeof rule?.flags === 'string' && /^[gimsuy]*$/.test(rule.flags)
+    );
+}
+
+async function refreshRules() {
+  const response = await fetch(RULES_ENDPOINT, {
+    headers: { accept: 'application/json', 'x-autoban-client': 'browser-extension' },
+    cache: 'no-store'
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const config = await response.json();
+  if (!isValidRuleConfig(config)) throw new Error('Invalid rule configuration');
+  config.checkedAt = new Date().toISOString();
+  await extensionAPI.storage.local.set({ remoteRuleConfig: config });
+  return config;
 }
 
 function scheduleQueue(delayMs = 0) {
@@ -105,6 +135,13 @@ function scheduleHeartbeat() {
   extensionAPI.alarms.create(HEARTBEAT_ALARM, {
     delayInMinutes: 1,
     periodInMinutes: 1
+  });
+}
+
+function scheduleRuleRefresh() {
+  extensionAPI.alarms.create(RULES_ALARM, {
+    delayInMinutes: 1,
+    periodInMinutes: 5
   });
 }
 
@@ -183,7 +220,7 @@ async function checkForUpdate() {
 }
 
 extensionAPI.runtime.onInstalled.addListener(() => {
-  Promise.all([initializeKeywords(), initializeSettings()]).catch(error => {
+  Promise.all([initializeKeywords(), initializeSettings(), initializeRules()]).catch(error => {
     console.error('Failed to initialize extension settings:', error);
   });
   scheduleQueue();
@@ -192,6 +229,8 @@ extensionAPI.runtime.onInstalled.addListener(() => {
   checkForUpdate();
   scheduleHeartbeat();
   sendHeartbeat().catch(() => {});
+  scheduleRuleRefresh();
+  refreshRules().catch(() => {});
 });
 
 extensionAPI.runtime.onStartup.addListener(() => {
@@ -201,6 +240,8 @@ extensionAPI.runtime.onStartup.addListener(() => {
   checkForUpdate();
   scheduleHeartbeat();
   sendHeartbeat().catch(() => {});
+  scheduleRuleRefresh();
+  refreshRules().catch(() => {});
 });
 
 extensionAPI.webRequest.onBeforeSendHeaders.addListener(
@@ -519,6 +560,9 @@ extensionAPI.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === HEARTBEAT_ALARM) {
     sendHeartbeat().catch(() => {});
   }
+  if (alarm.name === RULES_ALARM) {
+    refreshRules().catch(() => {});
+  }
 });
 
 extensionAPI.runtime.onMessage.addListener((message, sender) => {
@@ -532,6 +576,11 @@ extensionAPI.runtime.onMessage.addListener((message, sender) => {
   if (message.type === 'CHECK_FOR_UPDATE') {
     return checkForUpdate()
       .then(updateInfo => ({ ok: true, updateInfo }))
+      .catch(error => ({ ok: false, error: error.message }));
+  }
+  if (message.type === 'REFRESH_RULES') {
+    return refreshRules()
+      .then(config => ({ ok: true, config }))
       .catch(error => ({ ok: false, error: error.message }));
   }
 });

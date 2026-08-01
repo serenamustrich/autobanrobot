@@ -26,6 +26,7 @@
 		640F4175301C5D4800BD5F93 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 640F416C301C5D4800BD5F93 /* manifest.json */; };
 		640F4176301C5D4800BD5F93 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 640F416D301C5D4800BD5F93 /* content.js */; };
 		640F4177301C5D4800BD5F93 /* api.js in Resources */ = {isa = PBXBuildFile; fileRef = 640F416E301C5D4800BD5F93 /* api.js */; };
+		640F4178301C5D4800BD5F93 /* default-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 640F4179301C5D4800BD5F93 /* default-rules.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -75,6 +76,7 @@
 		640F416C301C5D4800BD5F93 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = Resources/manifest.json; sourceTree = "<group>"; };
 		640F416D301C5D4800BD5F93 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = Resources/content.js; sourceTree = "<group>"; };
 		640F416E301C5D4800BD5F93 /* api.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = api.js; path = Resources/api.js; sourceTree = "<group>"; };
+		640F4179301C5D4800BD5F93 /* default-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "default-rules.json"; path = "Resources/default-rules.json"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -156,6 +158,7 @@
 				640F4169301C5D4800BD5F93 /* popup.html */,
 				640F416A301C5D4800BD5F93 /* injected.js */,
 				640F416B301C5D4800BD5F93 /* default-keywords.json */,
+				640F4179301C5D4800BD5F93 /* default-rules.json */,
 				640F416C301C5D4800BD5F93 /* manifest.json */,
 				640F416D301C5D4800BD5F93 /* content.js */,
 				640F416E301C5D4800BD5F93 /* api.js */,
@@ -272,6 +275,7 @@
 				640F4171301C5D4800BD5F93 /* background.js in Resources */,
 				640F4170301C5D4800BD5F93 /* popup.js in Resources */,
 				640F4174301C5D4800BD5F93 /* default-keywords.json in Resources */,
+				640F4178301C5D4800BD5F93 /* default-rules.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

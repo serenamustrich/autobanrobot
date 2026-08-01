@@ -30,6 +30,9 @@
     .popular-status {
       min-height:15px;margin-top:4px;color:#71767b;font-size:10px;
     }
+    .rule-sync { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px; }
+    .rule-sync button { width:auto;margin:0;padding:5px 8px;font-size:10px; }
+    .rule-status { color:#71767b;font-size:10px;line-height:1.4; }
     .update-card {
       padding:9px;border:1px solid #eff3f4;border-radius:8px;background:#f7f9f9;
     }
@@ -132,14 +135,11 @@
       <div class="hint">任意内容 → 单个字符 → 任意内容</div>
     </span>
   </label>
-  <label class="toggle">
-    <input id="vlogShortLinkEnabled" type="checkbox">
-    <span class="switch-ui" aria-hidden="true"></span>
-    <span>
-      启用“文案 + 多 Emoji + t.cn 短链”规则
-      <div class="hint">不限关键词和语言，t.cn 短链需单独成行</div>
-    </span>
-  </label>
+  <div id="remoteRules"></div>
+  <div class="rule-sync">
+    <span class="rule-status" id="ruleStatus">正在读取在线规则…</span>
+    <button class="secondary" id="refreshRules" type="button">立即更新规则</button>
+  </div>
   <button id="save">保存</button>
   <div class="saved" id="saved">✓ 已保存，立即生效</div>
   <hr>

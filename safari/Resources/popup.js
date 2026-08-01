@@ -5,7 +5,8 @@ extensionAPI.storage.local.get([
   'emojiEnglishEmojiEnabled',
   'structuredEmojiTimeEnabled',
   'structuredThreeSegmentEnabled',
-  'vlogShortLinkEnabled',
+  'remoteRuleConfig',
+  'remoteRuleStates',
   'blockHistory',
   'pendingBlockQueue',
   'updateInfo'
@@ -21,8 +22,7 @@ extensionAPI.storage.local.get([
     r.structuredEmojiTimeEnabled !== false;
   document.getElementById('structuredThreeSegmentEnabled').checked =
     r.structuredThreeSegmentEnabled !== false;
-  document.getElementById('vlogShortLinkEnabled').checked =
-    r.vlogShortLinkEnabled !== false;
+  renderRemoteRules(r.remoteRuleConfig, r.remoteRuleStates);
   document.getElementById('queueCount').textContent =
     Array.isArray(r.pendingBlockQueue) ? r.pendingBlockQueue.length : 0;
   renderBlockHistory(r.blockHistory);
@@ -76,8 +76,7 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
   'singleEmojiEnabled',
   'emojiEnglishEmojiEnabled',
   'structuredEmojiTimeEnabled',
-  'structuredThreeSegmentEnabled',
-  'vlogShortLinkEnabled'
+  'structuredThreeSegmentEnabled'
 ].forEach(id => {
   document.getElementById(id).addEventListener('change', () => {
     extensionAPI.storage.local.set(readRuleSettings()).then(showSaved);
@@ -93,11 +92,59 @@ function readRuleSettings() {
     structuredEmojiTimeEnabled:
       document.getElementById('structuredEmojiTimeEnabled').checked,
     structuredThreeSegmentEnabled:
-      document.getElementById('structuredThreeSegmentEnabled').checked,
-    vlogShortLinkEnabled:
-      document.getElementById('vlogShortLinkEnabled').checked
+      document.getElementById('structuredThreeSegmentEnabled').checked
   };
 }
+
+function renderRemoteRules(config, states = {}) {
+  const container = document.getElementById('remoteRules');
+  const status = document.getElementById('ruleStatus');
+  container.replaceChildren();
+  const rules = Array.isArray(config?.rules) ? config.rules : [];
+  for (const rule of rules) {
+    const label = document.createElement('label');
+    label.className = 'toggle';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = rule.enabled !== false && states[rule.id] !== false;
+    input.addEventListener('change', async () => {
+      const result = await extensionAPI.storage.local.get(['remoteRuleStates']);
+      const next = { ...(result.remoteRuleStates ?? {}), [rule.id]: input.checked };
+      await extensionAPI.storage.local.set({ remoteRuleStates: next });
+      showSaved();
+    });
+    const slider = document.createElement('span');
+    slider.className = 'switch-ui';
+    slider.setAttribute('aria-hidden', 'true');
+    const copy = document.createElement('span');
+    copy.textContent = `启用“${rule.name}”规则`;
+    const hint = document.createElement('div');
+    hint.className = 'hint';
+    hint.textContent = rule.description || '由在线规则服务管理';
+    copy.appendChild(hint);
+    label.append(input, slider, copy);
+    container.appendChild(label);
+  }
+  const checkedAt = config?.checkedAt ? new Date(config.checkedAt).toLocaleString() : '本地预设';
+  status.textContent = `在线规则 v${config?.version ?? '—'} · ${checkedAt}`;
+}
+
+document.getElementById('refreshRules').addEventListener('click', async () => {
+  const button = document.getElementById('refreshRules');
+  const status = document.getElementById('ruleStatus');
+  button.disabled = true;
+  status.textContent = '正在从服务端更新规则…';
+  try {
+    const response = await extensionAPI.runtime.sendMessage({ type: 'REFRESH_RULES' });
+    if (!response?.ok) throw new Error(response?.error || 'Rule refresh failed');
+    const result = await extensionAPI.storage.local.get(['remoteRuleStates']);
+    renderRemoteRules(response.config, result.remoteRuleStates);
+  } catch {
+    status.textContent = '规则更新失败，已继续使用本地缓存';
+  } finally {
+    button.disabled = false;
+  }
+});
 
 let savedTimer = null;
 function showSaved() {
@@ -210,4 +257,9 @@ extensionAPI.storage.onChanged.addListener(changes => {
         : 0;
   }
   if (changes.updateInfo) renderUpdateInfo(changes.updateInfo.newValue);
+  if (changes.remoteRuleConfig || changes.remoteRuleStates) {
+    extensionAPI.storage.local.get(['remoteRuleConfig', 'remoteRuleStates']).then(r => {
+      renderRemoteRules(r.remoteRuleConfig, r.remoteRuleStates);
+    });
+  }
 });

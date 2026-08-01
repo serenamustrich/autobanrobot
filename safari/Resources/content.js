@@ -3,19 +3,21 @@ extensionAPI.storage.local.get(['keywords']).then(r => {
   dispatchKeywords(Array.isArray(r.keywords) ? r.keywords : []);
 });
 
+extensionAPI.storage.local.get(['remoteRuleConfig', 'remoteRuleStates']).then(r => {
+  dispatchRules(r.remoteRuleConfig, r.remoteRuleStates);
+});
+
 extensionAPI.storage.local.get([
   'emojiEnglishEmojiEnabled',
   'singleEmojiEnabled',
   'structuredEmojiTimeEnabled',
-  'structuredThreeSegmentEnabled',
-  'vlogShortLinkEnabled'
+  'structuredThreeSegmentEnabled'
 ]).then(r => {
   dispatchSettings({
     emojiEnglishEmojiEnabled: r.emojiEnglishEmojiEnabled !== false,
     singleEmojiEnabled: r.singleEmojiEnabled !== false,
     structuredEmojiTimeEnabled: r.structuredEmojiTimeEnabled !== false,
-    structuredThreeSegmentEnabled: r.structuredThreeSegmentEnabled !== false,
-    vlogShortLinkEnabled: r.vlogShortLinkEnabled !== false
+    structuredThreeSegmentEnabled: r.structuredThreeSegmentEnabled !== false
   });
 });
 
@@ -24,12 +26,16 @@ extensionAPI.storage.onChanged.addListener(changes => {
   if (changes.keywords) {
     dispatchKeywords(Array.isArray(changes.keywords.newValue) ? changes.keywords.newValue : []);
   }
+  if (changes.remoteRuleConfig || changes.remoteRuleStates) {
+    extensionAPI.storage.local.get(['remoteRuleConfig', 'remoteRuleStates']).then(r => {
+      dispatchRules(r.remoteRuleConfig, r.remoteRuleStates);
+    });
+  }
   if (
     changes.emojiEnglishEmojiEnabled ||
     changes.singleEmojiEnabled ||
     changes.structuredEmojiTimeEnabled ||
-    changes.structuredThreeSegmentEnabled ||
-    changes.vlogShortLinkEnabled
+    changes.structuredThreeSegmentEnabled
   ) {
     const settings = {};
     if (changes.emojiEnglishEmojiEnabled) {
@@ -48,10 +54,6 @@ extensionAPI.storage.onChanged.addListener(changes => {
       settings.structuredThreeSegmentEnabled =
         changes.structuredThreeSegmentEnabled.newValue !== false;
     }
-    if (changes.vlogShortLinkEnabled) {
-      settings.vlogShortLinkEnabled =
-        changes.vlogShortLinkEnabled.newValue !== false;
-    }
     dispatchSettings(settings);
   }
 });
@@ -62,6 +64,15 @@ function dispatchKeywords(kws) {
 
 function dispatchSettings(settings) {
   window.dispatchEvent(new CustomEvent('__twblocker_settings__', { detail: settings }));
+}
+
+function dispatchRules(config, states) {
+  window.dispatchEvent(new CustomEvent('__twblocker_rules__', {
+    detail: {
+      config: config && typeof config === 'object' ? config : null,
+      states: states && typeof states === 'object' ? states : {}
+    }
+  }));
 }
 
 extensionAPI.runtime.onMessage.addListener(msg => {
