@@ -27,6 +27,17 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.17 — 2026-08-01
+
+- Tightened the `Emoji + content + Emoji` matcher to require at least one
+  Unicode letter or number between the outer Emoji. Emoji-only posts no longer
+  match this rule.
+- Tests cover Emoji-only content, Emoji surrounding Chinese or Latin text, and
+  punctuation-only middle segments.
+- 收紧“Emoji + 内容 + Emoji”规则：首尾 Emoji 之间必须至少包含一个任意语言的
+  文字或数字；整条内容全部由 Emoji、空白或符号组成时不再命中。
+- 已覆盖纯 Emoji、Emoji 包围中英文内容以及中间仅标点符号等回归场景。
+
 ### v1.6.16 — 2026-08-01
 
 - Added a per-account Unblock action to the confirmed Ban history. The action
