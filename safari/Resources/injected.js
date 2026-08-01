@@ -238,20 +238,20 @@
     return normalizeForMatch(text).replace(/[^\p{Script=Han}]/gu, '');
   }
 
-  function isVlogShortLinkSpam(text) {
-    const normalizedText = normalizeWithoutSymbolNoise(text);
-    const phraseGroups = [
-      ['说的就是这个vlog吧'],
-      ['是这个吗', '之前好像看过'],
-      ['this is the vlog']
-    ];
-    const hasPhrase = phraseGroups.some(group =>
-      group.every(phrase =>
-        normalizedText.includes(normalizeWithoutSymbolNoise(phrase))
-      )
-    );
-    const hasShortLink = /(?:https?:\/\/)?t\.cn\/[a-z0-9]{5,}/iu.test(text);
-    return hasPhrase && hasShortLink;
+  function isEmojiShortLinkSpam(text) {
+    const lines = text
+      .split(/\r?\n/u)
+      .map(line => line.trim())
+      .filter(Boolean);
+    const shortLinkLine = /^(?:https?:\/\/)?t\.cn\/[a-z0-9]{5,}(?:[?#]\S*)?$/iu;
+    if (!lines.some(line => shortLinkLine.test(line))) return false;
+
+    const content = lines.filter(line => !shortLinkLine.test(line)).join('\n');
+    const graphemes = [...emojiSegmenter.segment(content)]
+      .map(item => item.segment);
+    const emojiCount = graphemes.filter(isEmojiGrapheme).length;
+    const meaningfulContent = content.replace(/[^\p{L}\p{N}]/gu, '');
+    return emojiCount >= 2 && meaningfulContent.length >= 2;
   }
 
   function matchingKeywords(text) {
@@ -356,7 +356,7 @@
     const structuredThreeSegment =
       structuredThreeSegmentEnabled && isStructuredThreeSegment(text);
     const vlogShortLink =
-      vlogShortLinkEnabled && isVlogShortLinkSpam(text);
+      vlogShortLinkEnabled && isEmojiShortLinkSpam(text);
     if (
       !nameSpam &&
       !contentSpam &&
@@ -375,7 +375,7 @@
     if (emojiContentEmoji) reasons.push('Emoji + 内容 + Emoji');
     if (structuredEmojiTime) reasons.push('非 Emoji + Emoji + 非 Emoji + Emoji + 非 Emoji');
     if (structuredThreeSegment) reasons.push('三段式中间单字符');
-    if (vlogShortLink) reasons.push('vlog 引导语 + t.cn 短链');
+    if (vlogShortLink) reasons.push('文案 + 多 Emoji + t.cn 短链');
     blockUser(username, el, {
       displayName: nameText,
       reason: reasons.join('；'),
