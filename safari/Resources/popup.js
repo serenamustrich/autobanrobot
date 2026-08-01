@@ -198,8 +198,40 @@ function renderBlockHistory(value) {
       content.textContent = record.content;
       item.appendChild(content);
     }
+    const actions = document.createElement('div');
+    actions.className = 'history-actions';
+    const unblock = document.createElement('button');
+    unblock.type = 'button';
+    if (record.unblockedAt) {
+      unblock.textContent = '已取消屏蔽';
+      unblock.disabled = true;
+      unblock.title = `取消时间：${new Date(record.unblockedAt).toLocaleString()}`;
+    } else {
+      unblock.textContent = '取消屏蔽';
+      unblock.addEventListener('click', () => requestUnblock(record, unblock));
+    }
+    actions.appendChild(unblock);
+    item.appendChild(actions);
     container.appendChild(item);
   });
+}
+
+async function requestUnblock(record, button) {
+  if (!confirm(`确定取消屏蔽 @${record.username}？`)) return;
+  button.disabled = true;
+  button.textContent = '处理中…';
+  try {
+    const response = await extensionAPI.runtime.sendMessage({
+      type: 'UNBLOCK_USER', record
+    });
+    if (!response?.ok) throw new Error(response?.error || '操作失败');
+    button.textContent = '已取消屏蔽';
+    button.title = 'X 已确认取消屏蔽成功';
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = '重试取消屏蔽';
+    button.title = error.message || '操作失败';
+  }
 }
 
 document.getElementById('clearHistory').addEventListener('click', () => {

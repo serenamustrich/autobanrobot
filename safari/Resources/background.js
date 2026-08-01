@@ -316,6 +316,17 @@ function confirmsBlock(payload, username) {
   );
 }
 
+function confirmsUnblock(payload, username) {
+  if (!payload || payload.errors?.length) return false;
+  const sameUser =
+    typeof payload.screen_name !== 'string' ||
+    payload.screen_name.toLocaleLowerCase() === username.toLocaleLowerCase();
+  return sameUser && (
+    payload.blocking === false ||
+    payload.relationship?.source?.blocking === false
+  );
+}
+
 async function fetchRelationship(job) {
   try {
     const query = new URLSearchParams({ target_screen_name: job.username });
@@ -384,6 +395,85 @@ async function attemptBlock(job) {
   } catch (error) {
     return { state: 'retry', message: `异常: ${error.message}` };
   }
+}
+
+async function attemptUnblock(record) {
+  await authReady;
+  if (!bearer || !csrf) {
+    return { state: 'failed', message: '尚未获取 X 登录凭据，请打开 X 后重试' };
+  }
+  const username = String(record?.username ?? '').trim();
+  if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
+    return { state: 'failed', message: '账号用户名无效' };
+  }
+  let hostname = 'x.com';
+  try {
+    const candidate = new URL(record?.pageUrl ?? '').hostname;
+    if (candidate === 'twitter.com' || candidate === 'x.com') hostname = candidate;
+  } catch {}
+  const target = { username, hostname };
+  const relationship = await fetchRelationship(target);
+  const source = relationship.payload?.relationship?.source;
+  if (!relationship.ok || !source) {
+    return {
+      state: 'failed',
+      message: relationship.status
+        ? `无法确认当前屏蔽状态（HTTP ${relationship.status}）`
+        : '无法确认当前屏蔽状态'
+    };
+  }
+  if (source.blocking === false) {
+    return { state: 'already-unblocked', message: '该账号已经取消屏蔽' };
+  }
+  try {
+    const response = await fetch(
+      `https://${hostname}/i/api/1.1/blocks/destroy.json`,
+      {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: `screen_name=${encodeURIComponent(username)}`,
+        credentials: 'include'
+      }
+    );
+    const payload = parseJson(await response.text());
+    if (!response.ok || payload?.errors?.length) {
+      return { state: 'failed', message: `取消屏蔽失败（HTTP ${response.status}）` };
+    }
+    const verification = await fetchRelationship(target);
+    if (verification.ok && confirmsUnblock(verification.payload, username)) {
+      return { state: 'success', message: '已确认取消屏蔽' };
+    }
+    return { state: 'failed', message: 'X 未确认取消屏蔽成功' };
+  } catch (error) {
+    return { state: 'failed', message: `取消屏蔽异常：${error.message}` };
+  }
+}
+
+async function unblockHistoryRecord(record) {
+  const stored = await extensionAPI.storage.local.get([QUEUE_KEY]);
+  const username = String(record?.username ?? '').toLocaleLowerCase();
+  const queue = Array.isArray(stored[QUEUE_KEY]) ? stored[QUEUE_KEY] : [];
+  await extensionAPI.storage.local.set({
+    [QUEUE_KEY]: queue.filter(job =>
+      String(job.username ?? '').toLocaleLowerCase() !== username
+    )
+  });
+  const outcome = await attemptUnblock(record);
+  if (outcome.state !== 'success' && outcome.state !== 'already-unblocked') {
+    return { ok: false, error: outcome.message };
+  }
+  const latest = await extensionAPI.storage.local.get(['blockHistory']);
+  const history = Array.isArray(latest.blockHistory) ? latest.blockHistory : [];
+  const unblockedAt = new Date().toISOString();
+  await extensionAPI.storage.local.set({
+    blockHistory: history.map(item => {
+      const sameRecord = record.clientEventId
+        ? item.clientEventId === record.clientEventId
+        : String(item.username ?? '').toLocaleLowerCase() === username;
+      return sameRecord ? { ...item, unblockedAt } : item;
+    })
+  });
+  return { ok: true, state: outcome.state, unblockedAt };
 }
 
 async function broadcastResult(job, state, message = '') {
@@ -587,6 +677,10 @@ extensionAPI.runtime.onMessage.addListener((message, sender) => {
   }
   if (message.type === 'PROCESS_BLOCK_QUEUE') {
     return withQueueLock(processQueue).then(() => ({ ok: true }));
+  }
+  if (message.type === 'UNBLOCK_USER') {
+    return withQueueLock(() => unblockHistoryRecord(message.record))
+      .catch(error => ({ ok: false, error: error.message }));
   }
   if (message.type === 'CHECK_FOR_UPDATE') {
     return checkForUpdate()
