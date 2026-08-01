@@ -42,10 +42,19 @@ chrome.runtime.onMessage.addListener(msg => {
 
 window.addEventListener('__twblocker_enqueue__', event => {
   if (!event.detail?.username) return;
-  chrome.runtime.sendMessage({
-    type: 'ENQUEUE_BLOCK',
-    job: event.detail
-  }).then(response => {
+  let request;
+  try {
+    if (!chrome.runtime?.id) return;
+    request = chrome.runtime.sendMessage({
+      type: 'ENQUEUE_BLOCK',
+      job: event.detail
+    });
+  } catch (error) {
+    if (isExtensionContextError(error)) return;
+    console.error('Failed to send block job to background:', error);
+    return;
+  }
+  Promise.resolve(request).then(response => {
     if (response?.queued) return;
     window.dispatchEvent(new CustomEvent('__twblocker_block_result__', {
       detail: {
@@ -55,9 +64,12 @@ window.addEventListener('__twblocker_enqueue__', event => {
       }
     }));
   }).catch(error => {
-    if (/No SW|Extension context invalidated|Receiving end does not exist/i.test(
-      error?.message ?? ''
-    )) return;
+    if (isExtensionContextError(error)) return;
     console.error('Failed to send block job to background:', error);
   });
 });
+
+function isExtensionContextError(error) {
+  return /No SW|Extension context invalidated|Receiving end does not exist|message port closed/i
+    .test(error?.message ?? '');
+}
