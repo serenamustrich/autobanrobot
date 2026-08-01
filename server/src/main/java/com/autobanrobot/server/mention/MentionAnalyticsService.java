@@ -72,4 +72,16 @@ public class MentionAnalyticsService {
             ))
             .toList();
     }
+
+    @Transactional(readOnly = true)
+    public List<MentionRankingResponse> allRanking() {
+        List<MentionRankingRow> rows = repository.findAllRanking();
+        return IntStream.range(0, rows.size())
+            .mapToObj(index -> new MentionRankingResponse(
+                index + 1,
+                rows.get(index).getUsername(),
+                rows.get(index).getMentionCount()
+            ))
+            .toList();
+    }
 }

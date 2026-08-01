@@ -24,10 +24,9 @@ public class PopularTermService {
         this.mentionAnalytics = mentionAnalytics;
     }
 
-    public List<PopularTermResponse> ranking(int limit) {
-        int safeLimit = Math.min(Math.max(limit, 1), 500);
+    public List<PopularTermResponse> ranking() {
         Map<String, PopularTermResponse> terms = new HashMap<>();
-        keywordAnalytics.ranking(500).forEach(item -> terms.put(
+        keywordAnalytics.allRanking().forEach(item -> terms.put(
             item.keyword(),
             new PopularTermResponse(
                 0,
@@ -36,7 +35,7 @@ public class PopularTermService {
                 item.hitCount()
             )
         ));
-        mentionAnalytics.ranking(500).forEach(item -> {
+        mentionAnalytics.allRanking().forEach(item -> {
             String term = "@" + item.username();
             terms.merge(
                 term,
@@ -56,7 +55,6 @@ public class PopularTermService {
                     .reversed()
                     .thenComparing(PopularTermResponse::term)
             )
-            .limit(safeLimit)
             .toList();
 
         return IntStream.range(0, combined.size())

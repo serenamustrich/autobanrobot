@@ -20,4 +20,14 @@ public interface BanEventMentionRepository
         order by count(mention.id) desc, mention.mentionedUsername asc
         """)
     List<MentionRankingRow> findRanking(Pageable pageable);
+
+    @Query("""
+        select
+            mention.mentionedUsername as username,
+            count(mention.id) as mentionCount
+        from BanEventMention mention
+        group by mention.mentionedUsername
+        order by count(mention.id) desc, mention.mentionedUsername asc
+        """)
+    List<MentionRankingRow> findAllRanking();
 }

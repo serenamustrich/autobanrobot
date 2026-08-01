@@ -18,4 +18,15 @@ public interface BanEventKeywordRepository extends JpaRepository<BanEventKeyword
         order by count(keyword.id) desc, keyword.keyword asc
         """)
     List<KeywordRankingRow> findRanking(Pageable pageable);
+
+    @Query("""
+        select
+            keyword.keyword as keyword,
+            count(keyword.id) as hitCount
+        from BanEventKeyword keyword
+        where keyword.matched = true
+        group by keyword.keyword
+        order by count(keyword.id) desc, keyword.keyword asc
+        """)
+    List<KeywordRankingRow> findAllRanking();
 }

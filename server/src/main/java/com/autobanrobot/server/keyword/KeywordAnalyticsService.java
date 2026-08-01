@@ -52,6 +52,21 @@ public class KeywordAnalyticsService {
             .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<KeywordRankingResponse> allRanking() {
+        List<KeywordRankingRow> rows = repository.findAllRanking();
+        return IntStream.range(0, rows.size())
+            .mapToObj(index -> {
+                KeywordRankingRow row = rows.get(index);
+                return new KeywordRankingResponse(
+                    index + 1,
+                    row.getKeyword(),
+                    row.getHitCount()
+                );
+            })
+            .toList();
+    }
+
     private Set<String> normalize(List<String> values) {
         Set<String> result = new LinkedHashSet<>();
         if (values == null) {
