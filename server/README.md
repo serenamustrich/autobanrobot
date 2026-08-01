@@ -36,8 +36,15 @@ MySQL 5.7 database remains supported.
 - `GET /api/keywords`: keyword hit ranking.
 - `GET /api/mentions`: accounts mentioned by confirmed spam content.
 - `GET /api/popular-terms`: exact terms offered to plugins for synchronization.
+- `GET /api/rules`: public versioned detection-rule configuration used by plugins.
+- `PUT /api/rules`: replace the online rule list and increment its version; requires
+  `X-AutoBan-Admin-Token` matching `AUTOBAN_RULE_ADMIN_TOKEN`.
 - `POST /api/clients/heartbeat`: record one anonymous plugin installation heartbeat.
 - `GET /api/clients/stats`: online and cumulative anonymous plugin users.
+
+Set a long random `AUTOBAN_RULE_ADMIN_TOKEN` in the deployment environment. The
+token is never stored in MySQL or returned by the API. Rule configuration is
+stored in the MySQL 5.7-compatible `rule_config` table as `MEDIUMTEXT`.
 
 The dashboard supports Chinese, English, Spanish, Japanese, Korean, German,
 French, Russian, and Italian. A client counts as online when its latest

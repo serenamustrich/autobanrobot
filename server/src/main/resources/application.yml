@@ -27,3 +27,7 @@ logging:
   level:
     root: INFO
     org.hibernate.SQL: WARN
+
+autoban:
+  rules:
+    admin-token: ${AUTOBAN_RULE_ADMIN_TOKEN:}
