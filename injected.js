@@ -1,9 +1,5 @@
 (() => {
   let SPAM = [];
-  let emojiEnglishEmojiEnabled = true;
-  let singleEmojiEnabled = true;
-  let structuredEmojiTimeEnabled = true;
-  let structuredThreeSegmentEnabled = true;
   let remoteRules = [];
 
   window.addEventListener('__twblocker_keywords__', e => {
@@ -11,29 +7,13 @@
     processedSignatures = new WeakMap();
     scanAll();
   });
-  window.addEventListener('__twblocker_settings__', e => {
-    if (typeof e.detail?.emojiEnglishEmojiEnabled === 'boolean') {
-      emojiEnglishEmojiEnabled = e.detail.emojiEnglishEmojiEnabled;
-    }
-    if (typeof e.detail?.singleEmojiEnabled === 'boolean') {
-      singleEmojiEnabled = e.detail.singleEmojiEnabled;
-    }
-    if (typeof e.detail?.structuredEmojiTimeEnabled === 'boolean') {
-      structuredEmojiTimeEnabled = e.detail.structuredEmojiTimeEnabled;
-    }
-    if (typeof e.detail?.structuredThreeSegmentEnabled === 'boolean') {
-      structuredThreeSegmentEnabled = e.detail.structuredThreeSegmentEnabled;
-    }
-    processedSignatures = new WeakMap();
-    scanAll();
-  });
-
   window.addEventListener('__twblocker_rules__', e => {
     const config = e.detail?.config;
     const states = e.detail?.states ?? {};
     remoteRules = Array.isArray(config?.rules)
       ? config.rules.flatMap(rule => {
           if (rule?.enabled === false || states[rule.id] === false) return [];
+          if (typeof rule.matcher === 'string') return [{ ...rule }];
           try {
             const flags = String(rule.flags ?? '').replace(/g/g, '');
             return [{ ...rule, regex: new RegExp(rule.pattern, flags) }];
@@ -260,6 +240,15 @@
       if (rule.requiresDefaultAvatar === true && !context.defaultAvatar) {
         return false;
       }
+      if (rule.matcher) {
+        const matcher = {
+          singleEmoji: isSingleEmoji,
+          emojiContentEmoji: isEmojiContentEmoji,
+          structuredEmojiTime: isStructuredEmojiTime,
+          structuredThreeSegment: isStructuredThreeSegment
+        }[rule.matcher];
+        return typeof matcher === 'function' && matcher(text);
+      }
       const target = rule.normalization === 'compact'
         ? normalizeForMatch(text)
         : rule.normalization === 'noSymbols'
@@ -364,13 +353,6 @@
     const matchedKeywords = [...new Set([...nameMatches, ...contentMatches])];
     const nameSpam = nameMatches.length > 0;
     const contentSpam = contentMatches.length > 0;
-    const singleEmoji = singleEmojiEnabled && isSingleEmoji(text);
-    const emojiContentEmoji =
-      emojiEnglishEmojiEnabled && isEmojiContentEmoji(text);
-    const structuredEmojiTime =
-      structuredEmojiTimeEnabled && isStructuredEmojiTime(text);
-    const structuredThreeSegment =
-      structuredThreeSegmentEnabled && isStructuredThreeSegment(text);
     const ruleContext = {
       defaultAvatar: Boolean(el.querySelector(
         'img[src*="default_profile_images"], img[src*="default_profile"]'
@@ -384,10 +366,6 @@
     if (
       !nameSpam &&
       !contentSpam &&
-      !singleEmoji &&
-      !emojiContentEmoji &&
-      !structuredEmojiTime &&
-      !structuredThreeSegment &&
       remoteMatches.length === 0
     ) return;
 
@@ -395,10 +373,6 @@
     const reasons = [];
     if (nameSpam) reasons.push('用户名或显示名称命中关键词');
     if (contentSpam) reasons.push('内容命中关键词');
-    if (singleEmoji) reasons.push('单 Emoji 内容');
-    if (emojiContentEmoji) reasons.push('Emoji + 内容 + Emoji');
-    if (structuredEmojiTime) reasons.push('非 Emoji + Emoji + 非 Emoji + Emoji + 非 Emoji');
-    if (structuredThreeSegment) reasons.push('三段式中间单字符');
     reasons.push(...remoteMatches.map(rule => rule.name));
     blockUser(username, el, {
       displayName: nameText,

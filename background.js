@@ -13,6 +13,7 @@ const HEARTBEAT_ALARM = 'autobanrobot-plugin-heartbeat';
 const HEARTBEAT_ENDPOINT = 'https://ban.richccy.com/api/clients/heartbeat';
 const RULES_ENDPOINT = 'https://ban.richccy.com/api/rules';
 const RULES_ALARM = 'autobanrobot-refresh-rules';
+const MIN_ONLINE_RULE_VERSION = 9;
 const INSTALLATION_ID_KEY = 'anonymousInstallationId';
 const LATEST_RELEASE_API =
   'https://api.github.com/repos/serenamustrich/autobanrobot/releases/latest';
@@ -61,49 +62,62 @@ async function initializeKeywords() {
   await chrome.storage.local.set({ keywords: await response.json() });
 }
 
-async function initializeSettings() {
+async function migrateLegacyRuleStates() {
   const stored = await chrome.storage.local.get([
     'emojiEnglishEmojiEnabled',
     'singleEmojiEnabled',
     'structuredEmojiTimeEnabled',
-    'structuredThreeSegmentEnabled'
+    'structuredThreeSegmentEnabled',
+    'remoteRuleStates',
+    'onlineRuleStateMigrationV1'
   ]);
-  const defaults = {};
-  if (typeof stored.emojiEnglishEmojiEnabled !== 'boolean') {
-    defaults.emojiEnglishEmojiEnabled = true;
+  if (stored.onlineRuleStateMigrationV1 === true) return;
+  const states = { ...(stored.remoteRuleStates ?? {}) };
+  const mappings = {
+    emojiEnglishEmojiEnabled: 'emoji-content-emoji',
+    singleEmojiEnabled: 'single-emoji-content',
+    structuredEmojiTimeEnabled: 'five-segment-alternating',
+    structuredThreeSegmentEnabled: 'three-segment-single-middle'
+  };
+  for (const [legacyKey, ruleId] of Object.entries(mappings)) {
+    if (stored[legacyKey] === false && states[ruleId] === undefined) {
+      states[ruleId] = false;
+    }
   }
-  if (typeof stored.singleEmojiEnabled !== 'boolean') {
-    defaults.singleEmojiEnabled = true;
-  }
-  if (typeof stored.structuredEmojiTimeEnabled !== 'boolean') {
-    defaults.structuredEmojiTimeEnabled = true;
-  }
-  if (typeof stored.structuredThreeSegmentEnabled !== 'boolean') {
-    defaults.structuredThreeSegmentEnabled = true;
-  }
-  if (Object.keys(defaults).length) await chrome.storage.local.set(defaults);
+  await chrome.storage.local.set({
+    remoteRuleStates: states,
+    onlineRuleStateMigrationV1: true
+  });
 }
 
 async function initializeRules() {
   const stored = await chrome.storage.local.get(['remoteRuleConfig']);
-  if (stored.remoteRuleConfig?.rules) return;
+  if (
+    stored.remoteRuleConfig?.rules &&
+    stored.remoteRuleConfig.version >= MIN_ONLINE_RULE_VERSION
+  ) return;
   const response = await fetch(chrome.runtime.getURL('default-rules.json'));
   await chrome.storage.local.set({ remoteRuleConfig: await response.json() });
 }
 
 function isValidRuleConfig(config) {
   return Number.isSafeInteger(config?.version) &&
+    config.version >= MIN_ONLINE_RULE_VERSION &&
     Array.isArray(config.rules) &&
     config.rules.length <= 100 &&
     config.rules.every(rule =>
       typeof rule?.id === 'string' && rule.id.length <= 64 &&
       typeof rule?.name === 'string' && rule.name.length <= 120 &&
-      typeof rule?.pattern === 'string' && rule.pattern.length <= 2000 &&
+      ((rule.matcher === undefined &&
+        typeof rule?.pattern === 'string' && rule.pattern.length <= 2000 &&
+        typeof rule?.flags === 'string' && /^[gimsuy]*$/.test(rule.flags)) ||
+        (rule.pattern === undefined &&
+          ['singleEmoji', 'emojiContentEmoji', 'structuredEmojiTime',
+            'structuredThreeSegment'].includes(rule?.matcher))) &&
       ['content', 'username', 'displayName'].includes(rule.scope ?? 'content') &&
       (rule.requiresDefaultAvatar === undefined ||
         typeof rule.requiresDefaultAvatar === 'boolean') &&
-      ['raw', 'compact', 'noSymbols'].includes(rule.normalization ?? 'raw') &&
-      typeof rule?.flags === 'string' && /^[gimsuy]*$/.test(rule.flags)
+      ['raw', 'compact', 'noSymbols'].includes(rule.normalization ?? 'raw')
     );
 }
 
@@ -259,7 +273,7 @@ async function checkForUpdate() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  Promise.all([initializeKeywords(), initializeSettings(), initializeRules()]).catch(error => {
+  Promise.all([initializeKeywords(), migrateLegacyRuleStates(), initializeRules()]).catch(error => {
     console.error('Failed to initialize extension settings:', error);
   });
   scheduleQueue();

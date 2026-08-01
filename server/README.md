@@ -46,8 +46,9 @@ Set a long random `AUTOBAN_RULE_ADMIN_TOKEN` in the deployment environment. The
 token is never stored in MySQL or returned by the API. Rule configuration is
 stored in the MySQL 5.7-compatible `rule_config` table as `MEDIUMTEXT`.
 
-Rule fields include `scope` (`content`, `username`, or `displayName`) and the
-optional `requiresDefaultAvatar` guard. The browser executes only validated
+Rule fields include `scope` (`content`, `username`, or `displayName`), the
+optional `requiresDefaultAvatar` guard, and either a validated regular-expression
+`pattern` or a supported `matcher`. The browser executes only validated
 regular expressions; the server never distributes executable JavaScript.
 
 The dashboard supports Chinese, English, Spanish, Japanese, Korean, German,
