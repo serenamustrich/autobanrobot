@@ -42,10 +42,19 @@ extensionAPI.runtime.onMessage.addListener(msg => {
 
 window.addEventListener('__twblocker_enqueue__', event => {
   if (!event.detail?.username) return;
-  extensionAPI.runtime.sendMessage({
-    type: 'ENQUEUE_BLOCK',
-    job: event.detail
-  }).then(response => {
+  let request;
+  try {
+    if (!extensionAPI.runtime?.id) return;
+    request = extensionAPI.runtime.sendMessage({
+      type: 'ENQUEUE_BLOCK',
+      job: event.detail
+    });
+  } catch (error) {
+    if (isExtensionContextError(error)) return;
+    dispatchEnqueueFailure(event.detail, error);
+    return;
+  }
+  Promise.resolve(request).then(response => {
     if (response?.queued) return;
     window.dispatchEvent(new CustomEvent('__twblocker_block_result__', {
       detail: {
@@ -55,12 +64,22 @@ window.addEventListener('__twblocker_enqueue__', event => {
       }
     }));
   }).catch(error => {
-    window.dispatchEvent(new CustomEvent('__twblocker_block_result__', {
-      detail: {
-        ...event.detail,
-        state: 'failed',
-        message: error.message || '无法连接 Safari 后台队列'
-      }
-    }));
+    if (isExtensionContextError(error)) return;
+    dispatchEnqueueFailure(event.detail, error);
   });
 });
+
+function dispatchEnqueueFailure(detail, error) {
+  window.dispatchEvent(new CustomEvent('__twblocker_block_result__', {
+    detail: {
+      ...detail,
+      state: 'failed',
+      message: error?.message || '无法连接 Safari 后台队列'
+    }
+  }));
+}
+
+function isExtensionContextError(error) {
+  return /No SW|Extension context invalidated|Receiving end does not exist|message port closed/i
+    .test(error?.message ?? '');
+}
