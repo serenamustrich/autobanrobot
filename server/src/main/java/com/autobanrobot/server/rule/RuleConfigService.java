@@ -73,10 +73,13 @@ public class RuleConfigService {
             String name = rule.path("name").asText();
             String pattern = rule.path("pattern").asText();
             String flags = rule.path("flags").asText("");
+            String scope = rule.path("scope").asText("content");
             String normalization = rule.path("normalization").asText("raw");
             if (id.isBlank() || id.length() > 64 || name.isBlank() || name.length() > 120 ||
                 pattern.isBlank() || pattern.length() > MAX_PATTERN_LENGTH ||
                 !flags.matches("[gimsuy]*") ||
+                !(scope.equals("content") || scope.equals("username") || scope.equals("displayName")) ||
+                (rule.has("requiresDefaultAvatar") && !rule.path("requiresDefaultAvatar").isBoolean()) ||
                 !(normalization.equals("raw") || normalization.equals("compact") || normalization.equals("noSymbols"))) {
                 throw new ResponseStatusException(BAD_REQUEST, "invalid rule: " + id);
             }

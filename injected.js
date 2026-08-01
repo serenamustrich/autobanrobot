@@ -254,8 +254,12 @@
     return normalizeForMatch(text).replace(/[^\p{Script=Han}]/gu, '');
   }
 
-  function matchingRemoteRules(text) {
+  function matchingRemoteRules(text, scope = 'content', context = {}) {
     return remoteRules.filter(rule => {
+      if ((rule.scope ?? 'content') !== scope) return false;
+      if (rule.requiresDefaultAvatar === true && !context.defaultAvatar) {
+        return false;
+      }
       const target = rule.normalization === 'compact'
         ? normalizeForMatch(text)
         : rule.normalization === 'noSymbols'
@@ -367,7 +371,16 @@
       structuredEmojiTimeEnabled && isStructuredEmojiTime(text);
     const structuredThreeSegment =
       structuredThreeSegmentEnabled && isStructuredThreeSegment(text);
-    const remoteMatches = matchingRemoteRules(text);
+    const ruleContext = {
+      defaultAvatar: Boolean(el.querySelector(
+        'img[src*="default_profile_images"], img[src*="default_profile"]'
+      ))
+    };
+    const remoteMatches = [
+      ...matchingRemoteRules(text, 'content', ruleContext),
+      ...matchingRemoteRules(username, 'username', ruleContext),
+      ...matchingRemoteRules(nameText, 'displayName', ruleContext)
+    ];
     if (
       !nameSpam &&
       !contentSpam &&

@@ -18,6 +18,25 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.13 — 2026-08-01
+
+- Extended server-managed hot rules with `content`, `username`, and
+  `displayName` scopes plus an optional default-avatar requirement.
+- Historical analysis of 1,297 distinct confirmed blocked accounts found 850
+  (65.5%) in a generated CamelCase English-name cluster. Of 837 distinct
+  three-character endings in that cluster, 824 occurred only once, strongly
+  indicating randomized account generation.
+- Added separate switches for the strict `name + 2 digits + 2 letters + 1 digit`
+  ID pattern, the broader CamelCase random-tail pattern combined with a default
+  avatar, and the previously added praise-solicitation content pattern.
+- 在线规则新增 `content`、`username`、`displayName` 匹配范围，
+  并可选要求账号使用默认头像。
+- 分析 1,297 个已确认屏蔽的不同账号后，发现 850 个（65.5%）
+  属于 CamelCase 英文姓名生成簇；该簇 837 种不同的末三位中，
+  824 种仅出现一次，随机生成特征明显。
+- 严格数字尾 ID、“CamelCase 随机尾 + 默认头像”以及夸赞引流文案
+  保留为三个独立滑块规则，可分别关闭。
+
 ### v1.6.12 — 2026-08-01
 
 - Added server-managed hot detection rules. The extension loads a bundled safe
