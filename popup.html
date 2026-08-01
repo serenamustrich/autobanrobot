@@ -115,6 +115,15 @@
     .history-user { color:#0f1419;font-size:12px;font-weight:600;text-decoration:none; }
     .history-user:hover { text-decoration:underline; }
     .history-meta { color:#71767b;font-size:10px;margin-top:2px; }
+    .history-actions { display:flex;justify-content:flex-end;margin-top:6px; }
+    .history-actions button {
+      width:auto;margin:0;padding:4px 8px;background:#fff;color:#f4212e;
+      border:1px solid #f4212e;border-radius:999px;font-size:10px;
+    }
+    .history-actions button:hover { background:#fff1f2; }
+    .history-actions button:disabled {
+      color:#71767b;border-color:#cfd9de;background:#f7f9f9;cursor:default;
+    }
     .history-content {
       color:#444;font-size:10px;margin-top:3px;white-space:nowrap;
       overflow:hidden;text-overflow:ellipsis;

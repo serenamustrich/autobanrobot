@@ -27,6 +27,19 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.16 — 2026-08-01
+
+- Added a per-account Unblock action to the confirmed Ban history. The action
+  checks the current X relationship, submits the unblock request, and marks the
+  record as unblocked only after X confirms `blocking=false`.
+- Pending block jobs for the same account are removed before unblocking to
+  prevent an immediate re-block. The cumulative blocked counter remains an
+  immutable historical count.
+- 已确认 Ban 清单中的每个账号新增“取消屏蔽”按钮。插件先检查当前关系，提交
+  取消请求，并且只在 X 再次确认 `blocking=false` 后标记为“已取消屏蔽”。
+- 取消前会移除同账号尚未执行的屏蔽任务，避免刚解除又被队列重新屏蔽；
+  “累计已屏蔽”继续表示历史成功次数，不会回退。
+
 ### v1.6.15 — 2026-08-01
 
 - Prevented stale X-page content scripts from throwing an uncaught `Extension
