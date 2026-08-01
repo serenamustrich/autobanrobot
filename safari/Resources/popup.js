@@ -4,6 +4,7 @@ extensionAPI.storage.local.get([
   'singleEmojiEnabled',
   'emojiEnglishEmojiEnabled',
   'structuredEmojiTimeEnabled',
+  'structuredThreeSegmentEnabled',
   'blockHistory',
   'pendingBlockQueue',
   'updateInfo'
@@ -17,6 +18,8 @@ extensionAPI.storage.local.get([
     r.singleEmojiEnabled !== false;
   document.getElementById('structuredEmojiTimeEnabled').checked =
     r.structuredEmojiTimeEnabled !== false;
+  document.getElementById('structuredThreeSegmentEnabled').checked =
+    r.structuredThreeSegmentEnabled !== false;
   document.getElementById('queueCount').textContent =
     Array.isArray(r.pendingBlockQueue) ? r.pendingBlockQueue.length : 0;
   renderBlockHistory(r.blockHistory);
@@ -69,7 +72,8 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
 [
   'singleEmojiEnabled',
   'emojiEnglishEmojiEnabled',
-  'structuredEmojiTimeEnabled'
+  'structuredEmojiTimeEnabled',
+  'structuredThreeSegmentEnabled'
 ].forEach(id => {
   document.getElementById(id).addEventListener('change', () => {
     extensionAPI.storage.local.set(readRuleSettings()).then(showSaved);
@@ -83,7 +87,9 @@ function readRuleSettings() {
     emojiEnglishEmojiEnabled:
       document.getElementById('emojiEnglishEmojiEnabled').checked,
     structuredEmojiTimeEnabled:
-      document.getElementById('structuredEmojiTimeEnabled').checked
+      document.getElementById('structuredEmojiTimeEnabled').checked,
+    structuredThreeSegmentEnabled:
+      document.getElementById('structuredThreeSegmentEnabled').checked
   };
 }
 

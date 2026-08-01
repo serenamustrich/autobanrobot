@@ -3,6 +3,7 @@
   let emojiEnglishEmojiEnabled = true;
   let singleEmojiEnabled = true;
   let structuredEmojiTimeEnabled = true;
+  let structuredThreeSegmentEnabled = true;
 
   window.addEventListener('__twblocker_keywords__', e => {
     SPAM = e.detail?.kws ?? SPAM;
@@ -18,6 +19,9 @@
     }
     if (typeof e.detail?.structuredEmojiTimeEnabled === 'boolean') {
       structuredEmojiTimeEnabled = e.detail.structuredEmojiTimeEnabled;
+    }
+    if (typeof e.detail?.structuredThreeSegmentEnabled === 'boolean') {
+      structuredThreeSegmentEnabled = e.detail.structuredThreeSegmentEnabled;
     }
     processedSignatures = new WeakMap();
     scanAll();
@@ -203,6 +207,18 @@
     );
   }
 
+  function isStructuredThreeSegment(text) {
+    const lines = text
+      .split(/\r?\n/u)
+      .map(line => line.trim())
+      .filter(Boolean);
+    if (lines.length !== 3) return false;
+
+    const middle = [...emojiSegmenter.segment(lines[1])]
+      .map(item => item.segment);
+    return middle.length === 1;
+  }
+
   function normalizeForMatch(text) {
     return text
       .normalize('NFKC')
@@ -317,12 +333,15 @@
       emojiEnglishEmojiEnabled && isEmojiContentEmoji(text);
     const structuredEmojiTime =
       structuredEmojiTimeEnabled && isStructuredEmojiTime(text);
+    const structuredThreeSegment =
+      structuredThreeSegmentEnabled && isStructuredThreeSegment(text);
     if (
       !nameSpam &&
       !contentSpam &&
       !singleEmoji &&
       !emojiContentEmoji &&
-      !structuredEmojiTime
+      !structuredEmojiTime &&
+      !structuredThreeSegment
     ) return;
 
     el.style.opacity = '0.35';
@@ -332,6 +351,7 @@
     if (singleEmoji) reasons.push('单 Emoji 内容');
     if (emojiContentEmoji) reasons.push('Emoji + 内容 + Emoji');
     if (structuredEmojiTime) reasons.push('非 Emoji + Emoji + 非 Emoji + Emoji + 非 Emoji');
+    if (structuredThreeSegment) reasons.push('三段式中间单字符');
     blockUser(username, el, {
       displayName: nameText,
       reason: reasons.join('；'),

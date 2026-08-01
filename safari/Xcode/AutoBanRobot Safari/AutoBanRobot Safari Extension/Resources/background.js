@@ -45,7 +45,8 @@ async function initializeSettings() {
   const stored = await extensionAPI.storage.local.get([
     'emojiEnglishEmojiEnabled',
     'singleEmojiEnabled',
-    'structuredEmojiTimeEnabled'
+    'structuredEmojiTimeEnabled',
+    'structuredThreeSegmentEnabled'
   ]);
   const defaults = {};
   if (typeof stored.emojiEnglishEmojiEnabled !== 'boolean') {
@@ -56,6 +57,9 @@ async function initializeSettings() {
   }
   if (typeof stored.structuredEmojiTimeEnabled !== 'boolean') {
     defaults.structuredEmojiTimeEnabled = true;
+  }
+  if (typeof stored.structuredThreeSegmentEnabled !== 'boolean') {
+    defaults.structuredThreeSegmentEnabled = true;
   }
   if (Object.keys(defaults).length) {
     await extensionAPI.storage.local.set(defaults);
