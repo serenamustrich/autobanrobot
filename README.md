@@ -18,6 +18,18 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.10 — 2026-08-01
+
+- Added an independently configurable rule for the repeated spam template
+  `说的就是这个vlog吧` followed by a randomized `t.cn` short link.
+- Emoji and punctuation around the phrase are optional. A match requires both
+  the normalized phrase and a valid `t.cn/<code>` link, reducing false positives
+  from ordinary vlog discussion or unrelated short links.
+- 新增可独立开关的 vlog 短链引流规则：同时出现“说的就是这个vlog吧”
+  类引导语和随机 `t.cn/<code>` 短链时命中。
+- 引导语前后的 Emoji 和标点可有可无；只有引导语、只有短链或使用其他域名
+  都不会命中，以降低误判。
+
 ### v1.6.9 — 2026-08-01
 
 - Renamed the popup counter label from “Blocked this session” to “Total

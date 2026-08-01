@@ -7,13 +7,15 @@ chrome.storage.local.get([
   'emojiEnglishEmojiEnabled',
   'singleEmojiEnabled',
   'structuredEmojiTimeEnabled',
-  'structuredThreeSegmentEnabled'
+  'structuredThreeSegmentEnabled',
+  'vlogShortLinkEnabled'
 ], r => {
   dispatchSettings({
     emojiEnglishEmojiEnabled: r.emojiEnglishEmojiEnabled !== false,
     singleEmojiEnabled: r.singleEmojiEnabled !== false,
     structuredEmojiTimeEnabled: r.structuredEmojiTimeEnabled !== false,
-    structuredThreeSegmentEnabled: r.structuredThreeSegmentEnabled !== false
+    structuredThreeSegmentEnabled: r.structuredThreeSegmentEnabled !== false,
+    vlogShortLinkEnabled: r.vlogShortLinkEnabled !== false
   });
 });
 
@@ -26,7 +28,8 @@ chrome.storage.onChanged.addListener(changes => {
     changes.emojiEnglishEmojiEnabled ||
     changes.singleEmojiEnabled ||
     changes.structuredEmojiTimeEnabled ||
-    changes.structuredThreeSegmentEnabled
+    changes.structuredThreeSegmentEnabled ||
+    changes.vlogShortLinkEnabled
   ) {
     const settings = {};
     if (changes.emojiEnglishEmojiEnabled) {
@@ -44,6 +47,10 @@ chrome.storage.onChanged.addListener(changes => {
     if (changes.structuredThreeSegmentEnabled) {
       settings.structuredThreeSegmentEnabled =
         changes.structuredThreeSegmentEnabled.newValue !== false;
+    }
+    if (changes.vlogShortLinkEnabled) {
+      settings.vlogShortLinkEnabled =
+        changes.vlogShortLinkEnabled.newValue !== false;
     }
     dispatchSettings(settings);
   }

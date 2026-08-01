@@ -4,6 +4,7 @@
   let singleEmojiEnabled = true;
   let structuredEmojiTimeEnabled = true;
   let structuredThreeSegmentEnabled = true;
+  let vlogShortLinkEnabled = true;
 
   window.addEventListener('__twblocker_keywords__', e => {
     SPAM = e.detail?.kws ?? SPAM;
@@ -22,6 +23,9 @@
     }
     if (typeof e.detail?.structuredThreeSegmentEnabled === 'boolean') {
       structuredThreeSegmentEnabled = e.detail.structuredThreeSegmentEnabled;
+    }
+    if (typeof e.detail?.vlogShortLinkEnabled === 'boolean') {
+      vlogShortLinkEnabled = e.detail.vlogShortLinkEnabled;
     }
     processedSignatures = new WeakMap();
     scanAll();
@@ -234,6 +238,14 @@
     return normalizeForMatch(text).replace(/[^\p{Script=Han}]/gu, '');
   }
 
+  function isVlogShortLinkSpam(text) {
+    const phrase = normalizeWithoutSymbolNoise('说的就是这个vlog吧');
+    const normalizedText = normalizeWithoutSymbolNoise(text);
+    const hasPhrase = normalizedText.includes(phrase);
+    const hasShortLink = /(?:https?:\/\/)?t\.cn\/[a-z0-9]{5,}/iu.test(text);
+    return hasPhrase && hasShortLink;
+  }
+
   function matchingKeywords(text) {
     const normalizedText = normalizeForMatch(text);
     const noiseStrippedText = normalizeWithoutSymbolNoise(text);
@@ -335,13 +347,16 @@
       structuredEmojiTimeEnabled && isStructuredEmojiTime(text);
     const structuredThreeSegment =
       structuredThreeSegmentEnabled && isStructuredThreeSegment(text);
+    const vlogShortLink =
+      vlogShortLinkEnabled && isVlogShortLinkSpam(text);
     if (
       !nameSpam &&
       !contentSpam &&
       !singleEmoji &&
       !emojiContentEmoji &&
       !structuredEmojiTime &&
-      !structuredThreeSegment
+      !structuredThreeSegment &&
+      !vlogShortLink
     ) return;
 
     el.style.opacity = '0.35';
@@ -352,6 +367,7 @@
     if (emojiContentEmoji) reasons.push('Emoji + 内容 + Emoji');
     if (structuredEmojiTime) reasons.push('非 Emoji + Emoji + 非 Emoji + Emoji + 非 Emoji');
     if (structuredThreeSegment) reasons.push('三段式中间单字符');
+    if (vlogShortLink) reasons.push('vlog 引导语 + t.cn 短链');
     blockUser(username, el, {
       displayName: nameText,
       reason: reasons.join('；'),
