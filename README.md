@@ -18,6 +18,13 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.9 — 2026-08-01
+
+- Renamed the popup counter label from “Blocked this session” to “Total
+  blocked” so it accurately describes the persisted cumulative `blockCount`.
+- 将插件弹窗的“本次已屏蔽”改为“累计已屏蔽”，与实际持久化的
+  `blockCount` 统计口径保持一致。
+
 ### v1.6.8 — 2026-08-01
 
 - Added an independently configurable three-segment spam rule for posts such as
