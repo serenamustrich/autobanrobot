@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 8,
   "rules": [
     {
       "id": "emoji-copy-tcn-link",
@@ -9,6 +9,48 @@
       "normalization": "raw",
       "pattern": "(?=[\\s\\S]*[\\p{L}\\p{N}])(?=(?:[\\s\\S]*\\p{Extended_Pictographic}){2,})(?=[\\s\\S]*(?:^|\\n)\\s*(?:https?:\\/\\/)?t\\.cn\\/[a-z0-9]{5,}(?:[?#]\\S*)?\\s*(?:\\n|$))",
       "flags": "imu"
+    },
+    {
+      "id": "two-line-single-latin-letter",
+      "name": "双行单字母",
+      "description": "恰好两行，每行仅一个拉丁字母",
+      "enabled": true,
+      "scope": "content",
+      "normalization": "raw",
+      "pattern": "^[\\t ]*[a-z][\\t ]*\\r?\\n[\\t ]*[a-z][\\t ]*$",
+      "flags": "iu"
+    },
+    {
+      "id": "praise-solicitation-copy",
+      "name": "夸赞引流组合文案",
+      "description": "多分句夸赞文案同时出现陪玩、在线、推荐或尝试等引流特征",
+      "enabled": true,
+      "scope": "content",
+      "normalization": "raw",
+      "pattern": "^(?=[\\s\\S]{15,100}$)(?=(?:[^，\\n]*，){2})(?=[\\s\\S]*(?:阳光|小姐姐|画面|表情|动作|笑容|气质|好看|自然感|治愈|清爽|氛围|质感))(?=[\\s\\S]*(?:陪玩|(?:你|小姐姐)[\\s\\S]{0,45}(?:真心推荐|推荐你|尝试这个|试试这个|在线|适合做这个)|(?:真心推荐|推荐你)[\\s\\S]{0,45}(?:你|小姐姐)))[\\s\\S]*$",
+      "flags": "u"
+    },
+    {
+      "id": "generated-name-number-id",
+      "name": "名字数字型机器账号 ID",
+      "description": "英文名字 + 两位数字 + 两个字母 + 一位数字，并使用默认头像",
+      "enabled": true,
+      "scope": "username",
+      "requiresDefaultAvatar": true,
+      "normalization": "raw",
+      "pattern": "^[a-z]{4,12}[0-9]{2}[a-z]{2}[0-9]$",
+      "flags": "iu"
+    },
+    {
+      "id": "generated-camelcase-id",
+      "name": "CamelCase 随机尾机器账号 ID",
+      "description": "12–15 位、恰好两个大写字母的英文姓名形 ID，并使用默认头像",
+      "enabled": true,
+      "scope": "username",
+      "requiresDefaultAvatar": true,
+      "normalization": "raw",
+      "pattern": "^(?=.{12,15}$)(?=(?:[^A-Z]*[A-Z]){2}[^A-Z]*$)[A-Z][a-z]{2,11}[A-Z][A-Za-z0-9]{4,12}$",
+      "flags": "u"
     }
   ]
 }
