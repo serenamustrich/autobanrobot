@@ -305,17 +305,39 @@
     return text;
   }
 
+  function extractAccountIdentity(nameBlock) {
+    const links = [...nameBlock.querySelectorAll('a[href^="/"]')];
+    const candidates = links.flatMap(link => {
+      const href = link.getAttribute('href') ?? '';
+      const match = /^\/([A-Za-z0-9_]{1,15})\/?$/u.exec(href);
+      return match ? [{ link, username: match[1] }] : [];
+    });
+    const usernameCandidate = candidates.find(({ link, username }) =>
+      link.textContent.trim() === `@${username}`
+    ) ?? candidates[0];
+    if (!usernameCandidate) return null;
+
+    const { username } = usernameCandidate;
+    const displayNameLink = candidates.find(({ link, username: candidate }) =>
+      candidate.toLocaleLowerCase() === username.toLocaleLowerCase() &&
+      link.textContent.trim() !== `@${candidate}` &&
+      !link.querySelector('time')
+    )?.link;
+    return {
+      username,
+      displayName: displayNameLink?.textContent.trim() ?? ''
+    };
+  }
+
   function processTweet(el) {
     const tweetText = el.querySelector('[data-testid="tweetText"]');
     const text = extractTweetText(tweetText);
     const nameBlock = el.querySelector('[data-testid="User-Name"]');
     if (!nameBlock) return;
 
-    const link = nameBlock.querySelector('a[href^="/"]');
-    const username = link?.getAttribute('href')?.replace(/^\//, '') ?? '';
-    if (!username) return;
-
-    const nameText = nameBlock.textContent.replace(`@${username}`, '').trim();
+    const identity = extractAccountIdentity(nameBlock);
+    if (!identity) return;
+    const { username, displayName: nameText } = identity;
     const signature = `${username}\u0000${nameText}\u0000${text}`;
     if (processedSignatures.get(el) === signature) return;
     processedSignatures.set(el, signature);
