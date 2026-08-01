@@ -23,10 +23,28 @@ let queueScheduleId = 0;
 let uploadProcessing = false;
 let uploadScheduleId = 0;
 
-const authReady = chrome.storage.session.get(['bearer', 'csrf']).then(result => {
-  bearer = result.bearer ?? null;
-  csrf = result.csrf ?? null;
-});
+function isExtensionShutdownError(error) {
+  return /(?:No SW|Extension context invalidated|message port closed)/i.test(
+    error?.message ?? ''
+  );
+}
+
+function settleExtensionCall(promise, operation) {
+  return Promise.resolve(promise).catch(error => {
+    if (!isExtensionShutdownError(error)) {
+      console.error(`${operation}:`, error);
+    }
+    return undefined;
+  });
+}
+
+const authReady = settleExtensionCall(
+  chrome.storage.session.get(['bearer', 'csrf']).then(result => {
+    bearer = result.bearer ?? null;
+    csrf = result.csrf ?? null;
+  }),
+  'Failed to restore session authentication'
+);
 
 function withQueueLock(operation) {
   const result = queueOperation.then(operation, operation);
@@ -63,39 +81,57 @@ async function initializeSettings() {
 function scheduleQueue(delayMs = 0) {
   const delay = Math.max(delayMs, 50);
   const scheduleId = ++queueScheduleId;
-  chrome.alarms.create(QUEUE_ALARM, { when: Date.now() + delay });
+  settleExtensionCall(
+    chrome.alarms.create(QUEUE_ALARM, { when: Date.now() + delay }),
+    'Failed to schedule block queue'
+  );
   setTimeout(() => {
     if (scheduleId !== queueScheduleId) return;
     queueScheduleId++;
-    chrome.alarms.clear(QUEUE_ALARM);
-    withQueueLock(processQueue);
+    settleExtensionCall(
+      chrome.alarms.clear(QUEUE_ALARM),
+      'Failed to clear block queue alarm'
+    );
+    withQueueLock(processQueue).catch(() => {});
   }, delay);
 }
 
 function scheduleUpload(delayMs = 0) {
   const delay = Math.max(delayMs, 100);
   const scheduleId = ++uploadScheduleId;
-  chrome.alarms.create(UPLOAD_ALARM, { when: Date.now() + delay });
+  settleExtensionCall(
+    chrome.alarms.create(UPLOAD_ALARM, { when: Date.now() + delay }),
+    'Failed to schedule upload queue'
+  );
   setTimeout(() => {
     if (scheduleId !== uploadScheduleId) return;
     uploadScheduleId++;
-    chrome.alarms.clear(UPLOAD_ALARM);
-    processUploadQueue();
+    settleExtensionCall(
+      chrome.alarms.clear(UPLOAD_ALARM),
+      'Failed to clear upload queue alarm'
+    );
+    processUploadQueue().catch(() => {});
   }, delay);
 }
 
 function scheduleUpdateChecks() {
-  chrome.alarms.create(UPDATE_ALARM, {
-    delayInMinutes: 1,
-    periodInMinutes: 12 * 60
-  });
+  settleExtensionCall(
+    chrome.alarms.create(UPDATE_ALARM, {
+      delayInMinutes: 1,
+      periodInMinutes: 12 * 60
+    }),
+    'Failed to schedule update checks'
+  );
 }
 
 function scheduleHeartbeat() {
-  chrome.alarms.create(HEARTBEAT_ALARM, {
-    delayInMinutes: 1,
-    periodInMinutes: 1
-  });
+  settleExtensionCall(
+    chrome.alarms.create(HEARTBEAT_ALARM, {
+      delayInMinutes: 1,
+      periodInMinutes: 1
+    }),
+    'Failed to schedule heartbeat'
+  );
 }
 
 async function getInstallationId() {
@@ -124,7 +160,7 @@ async function sendHeartbeat() {
     })
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  processUploadQueue();
+  processUploadQueue().catch(() => {});
 }
 
 function compareVersions(left, right) {
@@ -211,7 +247,10 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
       authChanged = true;
     }
     if (authChanged) {
-      chrome.storage.session.set({ bearer, csrf });
+      settleExtensionCall(
+        chrome.storage.session.set({ bearer, csrf }),
+        'Failed to persist session authentication'
+      );
       scheduleQueue();
     }
   },
@@ -495,11 +534,11 @@ async function enqueueBlock(job, sender) {
 chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === QUEUE_ALARM) {
     queueScheduleId++;
-    withQueueLock(processQueue);
+    withQueueLock(processQueue).catch(() => {});
   }
   if (alarm.name === UPLOAD_ALARM) {
     uploadScheduleId++;
-    processUploadQueue();
+    processUploadQueue().catch(() => {});
   }
   if (alarm.name === UPDATE_ALARM) {
     checkForUpdate();
@@ -517,7 +556,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   if (message.type === 'PROCESS_BLOCK_QUEUE') {
-    withQueueLock(processQueue).then(() => sendResponse({ ok: true }));
+    withQueueLock(processQueue)
+      .then(() => sendResponse({ ok: true }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }
   if (message.type === 'CHECK_FOR_UPDATE') {
