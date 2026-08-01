@@ -3,15 +3,19 @@
 <head>
   <meta charset="utf-8">
   <style>
-    body { width: 320px; padding: 14px 16px; font-family: -apple-system, sans-serif; margin: 0; }
-    h3 { margin: 0 0 10px; font-size: 13px; color: #0f1419; }
-    .count { font-size: 36px; font-weight: 700; color: #1d9bf0; line-height: 1; }
+    body { width: 360px; padding: 14px 16px 16px; font-family: -apple-system, sans-serif; margin: 0; color:#0f1419; }
+    h3 { margin: 0; font-size: 14px; color: #0f1419; }
+    .topbar { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+    .brand { display:flex;align-items:center;gap:8px;font-weight:700; }
+    .brand img { width:30px;height:30px;border-radius:8px; }
+    .summary { text-align:right; }
+    .count { font-size: 26px; font-weight: 750; color: #1d9bf0; line-height: 1; }
     .label { color: #71767b; font-size: 11px; margin-top: 3px; }
     hr { border: none; border-top: 1px solid #eff3f4; margin: 10px 0; }
     .section-label { font-size: 11px; color: #444; margin-bottom: 4px; }
     textarea {
       width: 100%; box-sizing: border-box;
-      height: 80px; font-size: 12px; border: 1px solid #cfd9de;
+      height: 190px; font-size: 12px; border: 1px solid #cfd9de;
       border-radius: 6px; padding: 6px; resize: vertical;
       font-family: inherit; outline: none;
     }
@@ -33,6 +37,31 @@
     .rule-sync { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px; }
     .rule-sync button { width:auto;margin:0;padding:5px 8px;font-size:10px; }
     .rule-status { color:#71767b;font-size:10px;line-height:1.4; }
+    .tabs {
+      display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:12px 0;
+      padding:3px;background:#eff3f4;border-radius:10px;
+    }
+    .tabs button {
+      position:relative;margin:0;padding:7px 3px;width:auto;border:0;
+      background:transparent;color:#536471;font-size:11px;font-weight:600;
+    }
+    .tabs button:hover { background:#e1e8ed;color:#0f1419; }
+    .tabs button[aria-selected="true"] {
+      background:#fff;color:#0f1419;box-shadow:0 1px 3px rgba(15,20,25,.12);
+    }
+    .tab-badge {
+      display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;
+      margin-left:2px;padding:0 3px;border-radius:999px;background:#cfd9de;color:#536471;
+      font-size:9px;line-height:1;
+    }
+    .tabs button[aria-selected="true"] .tab-badge { background:#e8f5fd;color:#1d9bf0; }
+    .tab-panel[hidden] { display:none; }
+    .panel-head { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px; }
+    .panel-title { font-size:13px;font-weight:700; }
+    .panel-meta { color:#71767b;font-size:10px; }
+    .subsection { margin-top:12px;padding-top:10px;border-top:1px solid #eff3f4; }
+    .subsection:first-child { margin-top:0;padding-top:0;border-top:0; }
+    .subsection-title { font-size:11px;font-weight:700;color:#536471;margin-bottom:4px; }
     .update-card {
       padding:9px;border:1px solid #eff3f4;border-radius:8px;background:#f7f9f9;
     }
@@ -77,7 +106,7 @@
       border:1px solid #cfd9de;
     }
     .history {
-      max-height:220px;overflow-y:auto;margin-top:6px;
+      height:360px;overflow-y:auto;margin-top:6px;
       border:1px solid #eff3f4;border-radius:8px;
     }
     .history-empty { padding:16px;text-align:center;color:#71767b;font-size:11px; }
@@ -90,60 +119,52 @@
       color:#444;font-size:10px;margin-top:3px;white-space:nowrap;
       overflow:hidden;text-overflow:ellipsis;
     }
+    .saved {
+      position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:10;
+      margin:0;padding:7px 11px;border-radius:999px;background:#071a14;color:#7ee2b8;
+      box-shadow:0 4px 16px rgba(0,0,0,.18);white-space:nowrap;
+    }
   </style>
 </head>
 <body>
-  <h3>🤖 Bot Blocker</h3>
-  <div class="count" id="count">—</div>
-  <div class="label">累计已屏蔽</div>
-  <hr>
-  <div class="section-label">关键词（每行一个）：</div>
-  <textarea id="keywords" placeholder="同城&#10;上门"></textarea>
-  <button class="secondary" id="loadPopular" type="button">加载热门关键词</button>
-  <div class="popular-status" id="popularStatus">
-    仅在点击时从服务端读取；加载后需确认并保存
+  <div class="topbar">
+    <div class="brand"><img src="icon.png" alt=""><h3>AutoBanRobot</h3></div>
+    <div class="summary"><div class="count" id="count">—</div><div class="label">累计已屏蔽</div></div>
   </div>
-  <label class="toggle">
-    <input id="singleEmojiEnabled" type="checkbox">
-    <span class="switch-ui" aria-hidden="true"></span>
-    <span>
-      启用“仅单个 Emoji”规则
-      <div class="hint">只匹配整条内容仅有一个完整 Emoji</div>
-    </span>
-  </label>
-  <label class="toggle">
-    <input id="emojiEnglishEmojiEnabled" type="checkbox">
-    <span class="switch-ui" aria-hidden="true"></span>
-    <span>
-      启用“Emoji + 内容 + Emoji”规则
-      <div class="hint">例如：💝charming✌</div>
-    </span>
-  </label>
-  <label class="toggle">
-    <input id="structuredEmojiTimeEnabled" type="checkbox">
-    <span class="switch-ui" aria-hidden="true"></span>
-    <span>
-      启用“五段式交替”规则
-      <div class="hint">非 Emoji → Emoji → 非 Emoji → Emoji → 非 Emoji</div>
-    </span>
-  </label>
-  <label class="toggle">
-    <input id="structuredThreeSegmentEnabled" type="checkbox">
-    <span class="switch-ui" aria-hidden="true"></span>
-    <span>
-      启用“三段式中间单字符”规则
-      <div class="hint">任意内容 → 单个字符 → 任意内容</div>
-    </span>
-  </label>
-  <div id="remoteRules"></div>
-  <div class="rule-sync">
+  <nav class="tabs" role="tablist" aria-label="插件设置">
+    <button type="button" role="tab" data-tab="keywords" aria-selected="true">关键词 <span class="tab-badge" id="keywordBadge">0</span></button>
+    <button type="button" role="tab" data-tab="rules" aria-selected="false">规则 <span class="tab-badge" id="ruleBadge">0</span></button>
+    <button type="button" role="tab" data-tab="history" aria-selected="false">Ban <span class="tab-badge" id="queueCount">0</span></button>
+    <button type="button" role="tab" data-tab="update" aria-selected="false">更新</button>
+  </nav>
+
+  <section class="tab-panel" id="keywordsPanel" role="tabpanel">
+    <div class="panel-head"><div class="panel-title">屏蔽关键词</div><div class="panel-meta" id="keywordCount">0 个</div></div>
+    <textarea id="keywords" placeholder="每行一个关键词&#10;例如：同城&#10;上门"></textarea>
+    <button class="secondary" id="loadPopular" type="button">加载热门关键词</button>
+    <div class="popular-status" id="popularStatus">仅在点击时读取，不会强制同步</div>
+    <button id="save">保存关键词</button>
+  </section>
+
+  <section class="tab-panel" id="rulesPanel" role="tabpanel" hidden>
+    <div class="panel-head"><div class="panel-title">屏蔽规则</div><div class="panel-meta" id="ruleCount">0/0 已启用</div></div>
+    <div id="remoteRules"></div>
+    <div class="rule-sync">
     <span class="rule-status" id="ruleStatus">正在读取在线规则…</span>
     <button class="secondary" id="refreshRules" type="button">立即更新规则</button>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="historyPanel" role="tabpanel" hidden>
+  <div class="history-head">
+    <div class="panel-title">已确认屏蔽清单</div>
+    <button id="clearHistory" type="button">清空记录</button>
   </div>
-  <button id="save">保存</button>
-  <div class="saved" id="saved">✓ 已保存，立即生效</div>
-  <hr>
-  <div class="section-label">插件更新</div>
+  <div class="history" id="blockHistory"></div>
+  </section>
+
+  <section class="tab-panel" id="updatePanel" role="tabpanel" hidden>
+  <div class="panel-head"><div class="panel-title">插件更新</div></div>
   <div class="update-card">
     <div class="update-row">
       <span class="update-version" id="currentVersion">当前版本 —</span>
@@ -155,14 +176,9 @@
          target="_blank" rel="noreferrer" hidden>下载新版本</a>
     </div>
   </div>
-  <hr>
-  <div class="history-head">
-    <div class="section-label">
-      已确认屏蔽清单 · 待处理 <span id="queueCount">0</span>
-    </div>
-    <button id="clearHistory" type="button">清空记录</button>
-  </div>
-  <div class="history" id="blockHistory"></div>
+  <div class="subsection"><div class="subsection-title">说明</div><div class="hint">所有规则统一显示并支持在线更新；只有插件执行能力变更时才需安装新版本。</div></div>
+  </section>
+  <div class="saved" id="saved">✓ 已保存，立即生效</div>
   <script src="popup.js"></script>
 </body>
 </html>

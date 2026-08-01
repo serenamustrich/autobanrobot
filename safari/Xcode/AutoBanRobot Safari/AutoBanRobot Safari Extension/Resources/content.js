@@ -7,20 +7,6 @@ extensionAPI.storage.local.get(['remoteRuleConfig', 'remoteRuleStates']).then(r 
   dispatchRules(r.remoteRuleConfig, r.remoteRuleStates);
 });
 
-extensionAPI.storage.local.get([
-  'emojiEnglishEmojiEnabled',
-  'singleEmojiEnabled',
-  'structuredEmojiTimeEnabled',
-  'structuredThreeSegmentEnabled'
-]).then(r => {
-  dispatchSettings({
-    emojiEnglishEmojiEnabled: r.emojiEnglishEmojiEnabled !== false,
-    singleEmojiEnabled: r.singleEmojiEnabled !== false,
-    structuredEmojiTimeEnabled: r.structuredEmojiTimeEnabled !== false,
-    structuredThreeSegmentEnabled: r.structuredThreeSegmentEnabled !== false
-  });
-});
-
 // 关键词更新时实时推送
 extensionAPI.storage.onChanged.addListener(changes => {
   if (changes.keywords) {
@@ -31,39 +17,10 @@ extensionAPI.storage.onChanged.addListener(changes => {
       dispatchRules(r.remoteRuleConfig, r.remoteRuleStates);
     });
   }
-  if (
-    changes.emojiEnglishEmojiEnabled ||
-    changes.singleEmojiEnabled ||
-    changes.structuredEmojiTimeEnabled ||
-    changes.structuredThreeSegmentEnabled
-  ) {
-    const settings = {};
-    if (changes.emojiEnglishEmojiEnabled) {
-      settings.emojiEnglishEmojiEnabled =
-        changes.emojiEnglishEmojiEnabled.newValue !== false;
-    }
-    if (changes.singleEmojiEnabled) {
-      settings.singleEmojiEnabled =
-        changes.singleEmojiEnabled.newValue !== false;
-    }
-    if (changes.structuredEmojiTimeEnabled) {
-      settings.structuredEmojiTimeEnabled =
-        changes.structuredEmojiTimeEnabled.newValue !== false;
-    }
-    if (changes.structuredThreeSegmentEnabled) {
-      settings.structuredThreeSegmentEnabled =
-        changes.structuredThreeSegmentEnabled.newValue !== false;
-    }
-    dispatchSettings(settings);
-  }
 });
 
 function dispatchKeywords(kws) {
   window.dispatchEvent(new CustomEvent('__twblocker_keywords__', { detail: { kws } }));
-}
-
-function dispatchSettings(settings) {
-  window.dispatchEvent(new CustomEvent('__twblocker_settings__', { detail: settings }));
 }
 
 function dispatchRules(config, states) {
