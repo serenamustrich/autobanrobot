@@ -1,4 +1,4 @@
-chrome.storage.local.get([
+extensionAPI.storage.local.get([
   'blockCount',
   'keywords',
   'remoteRuleConfig',
@@ -7,7 +7,7 @@ chrome.storage.local.get([
   'pendingBlockQueue',
   'updateInfo',
   'popupActiveTab'
-], r => {
+]).then(r => {
   document.getElementById('count').textContent = r.blockCount ?? 0;
   document.getElementById('keywords').value =
     (Array.isArray(r.keywords) ? r.keywords : []).join('\n');
@@ -34,19 +34,19 @@ function showTab(requestedTab, remember = true) {
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.hidden = panel.id !== `${tab}Panel`;
   });
-  if (remember) chrome.storage.local.set({ popupActiveTab: tab });
+  if (remember) extensionAPI.storage.local.set({ popupActiveTab: tab });
 }
 
 document.getElementById('currentVersion').textContent =
-  `当前版本 v${chrome.runtime.getManifest().version}`;
+  `当前版本 v${extensionAPI.runtime.getManifest().version}`;
 
 document.getElementById('save').addEventListener('click', () => {
   const kws = document.getElementById('keywords').value
     .split('\n').map(s => s.trim()).filter(Boolean);
 
-  chrome.storage.local.set({
+  extensionAPI.storage.local.set({
     keywords: kws
-  }, () => {
+  }).then(() => {
     showSaved();
   });
 });
@@ -60,7 +60,7 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
   status.textContent = '正在从线上服务读取可同步热门关键词…';
   try {
     const response = await fetch(
-      'https://ban.richccy.com/api/popular-terms'
+      'https://ban.richccy.com/api/popular-terms?limit=50'
     );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const ranking = await response.json();
@@ -108,12 +108,12 @@ function renderRemoteRules(config, states = {}) {
     input.type = 'checkbox';
     input.dataset.ruleToggle = 'remote';
     input.checked = rule.enabled !== false && states[rule.id] !== false;
-    input.addEventListener('change', () => {
-      chrome.storage.local.get(['remoteRuleStates'], result => {
-        const next = { ...(result.remoteRuleStates ?? {}), [rule.id]: input.checked };
-        chrome.storage.local.set({ remoteRuleStates: next }, showSaved);
-        updateRuleSummary();
-      });
+    input.addEventListener('change', async () => {
+      const result = await extensionAPI.storage.local.get(['remoteRuleStates']);
+      const next = { ...(result.remoteRuleStates ?? {}), [rule.id]: input.checked };
+      await extensionAPI.storage.local.set({ remoteRuleStates: next });
+      showSaved();
+      updateRuleSummary();
     });
     const slider = document.createElement('span');
     slider.className = 'switch-ui';
@@ -132,21 +132,21 @@ function renderRemoteRules(config, states = {}) {
   updateRuleSummary();
 }
 
-document.getElementById('refreshRules').addEventListener('click', () => {
+document.getElementById('refreshRules').addEventListener('click', async () => {
   const button = document.getElementById('refreshRules');
   const status = document.getElementById('ruleStatus');
   button.disabled = true;
   status.textContent = '正在从服务端更新规则…';
-  chrome.runtime.sendMessage({ type: 'REFRESH_RULES' }, response => {
+  try {
+    const response = await extensionAPI.runtime.sendMessage({ type: 'REFRESH_RULES' });
+    if (!response?.ok) throw new Error(response?.error || 'Rule refresh failed');
+    const result = await extensionAPI.storage.local.get(['remoteRuleStates']);
+    renderRemoteRules(response.config, result.remoteRuleStates);
+  } catch {
+    status.textContent = '规则更新失败，已继续使用本地缓存';
+  } finally {
     button.disabled = false;
-    if (chrome.runtime.lastError || !response?.ok) {
-      status.textContent = '规则更新失败，已继续使用本地缓存';
-      return;
-    }
-    chrome.storage.local.get(['remoteRuleStates'], result => {
-      renderRemoteRules(response.config, result.remoteRuleStates);
-    });
-  });
+  }
 });
 
 let savedTimer = null;
@@ -205,8 +205,7 @@ function renderBlockHistory(value) {
     if (record.unblockedAt) {
       unblock.textContent = '已取消屏蔽';
       unblock.disabled = true;
-      const unblockedTime = new Date(record.unblockedAt).toLocaleString();
-      unblock.title = `取消时间：${unblockedTime}`;
+      unblock.title = `取消时间：${new Date(record.unblockedAt).toLocaleString()}`;
     } else {
       unblock.textContent = '取消屏蔽';
       unblock.addEventListener('click', () => requestUnblock(record, unblock));
@@ -217,24 +216,26 @@ function renderBlockHistory(value) {
   });
 }
 
-function requestUnblock(record, button) {
+async function requestUnblock(record, button) {
   if (!confirm(`确定取消屏蔽 @${record.username}？`)) return;
   button.disabled = true;
   button.textContent = '处理中…';
-  chrome.runtime.sendMessage({ type: 'UNBLOCK_USER', record }, response => {
-    if (chrome.runtime.lastError || !response?.ok) {
-      button.disabled = false;
-      button.textContent = '重试取消屏蔽';
-      button.title = response?.error || chrome.runtime.lastError?.message || '操作失败';
-      return;
-    }
+  try {
+    const response = await extensionAPI.runtime.sendMessage({
+      type: 'UNBLOCK_USER', record
+    });
+    if (!response?.ok) throw new Error(response?.error || '操作失败');
     button.textContent = '已取消屏蔽';
     button.title = 'X 已确认取消屏蔽成功';
-  });
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = '重试取消屏蔽';
+    button.title = error.message || '操作失败';
+  }
 }
 
 document.getElementById('clearHistory').addEventListener('click', () => {
-  chrome.storage.local.set({ blockHistory: [] }, () => {
+  extensionAPI.storage.local.set({ blockHistory: [] }).then(() => {
     renderBlockHistory([]);
   });
 });
@@ -261,22 +262,25 @@ function renderUpdateInfo(info) {
   status.textContent = `已是最新版本${info.latestVersion ? `（v${info.latestVersion}）` : ''}`;
 }
 
-document.getElementById('checkUpdate').addEventListener('click', () => {
+document.getElementById('checkUpdate').addEventListener('click', async () => {
   const button = document.getElementById('checkUpdate');
   const status = document.getElementById('updateStatus');
   button.disabled = true;
   status.textContent = '正在检查 GitHub Releases…';
-  chrome.runtime.sendMessage({ type: 'CHECK_FOR_UPDATE' }, response => {
-    button.disabled = false;
-    if (chrome.runtime.lastError || !response?.ok) {
-      status.textContent = '检查失败，请确认网络可以访问 GitHub';
-      return;
-    }
+  try {
+    const response = await extensionAPI.runtime.sendMessage({
+      type: 'CHECK_FOR_UPDATE'
+    });
+    if (!response?.ok) throw new Error(response?.error || 'Update check failed');
     renderUpdateInfo(response.updateInfo);
-  });
+  } catch {
+    status.textContent = '检查失败，请确认网络可以访问 GitHub';
+  } finally {
+    button.disabled = false;
+  }
 });
 
-chrome.storage.onChanged.addListener(changes => {
+extensionAPI.storage.onChanged.addListener(changes => {
   if (changes.blockHistory) renderBlockHistory(changes.blockHistory.newValue);
   if (changes.blockCount) {
     document.getElementById('count').textContent = changes.blockCount.newValue ?? 0;
@@ -289,7 +293,7 @@ chrome.storage.onChanged.addListener(changes => {
   }
   if (changes.updateInfo) renderUpdateInfo(changes.updateInfo.newValue);
   if (changes.remoteRuleConfig || changes.remoteRuleStates) {
-    chrome.storage.local.get(['remoteRuleConfig', 'remoteRuleStates'], r => {
+    extensionAPI.storage.local.get(['remoteRuleConfig', 'remoteRuleStates']).then(r => {
       renderRemoteRules(r.remoteRuleConfig, r.remoteRuleStates);
     });
   }
