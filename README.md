@@ -27,6 +27,17 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.15 — 2026-08-01
+
+- Prevented stale X-page content scripts from throwing an uncaught `Extension
+  context invalidated` error after the extension is reloaded or updated.
+- The enqueue bridge now handles both synchronous API failures and asynchronous
+  message rejections; stale pages stop submitting quietly until refreshed.
+- 修复插件重新加载或更新后，旧 X 页面内容脚本抛出未捕获的
+  `Extension context invalidated` 错误。
+- 入队通信现在同时处理同步抛错和异步拒绝；旧页面会安静停止提交，刷新该 X 页面后
+  即恢复为新版本脚本。
+
 ### v1.6.14 — 2026-08-01
 
 - Redesigned the popup into four focused tabs: Keywords, Rules, Ban history,
