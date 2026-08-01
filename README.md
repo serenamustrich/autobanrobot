@@ -29,6 +29,10 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ### v1.6.17 — 2026-08-01
 
+- Removed the top-50 cap from popular-term loading. The server now returns all
+  current keyword hits and mentioned promotion-target accounts to the plugin.
+- 移除热门词加载的前 50 条限制；服务端现在会把当前全部关键词命中项及
+  垃圾推广目标账号提供给插件加载。
 - Added a dedicated `Spam Promotion Targets` dashboard page for accounts most
   frequently mentioned by confirmed spam, separate from keyword analytics.
 - Added a floating back-to-top control and preserved the selected dashboard

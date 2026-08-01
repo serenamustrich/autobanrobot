@@ -60,7 +60,7 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
   status.textContent = '正在从线上服务读取可同步热门关键词…';
   try {
     const response = await fetch(
-      'https://ban.richccy.com/api/popular-terms?limit=50'
+      'https://ban.richccy.com/api/popular-terms'
     );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const ranking = await response.json();
