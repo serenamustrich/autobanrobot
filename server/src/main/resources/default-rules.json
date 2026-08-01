@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "emoji-copy-tcn-link",
+      "name": "文案 + 多 Emoji + t.cn 短链",
+      "description": "不限关键词和语言，t.cn 短链需单独成行",
+      "enabled": true,
+      "normalization": "raw",
+      "pattern": "(?=[\\s\\S]*[\\p{L}\\p{N}])(?=(?:[\\s\\S]*\\p{Extended_Pictographic}){2,})(?=[\\s\\S]*(?:^|\\n)\\s*(?:https?:\\/\\/)?t\\.cn\\/[a-z0-9]{5,}(?:[?#]\\S*)?\\s*(?:\\n|$))",
+      "flags": "imu"
+    }
+  ]
+}

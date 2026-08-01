@@ -1,2 +1,3 @@
 safari/.derived-data/
-server/
+server/target/
+server/data/

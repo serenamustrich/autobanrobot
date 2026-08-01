@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AutoBanRobot · Ban 清单</title>
+  <link rel="icon" type="image/png" href="/icon.png">
+  <link rel="apple-touch-icon" href="/icon.png">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="brand">
+        <img src="/icon.png" alt="" width="76" height="76">
+        <div>
+          <p class="eyebrow">AUTOBANROBOT CONTROL ROOM</p>
+          <h1 data-i18n="heroTitle">实时 Ban 清单</h1>
+          <p class="subtitle" data-i18n="subtitle">仅展示经过 X 确认成功并上传到服务器的屏蔽记录。</p>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <nav class="language-switcher" aria-label="Language">
+          <button type="button" data-lang="zh-CN">中文</button>
+          <button type="button" data-lang="en">EN</button>
+          <button type="button" data-lang="es">ES</button>
+          <button type="button" data-lang="ja">日本語</button>
+          <button type="button" data-lang="ko">한국어</button>
+          <button type="button" data-lang="de">DE</button>
+          <button type="button" data-lang="fr">FR</button>
+          <button type="button" data-lang="ru">RU</button>
+          <button type="button" data-lang="it">IT</button>
+        </nav>
+        <div class="hero-status-row">
+          <a
+            class="release-link"
+            href="https://github.com/serenamustrich/autobanrobot/releases/latest"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.87c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.35 1.09 2.92.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.55 9.55 0 0 1 12 6.82c.85 0 1.7.12 2.5.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.77c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/>
+            </svg>
+            <span data-i18n="releaseLink">GitHub Releases · 下载插件</span>
+          </a>
+          <div class="connection" id="connection">
+            <span class="connection-dot"></span>
+            <span id="connectionText" data-i18n="connecting">正在连接实时数据</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="page-tabs" aria-label="页面">
+      <button class="page-tab active" type="button" data-page="bans" data-i18n="banTab">Ban 清单</button>
+      <button class="page-tab" type="button" data-page="keywords" data-i18n="keywordTab">关键词分析</button>
+    </nav>
+
+    <section class="metrics" aria-label="统计">
+      <article class="metric-card">
+        <span class="metric-label" data-i18n="confirmedTotal">累计已确认屏蔽</span>
+        <strong id="totalCount">—</strong>
+        <span class="metric-note" data-i18n="allRecords">所有已接收记录</span>
+      </article>
+      <article class="metric-card accent">
+        <span class="metric-label" data-i18n="todayAdded">今日新增</span>
+        <strong id="todayCount">—</strong>
+        <span class="metric-note" data-i18n="serverDate">按服务器本地日期</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label" data-i18n="onlineUsers">插件在线用户数</span>
+        <strong id="onlineUsers">—</strong>
+        <span class="metric-note" data-i18n="onlineWindow">最近 2 分钟发送过心跳</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label" data-i18n="cumulativeUsers">插件累计用户数</span>
+        <strong id="cumulativeUsers">—</strong>
+        <span class="metric-note" data-i18n="anonymousInstalls">不同匿名安装实例</span>
+      </article>
+    </section>
+
+    <section class="panel page-view" id="bansPage">
+      <div class="toolbar">
+        <div>
+          <p class="section-kicker">CONFIRMED BLOCKS</p>
+          <h2 data-i18n="blockRecords">屏蔽记录</h2>
+        </div>
+        <label class="search">
+          <span class="sr-only" data-i18n="searchLabel">搜索用户名</span>
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/>
+          </svg>
+          <input id="searchInput" type="search" placeholder="搜索 @username" data-i18n-placeholder="searchPlaceholder">
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table class="ban-table">
+          <thead>
+            <tr>
+              <th data-i18n="account">账号</th>
+              <th data-i18n="matchedRule">命中关键词 / 规则</th>
+              <th data-i18n="contentSummary">内容摘要</th>
+              <th data-i18n="blockedAt">屏蔽时间</th>
+            </tr>
+          </thead>
+          <tbody id="banRows"></tbody>
+        </table>
+        <div class="empty" id="emptyState" hidden>
+          <div class="empty-icon">🐾</div>
+          <h3 data-i18n="noBlocks">暂时没有屏蔽记录</h3>
+          <p data-i18n="noBlocksHint">插件确认 Ban 成功后，新记录会实时出现在这里。</p>
+        </div>
+      </div>
+
+      <footer class="pager">
+        <span id="rangeText">正在加载…</span>
+        <div>
+          <button id="prevButton" type="button" data-i18n="previous">上一页</button>
+          <button id="nextButton" type="button" data-i18n="next">下一页</button>
+        </div>
+      </footer>
+    </section>
+
+    <section class="panel page-view" id="keywordsPage" hidden>
+      <div class="analytics-section">
+        <div class="toolbar">
+          <div>
+            <p class="section-kicker">SYNC PREVIEW</p>
+            <h2 data-i18n="syncPreview">可同步热门关键词</h2>
+          </div>
+          <p class="ranking-note" data-i18n="syncPreviewNote">插件“加载热门关键词”将获取以下内容</p>
+        </div>
+        <div class="table-wrap analytics-table">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="rank">排名</th>
+                <th data-i18n="syncTerm">同步屏蔽词</th>
+                <th data-i18n="source">来源</th>
+                <th data-i18n="count">次数</th>
+              </tr>
+            </thead>
+            <tbody id="popularRows"></tbody>
+          </table>
+          <div class="empty" id="popularEmpty" hidden>
+            <div class="empty-icon">📥</div>
+            <h3 data-i18n="noPopularTerms">暂无可同步内容</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-section">
+        <div class="toolbar">
+          <div>
+            <p class="section-kicker">KEYWORD HITS</p>
+            <h2 data-i18n="keywordRanking">关键词命中排行</h2>
+          </div>
+          <p class="ranking-note" data-i18n="rankingNote">按命中次数排序，数据随 Ban 记录实时更新</p>
+        </div>
+        <div class="table-wrap analytics-table">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="rank">排名</th>
+                <th data-i18n="keyword">关键词</th>
+                <th data-i18n="hitCount">命中次数</th>
+              </tr>
+            </thead>
+            <tbody id="keywordRows"></tbody>
+          </table>
+          <div class="empty" id="keywordEmpty" hidden>
+            <div class="empty-icon">🔎</div>
+            <h3 data-i18n="noKeywords">暂无关键词统计</h3>
+            <p data-i18n="noKeywordsHint">关键词命中并完成 Ban 后会自动生成排名。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-section">
+        <div class="toolbar">
+          <div>
+            <p class="section-kicker">MENTION INTELLIGENCE</p>
+            <h2 data-i18n="mentionRanking">@账号提及排行</h2>
+          </div>
+          <p class="ranking-note" data-i18n="mentionNote">统计已 Ban 垃圾内容中出现的 @账号</p>
+        </div>
+        <div class="table-wrap analytics-table">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="rank">排名</th>
+                <th data-i18n="mentionedAccount">被提及账号</th>
+                <th data-i18n="mentionCount">提及次数</th>
+              </tr>
+            </thead>
+            <tbody id="mentionRows"></tbody>
+          </table>
+          <div class="empty" id="mentionEmpty" hidden>
+            <div class="empty-icon">＠</div>
+            <h3 data-i18n="noMentions">暂无 @账号统计</h3>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <template id="rowTemplate">
+    <tr>
+      <td>
+        <a class="account" target="_blank" rel="noreferrer">
+          <span class="avatar" aria-hidden="true"></span>
+          <span>
+            <strong class="display-name"></strong>
+            <small class="username"></small>
+          </span>
+        </a>
+      </td>
+      <td><span class="reason"></span></td>
+      <td><span class="content"></span></td>
+      <td><time class="blocked-at"></time></td>
+    </tr>
+  </template>
+
+  <template id="keywordRowTemplate">
+    <tr>
+      <td><span class="rank"></span></td>
+      <td><strong class="keyword"></strong></td>
+      <td><span class="hit-count ranking-number"></span></td>
+    </tr>
+  </template>
+
+  <template id="popularRowTemplate">
+    <tr>
+      <td><span class="rank"></span></td>
+      <td><strong class="term"></strong></td>
+      <td><span class="source"></span></td>
+      <td><span class="count ranking-number"></span></td>
+    </tr>
+  </template>
+
+  <template id="mentionRowTemplate">
+    <tr>
+      <td><span class="rank"></span></td>
+      <td>
+        <a class="mentioned-account" target="_blank" rel="noreferrer"></a>
+      </td>
+      <td><span class="mention-count ranking-number"></span></td>
+    </tr>
+  </template>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
