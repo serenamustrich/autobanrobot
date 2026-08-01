@@ -214,6 +214,10 @@
     return normalizeForMatch(text).replace(/[\p{P}\p{S}]/gu, '');
   }
 
+  function normalizeHanKeywordNoise(text) {
+    return normalizeForMatch(text).replace(/[^\p{Script=Han}]/gu, '');
+  }
+
   function matchingKeywords(text) {
     const normalizedText = normalizeForMatch(text);
     const noiseStrippedText = normalizeWithoutSymbolNoise(text);
@@ -223,10 +227,16 @@
       if (normalizedText.includes(normalizedKeyword)) return true;
 
       const noiseStrippedKeyword = normalizeWithoutSymbolNoise(keyword);
-      return (
+      if (
         noiseStrippedKeyword.length >= 2 &&
         noiseStrippedText.includes(noiseStrippedKeyword)
-      );
+      ) return true;
+
+      if (/^\p{Script=Han}{2,}$/u.test(noiseStrippedKeyword)) {
+        return normalizeHanKeywordNoise(text).includes(noiseStrippedKeyword);
+      }
+
+      return false;
     });
   }
 
