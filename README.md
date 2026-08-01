@@ -20,15 +20,15 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ### v1.6.11 — 2026-08-01
 
-- Expanded the existing vlog short-link rule to recognize the Chinese template
-  `是这个吗…之前好像看过` and the English template `This is the vlog`.
-- The Chinese variant requires both characteristic fragments, and every
-  template still requires a valid `t.cn/<code>` link. Emoji, punctuation,
-  capitalization, and whitespace do not affect matching.
-- 扩展现有 vlog 短链规则，新增识别“是这个吗…之前好像看过”
-  中文模板和 `This is the vlog` 英文模板。
-- 中文模板必须同时包含两段特征语，所有模板仍必须同时出现
-  有效的 `t.cn/<code>` 短链；Emoji、标点、大小写和空白不影响匹配。
+- Generalized the short-link rule so it no longer depends on fixed phrases or
+  language. It now detects the shared spam structure: meaningful copy containing
+  multiple Emoji plus a standalone randomized `t.cn/<code>` link line.
+- A bare short link, ordinary copy without multiple Emoji, and links embedded
+  inside a sentence are excluded to reduce false positives.
+- 短链规则改为通用结构识别，不再依赖固定话术、关键词或语言：
+  正文包含有意义的文案和多个 Emoji，并有单独成行的 `t.cn/<code>` 随机短链即命中。
+- 只有短链、文案中没有多个 Emoji，或短链嵌在普通句子中时不会命中，
+  以降低误判。
 
 ### v1.6.10 — 2026-08-01
 
