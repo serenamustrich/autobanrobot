@@ -93,7 +93,7 @@ function isValidRuleConfig(config) {
         typeof rule?.pattern === 'string' && rule.pattern.length <= 2000 &&
         typeof rule?.flags === 'string' && /^[gimsuy]*$/.test(rule.flags)) ||
         (rule.pattern === undefined &&
-          ['singleEmoji', 'emojiContentEmoji', 'structuredEmojiTime',
+          ['singleEmoji', 'structuredEmojiTime',
             'structuredThreeSegment'].includes(rule?.matcher))) &&
       ['content', 'username', 'displayName'].includes(rule.scope ?? 'content') &&
       (rule.requiresDefaultAvatar === undefined ||

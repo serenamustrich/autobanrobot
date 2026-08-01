@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "updatedAt": "2026-08-01T00:00:00Z",
   "rules": [
     {
@@ -16,7 +16,9 @@
       "description": "以 Emoji 开头和结尾，中间必须包含文字或数字；纯 Emoji 不命中",
       "enabled": true,
       "scope": "content",
-      "matcher": "emojiContentEmoji"
+      "normalization": "raw",
+      "pattern": "^\\s*\\p{Extended_Pictographic}(?=[\\s\\S]*[\\p{L}\\p{N}])[\\s\\S]*\\p{Extended_Pictographic}\\s*$",
+      "flags": "u"
     },
     {
       "id": "five-segment-alternating",
