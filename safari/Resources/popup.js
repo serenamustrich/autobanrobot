@@ -179,8 +179,11 @@ function renderBlockHistory(value) {
     user.href = `https://x.com/${encodeURIComponent(record.username)}`;
     user.target = '_blank';
     user.rel = 'noreferrer';
-    user.textContent = record.displayName
-      ? `${record.displayName} (@${record.username})`
+    const cleanName = String(record.displayName ?? '')
+      .replace(/\s*[·•]\s*(?:\d+\s*(?:秒|分钟|小时|天)|\d{1,2}月\d{1,2}日)\s*$/u, '')
+      .trim();
+    user.textContent = cleanName
+      ? `${cleanName} (@${record.username})`
       : `@${record.username}`;
 
     const meta = document.createElement('div');
