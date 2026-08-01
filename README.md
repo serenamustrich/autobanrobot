@@ -27,6 +27,13 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.18 — 2026-08-01
+
+- Fixed X relative timestamps and dates being appended to captured display
+  names. Identity extraction now reads only the account profile-name link.
+- 修复 X 的“分钟、小时、日期”等发布时间被错误拼入账号显示名称的问题；
+  账号识别现在只读取用户资料名称链接。
+
 ### v1.6.17 — 2026-08-01
 
 - Removed the top-50 cap from popular-term loading. The server now returns all

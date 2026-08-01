@@ -506,7 +506,10 @@ function renderRows(items) {
   items.forEach(item => {
     const row = elements.template.content.cloneNode(true);
     const account = row.querySelector('.account');
-    const name = item.displayName || `@${item.username}`;
+    const cleanName = String(item.displayName ?? '')
+      .replace(/\s*[·•]\s*(?:\d+\s*(?:秒|分钟|小时|天)|\d{1,2}月\d{1,2}日)\s*$/u, '')
+      .trim();
+    const name = cleanName || `@${item.username}`;
     account.href = `https://x.com/${encodeURIComponent(item.username)}`;
     row.querySelector('.avatar').dataset.initial =
       [...name.trim()][0]?.toLocaleUpperCase() || '?';
