@@ -18,6 +18,19 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.6 — 2026-08-01
+
+- Pure Han keywords now tolerate inserted Latin letters, numbers, punctuation,
+  Emoji, whitespace, and invisible characters. For example,
+  `👆她太涩h6了fh6l 我真顶不住 🪐 ❤ c` matches the keyword `她太涩了`.
+- Extra Han characters are still significant, so `她今天太涩了` does not falsely match
+  `她太涩了`. Mixed-language keywords such as `sao货` keep their meaningful Latin
+  characters and do not use the Han-only fallback.
+- 纯汉字关键词现允许在汉字之间插入英文字母、数字、标点、Emoji、空格和
+  零宽字符；例如 `👆她太涩h6了fh6l 我真顶不住 🪐 ❤ c` 会命中 `她太涩了`。
+- 额外汉字仍然会参与匹配，因此 `她今天太涩了` 不会误命中 `她太涩了`；`sao货`
+  等中英文混合关键词不会删除有意义的英文部分。
+
 ### v1.6.5 — 2026-08-01
 
 - Generalized the five-segment rule to `non-Emoji → Emoji → non-Emoji →
