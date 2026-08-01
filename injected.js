@@ -239,9 +239,17 @@
   }
 
   function isVlogShortLinkSpam(text) {
-    const phrase = normalizeWithoutSymbolNoise('说的就是这个vlog吧');
     const normalizedText = normalizeWithoutSymbolNoise(text);
-    const hasPhrase = normalizedText.includes(phrase);
+    const phraseGroups = [
+      ['说的就是这个vlog吧'],
+      ['是这个吗', '之前好像看过'],
+      ['this is the vlog']
+    ];
+    const hasPhrase = phraseGroups.some(group =>
+      group.every(phrase =>
+        normalizedText.includes(normalizeWithoutSymbolNoise(phrase))
+      )
+    );
     const hasShortLink = /(?:https?:\/\/)?t\.cn\/[a-z0-9]{5,}/iu.test(text);
     return hasPhrase && hasShortLink;
   }
