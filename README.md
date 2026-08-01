@@ -18,6 +18,22 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.14 — 2026-08-01
+
+- Redesigned the popup into four focused tabs: Keywords, Rules, Ban history,
+  and Updates. Large keyword and rule collections no longer compete for space
+  in one long page.
+- Added live keyword and enabled-rule counts, presented all rules in one
+  unified updateable list, and remembered the last selected tab.
+- Migrated the four former built-in rules into the same server-managed rule
+  configuration. Their existing disabled states are preserved automatically.
+- 插件弹窗改为“关键词 / 规则 / Ban / 更新”四个标签页，关键词和规则较多时
+  不再全部挤在同一个长页面中。
+- 新增关键词数量、已启用规则数量展示，所有规则统一显示、统一在线更新，并记住
+  上次打开的标签页。
+- 原先写死的 4 条规则已迁入服务端规则清单；以后规则统一由服务端新增、删除、
+  调整和热更新，升级时会自动保留用户原来关闭过的规则状态。
+
 ### v1.6.13 — 2026-08-01
 
 - Extended server-managed hot rules with `content`, `username`, and

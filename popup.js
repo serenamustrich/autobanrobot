@@ -1,33 +1,41 @@
 chrome.storage.local.get([
   'blockCount',
   'keywords',
-  'singleEmojiEnabled',
-  'emojiEnglishEmojiEnabled',
-  'structuredEmojiTimeEnabled',
-  'structuredThreeSegmentEnabled',
   'remoteRuleConfig',
   'remoteRuleStates',
   'blockHistory',
   'pendingBlockQueue',
-  'updateInfo'
+  'updateInfo',
+  'popupActiveTab'
 ], r => {
   document.getElementById('count').textContent = r.blockCount ?? 0;
   document.getElementById('keywords').value =
     (Array.isArray(r.keywords) ? r.keywords : []).join('\n');
-  document.getElementById('emojiEnglishEmojiEnabled').checked =
-    r.emojiEnglishEmojiEnabled !== false;
-  document.getElementById('singleEmojiEnabled').checked =
-    r.singleEmojiEnabled !== false;
-  document.getElementById('structuredEmojiTimeEnabled').checked =
-    r.structuredEmojiTimeEnabled !== false;
-  document.getElementById('structuredThreeSegmentEnabled').checked =
-    r.structuredThreeSegmentEnabled !== false;
   renderRemoteRules(r.remoteRuleConfig, r.remoteRuleStates);
   document.getElementById('queueCount').textContent =
     Array.isArray(r.pendingBlockQueue) ? r.pendingBlockQueue.length : 0;
   renderBlockHistory(r.blockHistory);
   renderUpdateInfo(r.updateInfo);
+  updateKeywordSummary();
+  updateRuleSummary();
+  showTab(r.popupActiveTab || 'keywords', false);
 });
+
+const validTabs = new Set(['keywords', 'rules', 'history', 'update']);
+document.querySelectorAll('[data-tab]').forEach(button => {
+  button.addEventListener('click', () => showTab(button.dataset.tab));
+});
+
+function showTab(requestedTab, remember = true) {
+  const tab = validTabs.has(requestedTab) ? requestedTab : 'keywords';
+  document.querySelectorAll('[data-tab]').forEach(button => {
+    button.setAttribute('aria-selected', String(button.dataset.tab === tab));
+  });
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    panel.hidden = panel.id !== `${tab}Panel`;
+  });
+  if (remember) chrome.storage.local.set({ popupActiveTab: tab });
+}
 
 document.getElementById('currentVersion').textContent =
   `当前版本 v${chrome.runtime.getManifest().version}`;
@@ -37,12 +45,13 @@ document.getElementById('save').addEventListener('click', () => {
     .split('\n').map(s => s.trim()).filter(Boolean);
 
   chrome.storage.local.set({
-    keywords: kws,
-    ...readRuleSettings()
+    keywords: kws
   }, () => {
     showSaved();
   });
 });
+
+document.getElementById('keywords').addEventListener('input', updateKeywordSummary);
 
 document.getElementById('loadPopular').addEventListener('click', async () => {
   const button = document.getElementById('loadPopular');
@@ -63,6 +72,7 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
       : [];
     const merged = [...new Set([...current, ...popular])];
     textarea.value = merged.join('\n');
+    updateKeywordSummary();
     status.textContent =
       `已加载 ${popular.length} 个热门词，新增 ${merged.length - current.length} 个；请确认后点击保存`;
   } catch {
@@ -72,28 +82,18 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
   }
 });
 
-[
-  'singleEmojiEnabled',
-  'emojiEnglishEmojiEnabled',
-  'structuredEmojiTimeEnabled',
-  'structuredThreeSegmentEnabled'
-].forEach(id => {
-  document.getElementById(id).addEventListener('change', () => {
-    chrome.storage.local.set(readRuleSettings(), showSaved);
-  });
-});
+function updateKeywordSummary() {
+  const count = document.getElementById('keywords').value
+    .split('\n').map(value => value.trim()).filter(Boolean).length;
+  document.getElementById('keywordCount').textContent = `${count} 个`;
+  document.getElementById('keywordBadge').textContent = count;
+}
 
-function readRuleSettings() {
-  return {
-    singleEmojiEnabled:
-      document.getElementById('singleEmojiEnabled').checked,
-    emojiEnglishEmojiEnabled:
-      document.getElementById('emojiEnglishEmojiEnabled').checked,
-    structuredEmojiTimeEnabled:
-      document.getElementById('structuredEmojiTimeEnabled').checked,
-    structuredThreeSegmentEnabled:
-      document.getElementById('structuredThreeSegmentEnabled').checked
-  };
+function updateRuleSummary() {
+  const inputs = [...document.querySelectorAll('#rulesPanel input[type="checkbox"]')];
+  const enabled = inputs.filter(input => input.checked).length;
+  document.getElementById('ruleCount').textContent = `${enabled}/${inputs.length} 已启用`;
+  document.getElementById('ruleBadge').textContent = enabled;
 }
 
 function renderRemoteRules(config, states = {}) {
@@ -106,11 +106,13 @@ function renderRemoteRules(config, states = {}) {
     label.className = 'toggle';
     const input = document.createElement('input');
     input.type = 'checkbox';
+    input.dataset.ruleToggle = 'remote';
     input.checked = rule.enabled !== false && states[rule.id] !== false;
     input.addEventListener('change', () => {
       chrome.storage.local.get(['remoteRuleStates'], result => {
         const next = { ...(result.remoteRuleStates ?? {}), [rule.id]: input.checked };
         chrome.storage.local.set({ remoteRuleStates: next }, showSaved);
+        updateRuleSummary();
       });
     });
     const slider = document.createElement('span');
@@ -127,6 +129,7 @@ function renderRemoteRules(config, states = {}) {
   }
   const checkedAt = config?.checkedAt ? new Date(config.checkedAt).toLocaleString() : '本地预设';
   status.textContent = `在线规则 v${config?.version ?? '—'} · ${checkedAt}`;
+  updateRuleSummary();
 }
 
 document.getElementById('refreshRules').addEventListener('click', () => {

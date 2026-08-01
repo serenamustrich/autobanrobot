@@ -1,6 +1,38 @@
 {
-  "version": 8,
+  "version": 9,
   "rules": [
+    {
+      "id": "single-emoji-content",
+      "name": "仅单个 Emoji",
+      "description": "只匹配整条内容仅有一个完整 Emoji",
+      "enabled": true,
+      "scope": "content",
+      "matcher": "singleEmoji"
+    },
+    {
+      "id": "emoji-content-emoji",
+      "name": "Emoji + 内容 + Emoji",
+      "description": "内容以 Emoji 开头并在后文再次出现 Emoji",
+      "enabled": true,
+      "scope": "content",
+      "matcher": "emojiContentEmoji"
+    },
+    {
+      "id": "five-segment-alternating",
+      "name": "五段式交替",
+      "description": "非 Emoji → Emoji → 非 Emoji → Emoji → 非 Emoji",
+      "enabled": true,
+      "scope": "content",
+      "matcher": "structuredEmojiTime"
+    },
+    {
+      "id": "three-segment-single-middle",
+      "name": "三段式中间单字符",
+      "description": "任意内容 → 单个字符 → 任意内容",
+      "enabled": true,
+      "scope": "content",
+      "matcher": "structuredThreeSegment"
+    },
     {
       "id": "emoji-copy-tcn-link",
       "name": "文案 + 多 Emoji + t.cn 短链",
