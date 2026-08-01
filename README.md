@@ -18,6 +18,28 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.12 — 2026-08-01
+
+- Added server-managed hot detection rules. The extension loads a bundled safe
+  fallback, fetches versioned JSON rules from `https://ban.richccy.com/api/rules`
+  at startup and every five minutes, caches the last successful response, and
+  immediately rescans the current X page after a rule change.
+- Online rules are displayed as normal slider switches in the popup and can be
+  refreshed manually. New language-independent regular-expression rules can be
+  added or changed without publishing another extension package.
+- The Java 21 server now persists rule versions in MySQL 5.7 `MEDIUMTEXT` and
+  exposes a public read endpoint plus a protected update endpoint. Updates
+  require the deployment-only `AUTOBAN_RULE_ADMIN_TOKEN`; arbitrary remote
+  JavaScript is never accepted or executed.
+- 新增服务端管理的检测规则热更新。插件内置安全兜底规则，启动时及
+  每 5 分钟从 `https://ban.richccy.com/api/rules` 拉取版本化 JSON，
+  成功后缓存并立即重新扫描当前 X 页面；断网时继续使用上次规则。
+- 在线规则会以滑块开关显示在插件中，也可手动点击“立即更新规则”。
+  以后新增或调整这类正则检测无需重新发布插件。
+- Java 21 服务端使用 MySQL 5.7 `MEDIUMTEXT` 保存规则和版本，
+  写入接口必须通过部署环境中的 `AUTOBAN_RULE_ADMIN_TOKEN` 验证；
+  服务端不会下发或执行任意 JavaScript。
+
 ### v1.6.11 — 2026-08-01
 
 - Generalized the short-link rule so it no longer depends on fixed phrases or

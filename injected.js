@@ -4,7 +4,7 @@
   let singleEmojiEnabled = true;
   let structuredEmojiTimeEnabled = true;
   let structuredThreeSegmentEnabled = true;
-  let vlogShortLinkEnabled = true;
+  let remoteRules = [];
 
   window.addEventListener('__twblocker_keywords__', e => {
     SPAM = e.detail?.kws ?? SPAM;
@@ -24,9 +24,25 @@
     if (typeof e.detail?.structuredThreeSegmentEnabled === 'boolean') {
       structuredThreeSegmentEnabled = e.detail.structuredThreeSegmentEnabled;
     }
-    if (typeof e.detail?.vlogShortLinkEnabled === 'boolean') {
-      vlogShortLinkEnabled = e.detail.vlogShortLinkEnabled;
-    }
+    processedSignatures = new WeakMap();
+    scanAll();
+  });
+
+  window.addEventListener('__twblocker_rules__', e => {
+    const config = e.detail?.config;
+    const states = e.detail?.states ?? {};
+    remoteRules = Array.isArray(config?.rules)
+      ? config.rules.flatMap(rule => {
+          if (rule?.enabled === false || states[rule.id] === false) return [];
+          try {
+            const flags = String(rule.flags ?? '').replace(/g/g, '');
+            return [{ ...rule, regex: new RegExp(rule.pattern, flags) }];
+          } catch (error) {
+            console.warn(`Ignored invalid remote rule ${rule?.id ?? ''}:`, error);
+            return [];
+          }
+        })
+      : [];
     processedSignatures = new WeakMap();
     scanAll();
   });
@@ -238,20 +254,16 @@
     return normalizeForMatch(text).replace(/[^\p{Script=Han}]/gu, '');
   }
 
-  function isEmojiShortLinkSpam(text) {
-    const lines = text
-      .split(/\r?\n/u)
-      .map(line => line.trim())
-      .filter(Boolean);
-    const shortLinkLine = /^(?:https?:\/\/)?t\.cn\/[a-z0-9]{5,}(?:[?#]\S*)?$/iu;
-    if (!lines.some(line => shortLinkLine.test(line))) return false;
-
-    const content = lines.filter(line => !shortLinkLine.test(line)).join('\n');
-    const graphemes = [...emojiSegmenter.segment(content)]
-      .map(item => item.segment);
-    const emojiCount = graphemes.filter(isEmojiGrapheme).length;
-    const meaningfulContent = content.replace(/[^\p{L}\p{N}]/gu, '');
-    return emojiCount >= 2 && meaningfulContent.length >= 2;
+  function matchingRemoteRules(text) {
+    return remoteRules.filter(rule => {
+      const target = rule.normalization === 'compact'
+        ? normalizeForMatch(text)
+        : rule.normalization === 'noSymbols'
+          ? normalizeWithoutSymbolNoise(text)
+          : text;
+      rule.regex.lastIndex = 0;
+      return rule.regex.test(target);
+    });
   }
 
   function matchingKeywords(text) {
@@ -355,8 +367,7 @@
       structuredEmojiTimeEnabled && isStructuredEmojiTime(text);
     const structuredThreeSegment =
       structuredThreeSegmentEnabled && isStructuredThreeSegment(text);
-    const vlogShortLink =
-      vlogShortLinkEnabled && isEmojiShortLinkSpam(text);
+    const remoteMatches = matchingRemoteRules(text);
     if (
       !nameSpam &&
       !contentSpam &&
@@ -364,7 +375,7 @@
       !emojiContentEmoji &&
       !structuredEmojiTime &&
       !structuredThreeSegment &&
-      !vlogShortLink
+      remoteMatches.length === 0
     ) return;
 
     el.style.opacity = '0.35';
@@ -375,7 +386,7 @@
     if (emojiContentEmoji) reasons.push('Emoji + 内容 + Emoji');
     if (structuredEmojiTime) reasons.push('非 Emoji + Emoji + 非 Emoji + Emoji + 非 Emoji');
     if (structuredThreeSegment) reasons.push('三段式中间单字符');
-    if (vlogShortLink) reasons.push('文案 + 多 Emoji + t.cn 短链');
+    reasons.push(...remoteMatches.map(rule => rule.name));
     blockUser(username, el, {
       displayName: nameText,
       reason: reasons.join('；'),
