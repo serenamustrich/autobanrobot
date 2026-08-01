@@ -18,6 +18,20 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.7 — 2026-08-01
+
+- Fixed the browser extension error `Uncaught (in promise) Error: No SW`
+  during extension reloads or service-worker shutdown windows.
+- Background storage, alarm scheduling, message delivery, and queue processing
+  now handle rejected extension API promises without discarding persisted jobs.
+- Unexpected API failures remain visible in the console; only expected
+  extension-shutdown errors are suppressed.
+- 修复插件重载或 Service Worker 关闭窗口期出现的
+  `Uncaught (in promise) Error: No SW`。
+- 后台存储、定时器、消息发送和队列处理现会完整接住异步 API 拒绝，
+  已持久化的 Ban 任务不会丢失。
+- 只忽略扩展关闭时的预期错误，其他真实 API 错误仍会保留在控制台。
+
 ### v1.6.6 — 2026-08-01
 
 - Pure Han keywords now tolerate inserted Latin letters, numbers, punctuation,

@@ -72,5 +72,10 @@ window.addEventListener('__twblocker_enqueue__', event => {
         message: response?.error || '无法加入后台队列'
       }
     }));
+  }).catch(error => {
+    if (/No SW|Extension context invalidated|Receiving end does not exist/i.test(
+      error?.message ?? ''
+    )) return;
+    console.error('Failed to send block job to background:', error);
   });
 });
