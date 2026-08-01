@@ -173,22 +173,6 @@
 
   const emojiSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
 
-  function isEmojiGrapheme(value) {
-    return isSingleEmoji(value);
-  }
-
-  function isEmojiContentEmoji(text) {
-    const normalized = text.trim();
-    if (!normalized) return false;
-
-    const graphemes = [...emojiSegmenter.segment(normalized)].map(item => item.segment);
-    if (graphemes.length < 3) return false;
-    if (!isEmojiGrapheme(graphemes[0]) || !isEmojiGrapheme(graphemes.at(-1))) return false;
-
-    const middle = graphemes.slice(1, -1).join('');
-    return /[\p{L}\p{N}]/u.test(middle);
-  }
-
   function isStructuredEmojiTime(text) {
     const lines = text
       .split(/\r?\n/u)
@@ -243,7 +227,6 @@
       if (rule.matcher) {
         const matcher = {
           singleEmoji: isSingleEmoji,
-          emojiContentEmoji: isEmojiContentEmoji,
           structuredEmojiTime: isStructuredEmojiTime,
           structuredThreeSegment: isStructuredThreeSegment
         }[rule.matcher];
