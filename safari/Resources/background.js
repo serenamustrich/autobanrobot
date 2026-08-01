@@ -46,7 +46,8 @@ async function initializeSettings() {
     'emojiEnglishEmojiEnabled',
     'singleEmojiEnabled',
     'structuredEmojiTimeEnabled',
-    'structuredThreeSegmentEnabled'
+    'structuredThreeSegmentEnabled',
+    'vlogShortLinkEnabled'
   ]);
   const defaults = {};
   if (typeof stored.emojiEnglishEmojiEnabled !== 'boolean') {
@@ -60,6 +61,9 @@ async function initializeSettings() {
   }
   if (typeof stored.structuredThreeSegmentEnabled !== 'boolean') {
     defaults.structuredThreeSegmentEnabled = true;
+  }
+  if (typeof stored.vlogShortLinkEnabled !== 'boolean') {
+    defaults.vlogShortLinkEnabled = true;
   }
   if (Object.keys(defaults).length) {
     await extensionAPI.storage.local.set(defaults);
