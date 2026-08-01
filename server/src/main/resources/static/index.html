@@ -55,6 +55,7 @@
     <nav class="page-tabs" aria-label="页面">
       <button class="page-tab active" type="button" data-page="bans" data-i18n="banTab">Ban 清单</button>
       <button class="page-tab" type="button" data-page="keywords" data-i18n="keywordTab">关键词分析</button>
+      <button class="page-tab" type="button" data-page="targets" data-i18n="targetTab">垃圾推广目标账号</button>
     </nav>
 
     <section class="metrics" aria-label="统计">
@@ -178,6 +179,9 @@
         </div>
       </div>
 
+    </section>
+
+    <section class="panel page-view" id="targetsPage" hidden>
       <div class="analytics-section">
         <div class="toolbar">
           <div>
@@ -249,6 +253,19 @@
       <td><span class="mention-count ranking-number"></span></td>
     </tr>
   </template>
+
+  <button
+    class="back-to-top"
+    id="backToTop"
+    type="button"
+    aria-label="回到顶部"
+    data-i18n-aria-label="backToTop"
+    hidden
+  >
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="m6 14 6-6 6 6"/>
+    </svg>
+  </button>
 
   <script src="/app.js" defer></script>
 </body>

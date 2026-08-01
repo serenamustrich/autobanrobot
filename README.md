@@ -29,11 +29,18 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ### v1.6.17 — 2026-08-01
 
+- Added a dedicated `Spam Promotion Targets` dashboard page for accounts most
+  frequently mentioned by confirmed spam, separate from keyword analytics.
+- Added a floating back-to-top control and preserved the selected dashboard
+  page across refreshes, direct links, and browser Back/Forward navigation.
 - Updated the server-managed `Emoji + content + Emoji` regular expression to
   require at least one Unicode letter or number between the outer Emoji.
   Emoji-only posts no longer match, without requiring an extension update.
 - Tests cover Emoji-only content, Emoji surrounding Chinese or Latin text, and
   punctuation-only middle segments.
+- 服务端看板新增独立的“垃圾推广目标账号”菜单，集中展示已确认垃圾内容中
+  被提及次数最多的账号，不再与关键词分析混在同一页面。
+- 新增右下角悬浮回到顶部按钮；刷新、直接访问及浏览器前进后退时均保留当前菜单。
 - 在线更新“Emoji + 内容 + Emoji”正则：首尾 Emoji 之间必须至少包含一个任意语言的
   文字或数字；整条内容全部由 Emoji、空白或符号组成时不再命中，无需更新插件。
 - 已覆盖纯 Emoji、Emoji 包围中英文内容以及中间仅标点符号等回归场景。
