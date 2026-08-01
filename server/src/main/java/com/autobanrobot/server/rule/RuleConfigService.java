@@ -108,7 +108,7 @@ public class RuleConfigService {
                 !pattern.isBlank() && pattern.length() <= MAX_PATTERN_LENGTH &&
                 flags.matches("[gimsuy]*");
             boolean validMatcher = pattern.isBlank() &&
-                (matcher.equals("singleEmoji") || matcher.equals("emojiContentEmoji") ||
+                (matcher.equals("singleEmoji") ||
                  matcher.equals("structuredEmojiTime") ||
                  matcher.equals("structuredThreeSegment"));
             if (id.isBlank() || id.length() > 64 || name.isBlank() || name.length() > 120 ||
