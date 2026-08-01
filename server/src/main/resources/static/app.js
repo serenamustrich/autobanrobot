@@ -18,7 +18,7 @@ const translations = {
     connected: '实时数据已连接',
     reconnecting: '连接中断，正在自动重试',
     loadFailed: '服务器数据加载失败',
-    banTab: 'Ban 清单', keywordTab: '关键词分析',
+    banTab: 'Ban 清单', keywordTab: '关键词分析', targetTab: '垃圾推广目标账号',
     confirmedTotal: '累计已确认屏蔽', allRecords: '所有已接收记录',
     todayAdded: '今日新增', serverDate: '按服务器本地日期',
     onlineUsers: '插件在线用户数', onlineWindow: '最近 2 分钟发送过心跳',
@@ -43,7 +43,7 @@ const translations = {
     mentionNote: '统计已 Ban 垃圾内容中出现的 @账号',
     mentionedAccount: '被提及账号', mentionCount: '提及次数',
     noMentions: '暂无 @账号统计',
-    structuredRule: '结构化规则'
+    structuredRule: '结构化规则', backToTop: '回到顶部'
   },
   en: {
     pageTitle: 'AutoBanRobot · Ban List',
@@ -54,7 +54,7 @@ const translations = {
     connected: 'Live data connected',
     reconnecting: 'Connection lost, retrying automatically',
     loadFailed: 'Failed to load server data',
-    banTab: 'Ban List', keywordTab: 'Keyword Analytics',
+    banTab: 'Ban List', keywordTab: 'Keyword Analytics', targetTab: 'Spam Promotion Targets',
     confirmedTotal: 'Confirmed Bans', allRecords: 'All received records',
     todayAdded: 'Added Today', serverDate: 'Server local date',
     onlineUsers: 'Online Plugin Users', onlineWindow: 'Heartbeat received in the last 2 minutes',
@@ -79,7 +79,7 @@ const translations = {
     mentionNote: 'Accounts mentioned in content posted by confirmed spam accounts',
     mentionedAccount: 'Mentioned Account', mentionCount: 'Mentions',
     noMentions: 'No @account statistics',
-    structuredRule: 'Structured rule'
+    structuredRule: 'Structured rule', backToTop: 'Back to top'
   },
   es: {
     pageTitle: 'AutoBanRobot · Lista de bloqueos',
@@ -90,7 +90,7 @@ const translations = {
     connected: 'Datos en tiempo real conectados',
     reconnecting: 'Conexión perdida; reintentando automáticamente',
     loadFailed: 'No se pudieron cargar los datos del servidor',
-    banTab: 'Bloqueos', keywordTab: 'Análisis de palabras clave',
+    banTab: 'Bloqueos', keywordTab: 'Análisis de palabras clave', targetTab: 'Objetivos de promoción spam',
     confirmedTotal: 'Bloqueos confirmados', allRecords: 'Todos los registros recibidos',
     todayAdded: 'Añadidos hoy', serverDate: 'Fecha local del servidor',
     onlineUsers: 'Usuarios del plugin en línea', onlineWindow: 'Heartbeat recibido en los últimos 2 minutos',
@@ -115,7 +115,7 @@ const translations = {
     mentionNote: 'Cuentas mencionadas por contenido de spam bloqueado',
     mentionedAccount: 'Cuenta mencionada', mentionCount: 'Menciones',
     noMentions: 'Sin estadísticas de menciones',
-    structuredRule: 'Regla estructurada'
+    structuredRule: 'Regla estructurada', backToTop: 'Volver arriba'
   },
   ja: {
     pageTitle: 'AutoBanRobot · Ban 一覧',
@@ -126,7 +126,7 @@ const translations = {
     connected: 'リアルタイムデータ接続済み',
     reconnecting: '接続が切れました。自動再接続中',
     loadFailed: 'サーバーデータを読み込めません',
-    banTab: 'Ban 一覧', keywordTab: 'キーワード分析',
+    banTab: 'Ban 一覧', keywordTab: 'キーワード分析', targetTab: 'スパム宣伝対象アカウント',
     confirmedTotal: '確認済み Ban 累計', allRecords: '受信した全記録',
     todayAdded: '本日の追加', serverDate: 'サーバーのローカル日付',
     onlineUsers: 'オンラインプラグインユーザー', onlineWindow: '直近 2 分以内にハートビート受信',
@@ -151,7 +151,7 @@ const translations = {
     mentionNote: 'Ban 済みスパム内容に登場する @アカウント',
     mentionedAccount: '言及アカウント', mentionCount: '言及回数',
     noMentions: '@アカウント統計はありません',
-    structuredRule: '構造化ルール'
+    structuredRule: '構造化ルール', backToTop: 'ページ上部へ戻る'
   },
   ko: {
     pageTitle: 'AutoBanRobot · Ban 목록',
@@ -162,7 +162,7 @@ const translations = {
     connected: '실시간 데이터 연결됨',
     reconnecting: '연결 끊김, 자동 재연결 중',
     loadFailed: '서버 데이터를 불러오지 못했습니다',
-    banTab: 'Ban 목록', keywordTab: '키워드 분석',
+    banTab: 'Ban 목록', keywordTab: '키워드 분석', targetTab: '스팸 홍보 대상 계정',
     confirmedTotal: '확인된 누적 Ban', allRecords: '수신한 전체 기록',
     todayAdded: '오늘 추가', serverDate: '서버 현지 날짜 기준',
     onlineUsers: '온라인 플러그인 사용자', onlineWindow: '최근 2분 이내 하트비트 수신',
@@ -187,7 +187,7 @@ const translations = {
     mentionNote: '차단된 스팸 내용에 등장한 @계정',
     mentionedAccount: '언급된 계정', mentionCount: '언급 횟수',
     noMentions: '@계정 통계가 없습니다',
-    structuredRule: '구조화 규칙'
+    structuredRule: '구조화 규칙', backToTop: '맨 위로'
   },
   de: {
     pageTitle: 'AutoBanRobot · Ban-Liste',
@@ -198,7 +198,7 @@ const translations = {
     connected: 'Live-Daten verbunden',
     reconnecting: 'Verbindung getrennt, automatischer Neuversuch',
     loadFailed: 'Serverdaten konnten nicht geladen werden',
-    banTab: 'Ban-Liste', keywordTab: 'Schlüsselwortanalyse',
+    banTab: 'Ban-Liste', keywordTab: 'Schlüsselwortanalyse', targetTab: 'Spam-Werbeziele',
     confirmedTotal: 'Bestätigte Bans', allRecords: 'Alle empfangenen Einträge',
     todayAdded: 'Heute hinzugefügt', serverDate: 'Lokales Serverdatum',
     onlineUsers: 'Online-Plugin-Nutzer', onlineWindow: 'Heartbeat in den letzten 2 Minuten',
@@ -223,7 +223,7 @@ const translations = {
     mentionNote: 'In gesperrten Spam-Inhalten erwähnte Konten',
     mentionedAccount: 'Erwähntes Konto', mentionCount: 'Erwähnungen',
     noMentions: 'Keine @Konto-Statistik',
-    structuredRule: 'Strukturierte Regel'
+    structuredRule: 'Strukturierte Regel', backToTop: 'Nach oben'
   },
   fr: {
     pageTitle: 'AutoBanRobot · Liste des blocages',
@@ -234,7 +234,7 @@ const translations = {
     connected: 'Données en temps réel connectées',
     reconnecting: 'Connexion perdue, nouvelle tentative automatique',
     loadFailed: 'Impossible de charger les données du serveur',
-    banTab: 'Blocages', keywordTab: 'Analyse des mots-clés',
+    banTab: 'Blocages', keywordTab: 'Analyse des mots-clés', targetTab: 'Cibles de promotion spam',
     confirmedTotal: 'Blocages confirmés', allRecords: 'Tous les enregistrements reçus',
     todayAdded: 'Ajouts du jour', serverDate: 'Date locale du serveur',
     onlineUsers: 'Utilisateurs du plugin en ligne', onlineWindow: 'Heartbeat reçu dans les 2 dernières minutes',
@@ -259,7 +259,7 @@ const translations = {
     mentionNote: 'Comptes mentionnés dans les contenus spam bloqués',
     mentionedAccount: 'Compte mentionné', mentionCount: 'Mentions',
     noMentions: 'Aucune statistique de mention',
-    structuredRule: 'Règle structurée'
+    structuredRule: 'Règle structurée', backToTop: 'Retour en haut'
   },
   ru: {
     pageTitle: 'AutoBanRobot · Список блокировок',
@@ -270,7 +270,7 @@ const translations = {
     connected: 'Данные в реальном времени подключены',
     reconnecting: 'Соединение потеряно, выполняется повторная попытка',
     loadFailed: 'Не удалось загрузить данные сервера',
-    banTab: 'Блокировки', keywordTab: 'Аналитика ключевых слов',
+    banTab: 'Блокировки', keywordTab: 'Аналитика ключевых слов', targetTab: 'Целевые аккаунты спам-рекламы',
     confirmedTotal: 'Подтверждённые блокировки', allRecords: 'Все полученные записи',
     todayAdded: 'Добавлено сегодня', serverDate: 'Локальная дата сервера',
     onlineUsers: 'Пользователи плагина онлайн', onlineWindow: 'Heartbeat за последние 2 минуты',
@@ -295,7 +295,7 @@ const translations = {
     mentionNote: 'Аккаунты в заблокированном спам-контенте',
     mentionedAccount: 'Упомянутый аккаунт', mentionCount: 'Упоминания',
     noMentions: 'Нет статистики упоминаний',
-    structuredRule: 'Структурированное правило'
+    structuredRule: 'Структурированное правило', backToTop: 'Наверх'
   },
   it: {
     pageTitle: 'AutoBanRobot · Elenco Ban',
@@ -306,7 +306,7 @@ const translations = {
     connected: 'Dati in tempo reale connessi',
     reconnecting: 'Connessione interrotta, nuovo tentativo automatico',
     loadFailed: 'Impossibile caricare i dati del server',
-    banTab: 'Elenco Ban', keywordTab: 'Analisi parole chiave',
+    banTab: 'Elenco Ban', keywordTab: 'Analisi parole chiave', targetTab: 'Account obiettivo dello spam',
     confirmedTotal: 'Ban confermati', allRecords: 'Tutti i record ricevuti',
     todayAdded: 'Aggiunti oggi', serverDate: 'Data locale del server',
     onlineUsers: 'Utenti plugin online', onlineWindow: 'Heartbeat negli ultimi 2 minuti',
@@ -331,7 +331,7 @@ const translations = {
     mentionNote: 'Account menzionati nei contenuti spam bloccati',
     mentionedAccount: 'Account menzionato', mentionCount: 'Menzioni',
     noMentions: 'Nessuna statistica delle menzioni',
-    structuredRule: 'Regola strutturata'
+    structuredRule: 'Regola strutturata', backToTop: 'Torna su'
   }
 };
 
@@ -368,6 +368,11 @@ function applyLanguage(language) {
   document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
     element.placeholder = t(element.dataset.i18nPlaceholder);
   });
+  document.querySelectorAll('[data-i18n-aria-label]').forEach(element => {
+    const label = t(element.dataset.i18nAriaLabel);
+    element.setAttribute('aria-label', label);
+    element.title = label;
+  });
   document.querySelectorAll('[data-lang]').forEach(button => {
     button.classList.toggle('active', button.dataset.lang === currentLanguage);
   });
@@ -389,7 +394,8 @@ const elements = {
   connection: document.getElementById('connection'),
   connectionText: document.getElementById('connectionText'),
   onlineUsers: document.getElementById('onlineUsers'),
-  cumulativeUsers: document.getElementById('cumulativeUsers')
+  cumulativeUsers: document.getElementById('cumulativeUsers'),
+  backToTop: document.getElementById('backToTop')
 };
 
 const keywordElements = {
@@ -566,12 +572,13 @@ function connectStream() {
 }
 
 function applyPage(page, updateUrl = true, replaceUrl = false) {
-  const selectedPage = page === 'keywords' ? 'keywords' : 'bans';
+  const selectedPage = ['bans', 'keywords', 'targets'].includes(page) ? page : 'bans';
   document.querySelectorAll('.page-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.page === selectedPage);
   });
   document.getElementById('bansPage').hidden = selectedPage !== 'bans';
   document.getElementById('keywordsPage').hidden = selectedPage !== 'keywords';
+  document.getElementById('targetsPage').hidden = selectedPage !== 'targets';
   localStorage.setItem(PAGE_KEY, selectedPage);
   if (updateUrl) {
     const url = `#${selectedPage}`;
@@ -590,6 +597,20 @@ document.querySelectorAll('.page-tab').forEach(button => {
 window.addEventListener('popstate', () => {
   applyPage(location.hash.slice(1), false);
 });
+
+window.addEventListener('hashchange', () => {
+  applyPage(location.hash.slice(1), false);
+});
+
+function updateBackToTopVisibility() {
+  elements.backToTop.hidden = window.scrollY < 360;
+}
+
+elements.backToTop.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+window.addEventListener('scroll', updateBackToTopVisibility, { passive: true });
+updateBackToTopVisibility();
 
 document.querySelectorAll('[data-lang]').forEach(button => {
   button.addEventListener('click', async () => {
@@ -631,7 +652,7 @@ setInterval(() => {
   loadUserStats().catch(error => console.error('用户统计刷新失败', error));
 }, 15_000);
 
-const initialPage = ['bans', 'keywords'].includes(location.hash.slice(1))
+const initialPage = ['bans', 'keywords', 'targets'].includes(location.hash.slice(1))
   ? location.hash.slice(1)
   : localStorage.getItem(PAGE_KEY);
 applyPage(initialPage, true, true);
