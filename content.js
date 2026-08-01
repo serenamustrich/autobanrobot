@@ -6,12 +6,14 @@ chrome.storage.local.get(['keywords'], r => {
 chrome.storage.local.get([
   'emojiEnglishEmojiEnabled',
   'singleEmojiEnabled',
-  'structuredEmojiTimeEnabled'
+  'structuredEmojiTimeEnabled',
+  'structuredThreeSegmentEnabled'
 ], r => {
   dispatchSettings({
     emojiEnglishEmojiEnabled: r.emojiEnglishEmojiEnabled !== false,
     singleEmojiEnabled: r.singleEmojiEnabled !== false,
-    structuredEmojiTimeEnabled: r.structuredEmojiTimeEnabled !== false
+    structuredEmojiTimeEnabled: r.structuredEmojiTimeEnabled !== false,
+    structuredThreeSegmentEnabled: r.structuredThreeSegmentEnabled !== false
   });
 });
 
@@ -23,7 +25,8 @@ chrome.storage.onChanged.addListener(changes => {
   if (
     changes.emojiEnglishEmojiEnabled ||
     changes.singleEmojiEnabled ||
-    changes.structuredEmojiTimeEnabled
+    changes.structuredEmojiTimeEnabled ||
+    changes.structuredThreeSegmentEnabled
   ) {
     const settings = {};
     if (changes.emojiEnglishEmojiEnabled) {
@@ -37,6 +40,10 @@ chrome.storage.onChanged.addListener(changes => {
     if (changes.structuredEmojiTimeEnabled) {
       settings.structuredEmojiTimeEnabled =
         changes.structuredEmojiTimeEnabled.newValue !== false;
+    }
+    if (changes.structuredThreeSegmentEnabled) {
+      settings.structuredThreeSegmentEnabled =
+        changes.structuredThreeSegmentEnabled.newValue !== false;
     }
     dispatchSettings(settings);
   }
