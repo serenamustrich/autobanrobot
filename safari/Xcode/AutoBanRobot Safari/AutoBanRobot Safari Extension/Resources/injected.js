@@ -186,7 +186,7 @@
     if (!isEmojiGrapheme(graphemes[0]) || !isEmojiGrapheme(graphemes.at(-1))) return false;
 
     const middle = graphemes.slice(1, -1).join('');
-    return middle.trim().length > 0;
+    return /[\p{L}\p{N}]/u.test(middle);
   }
 
   function isStructuredEmojiTime(text) {
