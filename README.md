@@ -27,6 +27,14 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### Server v1.2.2 — 2026-08-01
+
+- Added the dedicated spam-promotion target dashboard, full popular-term
+  synchronization without a top-50 cap, and cleanup of X timestamp suffixes
+  from displayed account names.
+- 服务端升级至 1.2.2：新增独立的垃圾推广目标账号页面，热门词同步不再限制
+  前 50 条，并清理账号显示名称末尾误采集的 X 发布时间。
+
 ### v1.6.18 — 2026-08-01
 
 - Fixed X relative timestamps and dates being appended to captured display
