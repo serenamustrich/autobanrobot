@@ -82,6 +82,9 @@ function isValidRuleConfig(config) {
       typeof rule?.id === 'string' && rule.id.length <= 64 &&
       typeof rule?.name === 'string' && rule.name.length <= 120 &&
       typeof rule?.pattern === 'string' && rule.pattern.length <= 2000 &&
+      ['content', 'username', 'displayName'].includes(rule.scope ?? 'content') &&
+      (rule.requiresDefaultAvatar === undefined ||
+        typeof rule.requiresDefaultAvatar === 'boolean') &&
       ['raw', 'compact', 'noSymbols'].includes(rule.normalization ?? 'raw') &&
       typeof rule?.flags === 'string' && /^[gimsuy]*$/.test(rule.flags)
     );
