@@ -192,17 +192,14 @@
       .filter(Boolean);
     if (lines.length !== 5) return false;
 
-    const textLine = value =>
-      /\p{Script=Latin}/u.test(value) && !isSingleEmoji(value);
-    const dateTime =
-      /^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\s+\d{1,2}:\d{2}(?::\d{2})?$/u;
+    const nonEmojiSegment = value => value.length > 0 && !isSingleEmoji(value);
 
     return (
-      textLine(lines[0]) &&
+      nonEmojiSegment(lines[0]) &&
       isSingleEmoji(lines[1]) &&
-      textLine(lines[2]) &&
+      nonEmojiSegment(lines[2]) &&
       isSingleEmoji(lines[3]) &&
-      dateTime.test(lines[4])
+      nonEmojiSegment(lines[4])
     );
   }
 
@@ -213,11 +210,23 @@
       .replace(/[\s\u200B-\u200D\u2060\uFEFF]/gu, '');
   }
 
+  function normalizeWithoutSymbolNoise(text) {
+    return normalizeForMatch(text).replace(/[\p{P}\p{S}]/gu, '');
+  }
+
   function matchingKeywords(text) {
     const normalizedText = normalizeForMatch(text);
+    const noiseStrippedText = normalizeWithoutSymbolNoise(text);
     return SPAM.filter(keyword => {
       const normalizedKeyword = normalizeForMatch(keyword);
-      return normalizedKeyword && normalizedText.includes(normalizedKeyword);
+      if (!normalizedKeyword) return false;
+      if (normalizedText.includes(normalizedKeyword)) return true;
+
+      const noiseStrippedKeyword = normalizeWithoutSymbolNoise(keyword);
+      return (
+        noiseStrippedKeyword.length >= 2 &&
+        noiseStrippedText.includes(noiseStrippedKeyword)
+      );
     });
   }
 
@@ -312,7 +321,7 @@
     if (contentSpam) reasons.push('内容命中关键词');
     if (singleEmoji) reasons.push('单 Emoji 内容');
     if (emojiContentEmoji) reasons.push('Emoji + 内容 + Emoji');
-    if (structuredEmojiTime) reasons.push('文字 + Emoji + 文字 + Emoji + 时间');
+    if (structuredEmojiTime) reasons.push('非 Emoji + Emoji + 非 Emoji + Emoji + 非 Emoji');
     blockUser(username, el, {
       displayName: nameText,
       reason: reasons.join('；'),

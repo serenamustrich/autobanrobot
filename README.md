@@ -18,6 +18,23 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.5 — 2026-08-01
+
+- Generalized the five-segment rule to `non-Emoji → Emoji → non-Emoji →
+  Emoji → non-Emoji`. The three non-Emoji segments may now contain text, a
+  date/time, numbers, or other non-empty content in any position.
+- Added symbol-noise-resistant keyword matching. Punctuation, Emoji, whitespace,
+  and invisible separators inserted between keyword characters no longer bypass
+  a match, while additional letters or CJK characters still prevent a false
+  match.
+- The existing rule switch and saved keyword list remain unchanged during the
+  upgrade.
+- 五段式规则改为“非 Emoji → Emoji → 非 Emoji → Emoji → 非
+  Emoji”，三个非 Emoji 段可以任意是文字、日期时间、数字或其他非空内容。
+- 关键词匹配新增抗符号干扰：在关键词字符之间插入标点、Emoji、空格或
+  零宽字符仍会命中；插入额外字母或汉字不会被忽略，避免过度放宽。
+- 升级沿用现有规则开关和用户已保存的关键词，不重置配置。
+
 ### v1.6.4 — 2026-07-31
 
 - The server dashboard now preserves the active page in the URL hash and local
