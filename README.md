@@ -40,6 +40,10 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 - 将“可同步热门关键词”独立为“热门关键词”页面，关键词分析页仅保留命中排行。
 - Server v1.2.3 separates the syncable popular-keyword dashboard from keyword analytics.
 
+### Server v1.2.4 — 2026-08-02
+
+- 为服务端页面脚本增加版本化地址，避免新菜单 HTML 搭配浏览器缓存的旧 JavaScript，确保多语言和页面路由立即生效。
+
 ### v1.6.18 — 2026-08-01
 
 - Fixed X relative timestamps and dates being appended to captured display
