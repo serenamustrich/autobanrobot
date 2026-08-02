@@ -1,5 +1,18 @@
 # AutoBanRobot
 
+### Android v1.0.38 — 2026-08-02
+
+- Corrected system back-gesture semantics: either screen-edge back gesture now clicks the visible top-left back control, matching a direct tap. The current page reloads only when that control is absent.
+- 修正系统返回手势语义：左右任一边缘返回手势现在等同于点击页面左上角可见的返回按钮；只有找不到该按钮时才刷新当前页。
+
+### Android v1.0.37 — 2026-08-02
+
+- Android system back gestures from either screen edge now stay inside AutoBanRobot: menu pages return to X, X pages return through WebView history, and the current page reloads when no earlier page exists.
+- The bottom-edge swipe-up system gesture remains unchanged.
+
+- Android 系统左右边缘返回手势现在始终留在 AutoBanRobot 内：菜单页返回 X，X 页面按 WebView 历史逐页返回，没有上一页时刷新当前页。
+- 底部上滑系统手势保持不变。
+
 <img src="icon.png" alt="AutoBanRobot cat assistant icon" width="160">
 
 Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
@@ -26,6 +39,74 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 - [`safari`](https://github.com/serenamustrich/autobanrobot/tree/safari)：Safari 适配与打包源码；Safari 专用代码统一维护在该分支的 `safari/` 目录。
 
 ## Release notes / 更新说明
+
+### v1.6.27 — 2026-08-02
+
+- Fixed engagement display-name extraction when X places an empty avatar link
+  before the visible name. The visible text before `@username` is now the actor
+  display name used for keyword matching.
+- Android v1.0.36 includes this display-name extraction fix.
+- 修复 X 将空文本头像链接放在昵称前方时昵称被解析为空的问题；现在使用账号
+  行中 `@用户名` 前的可见文本作为昵称进行关键词匹配。
+- Android v1.0.36 同步包含昵称提取修复。
+
+### v1.6.26 — 2026-08-02
+
+- Removed the unreliable visible-text equality check from engagement profile
+  links and added non-sensitive local scan-count diagnostics for Android.
+- Android v1.0.35 includes the actor-link and diagnostics fix.
+- 移除“帖子活动”资料链接对肉眼文本与 DOM 文本完全相等的错误依赖，并为
+  Android 增加仅记录节点数量的本机扫描诊断。
+- Android v1.0.35 同步包含该修复。
+
+### v1.6.25 — 2026-08-02
+
+- Post-engagement actor discovery now starts from rendered `@username` profile
+  links and resolves their clickable account rows, without requiring X's
+  optional `cellInnerDiv` wrapper.
+- Android v1.0.34 includes the account-row discovery fix.
+- “帖子活动”操作人现在从页面已渲染的 `@用户名` 资料链接反向定位账号整行，
+  不再依赖 X 可选的 `cellInnerDiv` 外层节点。
+- Android v1.0.34 同步包含账号行发现修复。
+
+### v1.6.24 — 2026-08-02
+
+- Fixed the X post-engagement overlay, which may keep the underlying post URL
+  and render its title without a standard heading role. The scanner now detects
+  the visible engagement title and tab set before processing actor rows.
+- Android v1.0.33 includes this overlay-page compatibility fix.
+- 修复 X“查看动态”以弹层呈现时保留原帖子地址、标题不使用标准 heading
+  节点而导致扫描未触发的问题；现在根据可见页面标题和标签组合识别。
+- Android v1.0.33 同步包含该弹层兼容修复。
+
+### v1.6.23 — 2026-08-02
+
+- Fixed X post-engagement route detection for username-prefixed status URLs and
+  account rows that omit the optional `UserCell` marker.
+- Android v1.0.32 includes this verified route compatibility fix.
+- 修复 X“帖子活动”页面实际使用“用户名/status”地址、部分账号行不含可选
+  `UserCell` 标记时未触发扫描的问题。
+- Android v1.0.32 同步包含该兼容修复。
+
+### v1.6.22 — 2026-08-02
+
+- Added scanning for the dedicated X post-engagement lists. Repost, quote and
+  like actor rows now match only the actor display name and username, then use
+  the existing whitelist, persistent queue, block, mute, gray and stamp flow.
+- Android v1.0.31 includes the same post-engagement scanner.
+- 新增 X“帖子活动”账号列表扫描：转帖、引用和喜欢列表仅匹配操作人的昵称与
+  用户名，并复用现有白名单、本地持久化队列、屏蔽、隐藏、置灰和盖章流程。
+- Android v1.0.31 同步包含该修复。
+
+### v1.6.21 — 2026-08-02
+
+- Added like/repost notification scanning. Actor display names and X usernames
+  rendered in notification cards now use the same keyword, remote-rule,
+  whitelist, persistent queue, block and mute workflow as timeline posts.
+- Aggregated notifications are rescanned as X renders more actor accounts.
+- 新增点赞/转发通知扫描：通知卡片中已渲染的操作人昵称与 X 用户名会复用现有
+  关键词、在线规则、白名单、本地持久化队列以及“屏蔽 + 隐藏”流程。
+- 聚合通知展开或滚动加载出更多操作人后会自动继续扫描。
 
 ### v1.6.20 — 2026-08-02
 

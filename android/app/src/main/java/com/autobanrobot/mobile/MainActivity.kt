@@ -25,6 +25,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.window.OnBackInvokedDispatcher
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
@@ -103,6 +104,21 @@ private class SelectionWebView(
     }
 }
 
+internal enum class BackNavigationAction {
+    SHOW_HOME,
+    CLICK_PAGE_BACK
+}
+
+internal object BackNavigationPolicy {
+    fun decide(isHomePage: Boolean): BackNavigationAction {
+        return if (isHomePage) {
+            BackNavigationAction.CLICK_PAGE_BACK
+        } else {
+            BackNavigationAction.SHOW_HOME
+        }
+    }
+}
+
 class MainActivity : Activity() {
     private lateinit var webView: WebView
     private lateinit var status: TextView
@@ -171,6 +187,7 @@ class MainActivity : Activity() {
         }
 
         buildUi()
+        registerSystemBackGesture()
         ruleStore.refreshRules { refreshed ->
             if (!refreshed) return@refreshRules
         }
@@ -1030,12 +1047,29 @@ class MainActivity : Activity() {
 
     @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun onBackPressed() {
-        if (currentPage != PAGE_HOME) {
-            showHome()
-        } else if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
+        handleBackNavigation()
+    }
+
+    private fun registerSystemBackGesture() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT
+            ) {
+                handleBackNavigation()
+            }
+        }
+    }
+
+    private fun handleBackNavigation() {
+        when (BackNavigationPolicy.decide(currentPage == PAGE_HOME)) {
+            BackNavigationAction.SHOW_HOME -> toolbarBack.performClick()
+            BackNavigationAction.CLICK_PAGE_BACK -> clickPageBackOrReload()
+        }
+    }
+
+    private fun clickPageBackOrReload() {
+        webView.evaluateJavascript(PAGE_BACK_BUTTON_SCRIPT) { clicked ->
+            if (clicked != "true") webView.reload()
         }
     }
 
@@ -1289,8 +1323,32 @@ class MainActivity : Activity() {
         private const val REQUEST_FILE_CHOOSER = 9003
         private const val MAX_POST_MEDIA = 4
         private const val APP_HEARTBEAT_INTERVAL_MS = 60_000L
-        private const val APP_VERSION = "1.0.28"
+        private const val APP_VERSION = "1.0.38"
         private const val PAGE_HOME = "home"
+        private const val PAGE_BACK_BUTTON_SCRIPT = """
+            (() => {
+              const selectors = [
+                '[data-testid="app-bar-back"]',
+                '[aria-label="Back"]',
+                '[aria-label="返回"]',
+                '[aria-label="上一页"]'
+              ];
+              const candidates = selectors.flatMap(selector =>
+                Array.from(document.querySelectorAll(selector))
+              );
+              const target = candidates.find(element => {
+                const rect = element.getBoundingClientRect();
+                const style = window.getComputedStyle(element);
+                return rect.width > 0 && rect.height > 0 &&
+                  rect.left < window.innerWidth * 0.45 &&
+                  rect.top < Math.min(window.innerHeight * 0.3, 220) &&
+                  style.visibility !== 'hidden' && style.display !== 'none';
+              });
+              if (!target) return false;
+              target.click();
+              return true;
+            })()
+        """
         private val INK = Color.rgb(15, 20, 25)
         private val MUTED = Color.rgb(113, 118, 123)
         private val SURFACE = Color.rgb(247, 249, 250)
@@ -1381,6 +1439,11 @@ class MainActivity : Activity() {
     }
 
     inner class AndroidBridge {
+        @JavascriptInterface
+        fun reportScanDiagnostic(message: String) {
+            Log.i("AutoBanScan", message.take(300))
+        }
+
         @JavascriptInterface
         fun enqueueBlock(payload: String) {
             if (ruleStore.autoBanEnabled) queue.enqueue(payload)

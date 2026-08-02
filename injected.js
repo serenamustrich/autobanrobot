@@ -44,7 +44,26 @@
   const stampAnchors = new Map();
   let processedSignatures = new WeakMap();
   let scanScheduled = false;
+  let lastEngagementDiagnostic = '';
   let pageStats = createPageStats();
+  const NOTIFICATION_ACTION_PATTERN = new RegExp([
+    '点赞了你的(?:\\s*\\d+\\s*个)?(?:帖子|回复)',
+    '喜欢了你的(?:\\s*\\d+\\s*个)?(?:帖子|回复)',
+    '轉發了你的(?:\\s*\\d+\\s*個)?(?:貼文|帖子|回覆)',
+    '转发了你的(?:\\s*\\d+\\s*个)?(?:帖子|回复)',
+    '轉貼了你的(?:\\s*\\d+\\s*個)?(?:貼文|帖子|回覆)',
+    '转帖了你的(?:\\s*\\d+\\s*个)?(?:帖子|回复)',
+    'liked (?:\\d+ of )?your (?:post|posts|reply|replies)',
+    'reposted (?:\\d+ of )?your (?:post|posts|reply|replies)',
+    'retweeted (?:\\d+ of )?your (?:post|posts|reply|replies)'
+  ].join('|'), 'iu');
+  const ENGAGEMENT_ROUTE_PATTERN = /\/(?:i|[A-Za-z0-9_]{1,15})\/status\/\d+\/(?:retweets|retweets_with_comments|quotes|likes)\/?$/u;
+  const ENGAGEMENT_TITLE_PATTERN = /(?:帖子活动|貼文活動|Post engagements)/iu;
+  const ENGAGEMENT_TAB_PATTERNS = [
+    /(?:引用|Quotes?)/iu,
+    /(?:转帖|轉貼|转发|轉發|Reposts?|Retweets?)/iu,
+    /(?:喜欢|喜歡|Likes?)/iu
+  ];
 
   function positionStamp(anchor, stamp) {
     if (!anchor?.isConnected || !stamp?.isConnected) {
@@ -467,6 +486,214 @@
     };
   }
 
+  function notificationText(el) {
+    return String(el?.innerText || el?.textContent || '')
+      .replace(/\s+/gu, ' ')
+      .trim();
+  }
+
+  function isLikeOrRepostNotification(el) {
+    if (!/^\/notifications(?:\/|$)/u.test(location.pathname)) return false;
+    return NOTIFICATION_ACTION_PATTERN.test(notificationText(el));
+  }
+
+  function actorDisplayName(link, username) {
+    const values = [
+      link.textContent,
+      link.getAttribute('aria-label'),
+      link.getAttribute('title'),
+      link.querySelector('img')?.getAttribute('alt')
+    ];
+    return values
+      .map(value => String(value || '').replace(/\s+/gu, ' ').trim())
+      .find(value => value && value.toLocaleLowerCase() !== `@${username}`.toLocaleLowerCase()) || '';
+  }
+
+  function extractNotificationActors(el) {
+    const actors = new Map();
+    [...el.querySelectorAll('a[href]')].forEach(link => {
+      if (link.closest('[data-testid="tweet"], article[role="article"]')) return;
+      let path = '';
+      try {
+        path = new URL(link.getAttribute('href') || '', location.origin).pathname;
+      } catch (_) {
+        return;
+      }
+      const match = /^\/([A-Za-z0-9_]{1,15})\/?$/u.exec(path);
+      if (!match) return;
+      const username = match[1];
+      const key = username.toLocaleLowerCase();
+      const displayName = actorDisplayName(link, username);
+      const existing = actors.get(key);
+      if (!existing || (!existing.displayName && displayName)) {
+        actors.set(key, { username, displayName });
+      }
+    });
+    return [...actors.values()];
+  }
+
+  function processNotification(el) {
+    if (!isLikeOrRepostNotification(el)) return;
+    const actors = extractNotificationActors(el);
+    if (!actors.length) return;
+    const actionText = notificationText(el);
+    const signature = actors
+      .map(actor => `${actor.username}\u0000${actor.displayName}`)
+      .sort()
+      .join('\u0001') + `\u0002${actionText}`;
+    if (processedSignatures.get(el) === signature) return;
+    processedSignatures.set(el, signature);
+
+    actors.forEach(({ username, displayName }) => {
+      if (accountWhitelist.has(username.toLowerCase()) || exemptAccounts.has(username)) return;
+      if (blocked.has(username)) {
+        el.style.opacity = '0.12';
+        el.title = `[已屏蔽和隐藏] @${username}`;
+        applyStamp(el);
+        return;
+      }
+
+      const nameMatches = matchingKeywords(`${displayName}\n${username}`);
+      const ruleContext = {
+        defaultAvatar: Boolean(
+          [...el.querySelectorAll(`a[href="/${username}"] img, a[href$="/${username}"] img`)]
+            .some(node => String(node.getAttribute?.('src') || '').includes('default_profile'))
+        )
+      };
+      const remoteMatches = [
+        ...matchingRemoteRules(username, 'username', ruleContext),
+        ...matchingRemoteRules(displayName, 'displayName', ruleContext)
+      ];
+      if (!nameMatches.length && !remoteMatches.length) return;
+
+      const matchedKeywords = [...new Set(nameMatches)];
+      const reasons = ['点赞或转发通知账号命中规则'];
+      if (nameMatches.length) reasons.push('用户名或显示名称命中关键词');
+      reasons.push(...remoteMatches.map(rule => rule.name));
+      blockUser(username, el, {
+        displayName,
+        reason: reasons.join('；'),
+        matchedKeywords,
+        content: actionText.slice(0, 160)
+      });
+    });
+  }
+
+  function isEngagementActivityPage() {
+    if (ENGAGEMENT_ROUTE_PATTERN.test(location.pathname)) return true;
+    const pageText = notificationText(document.body);
+    if (!ENGAGEMENT_TITLE_PATTERN.test(pageText)) return false;
+    return ENGAGEMENT_TAB_PATTERNS.filter(pattern => pattern.test(pageText)).length >= 2;
+  }
+
+  function processEngagementActor(el) {
+    const userCell = el.matches?.('[data-testid="UserCell"]')
+      ? el
+      : el.querySelector?.('[data-testid="UserCell"]') || el;
+    const nameBlock = userCell.querySelector('[data-testid="User-Name"]') || userCell;
+    const identity = extractEngagementIdentity(nameBlock);
+    if (!identity) return;
+    const { username, displayName } = identity;
+    const signature = `engagement\u0000${username}\u0000${displayName}`;
+    if (processedSignatures.get(el) === signature) return;
+    processedSignatures.set(el, signature);
+
+    if (accountWhitelist.has(username.toLowerCase())) {
+      exemptAccounts.add(username);
+      el.style.opacity = '1';
+      el.title = `[已跳过：白名单账号] @${username}`;
+      removeStamp(el);
+      return;
+    }
+    if (exemptAccounts.has(username)) {
+      el.style.opacity = '1';
+      el.title = `[已跳过：你正在关注该账号] @${username}`;
+      removeStamp(el);
+      return;
+    }
+    if (blocked.has(username)) {
+      el.style.opacity = '0.12';
+      el.title = `[已屏蔽和隐藏] @${username}`;
+      applyStamp(el);
+      return;
+    }
+
+    const nameMatches = matchingKeywords(`${displayName}\n${username}`);
+    const ruleContext = {
+      defaultAvatar: Boolean(userCell.querySelector(
+        'img[src*="default_profile_images"], img[src*="default_profile"]'
+      ))
+    };
+    const remoteMatches = [
+      ...matchingRemoteRules(username, 'username', ruleContext),
+      ...matchingRemoteRules(displayName, 'displayName', ruleContext)
+    ];
+    if (!nameMatches.length && !remoteMatches.length) {
+      el.style.opacity = '1';
+      removeStamp(el);
+      return;
+    }
+
+    const reasons = ['帖子活动账号命中规则'];
+    if (nameMatches.length) reasons.push('用户名或显示名称命中关键词');
+    reasons.push(...remoteMatches.map(rule => rule.name));
+    blockUser(username, el, {
+      displayName,
+      reason: reasons.join('；'),
+      matchedKeywords: [...new Set(nameMatches)],
+      content: `${displayName} @${username}`.trim()
+    });
+  }
+
+  function extractEngagementIdentity(row) {
+    const identity = extractAccountIdentity(row);
+    if (!identity) return null;
+    const rowText = notificationText(row);
+    const marker = `@${identity.username}`;
+    const markerIndex = rowText.toLocaleLowerCase().indexOf(marker.toLocaleLowerCase());
+    const visibleDisplayName = markerIndex > 0
+      ? rowText.slice(0, markerIndex).replace(/\s+/gu, ' ').trim()
+      : '';
+    return {
+      ...identity,
+      displayName: visibleDisplayName || identity.displayName
+    };
+  }
+
+  function engagementActorRows() {
+    const rows = new Set(document.querySelectorAll('[data-testid="UserCell"]'));
+    document.querySelectorAll('a[href^="/"]').forEach(link => {
+      const href = link.getAttribute('href') || '';
+      const match = /^\/([A-Za-z0-9_]{1,15})\/?$/u.exec(href);
+      if (!match) return;
+      const row = link.closest(
+        '[data-testid="UserCell"], [data-testid="cellInnerDiv"], button, [role="button"]'
+      );
+      if (row) rows.add(row);
+    });
+    return rows;
+  }
+
+  function reportEngagementDiagnostic(rows) {
+    if (!window.__AUTOBANROBOT_MOBILE__ || !window.AutoBanBridge?.reportScanDiagnostic) return;
+    const identities = [...rows]
+      .map(row => extractEngagementIdentity(row.querySelector('[data-testid="User-Name"]') || row))
+      .filter(Boolean);
+    const matched = identities.filter(identity =>
+      hasKeyword(`${identity.displayName}\n${identity.username}`)
+    );
+    const message = [
+      `rows=${rows.size}`,
+      `userCells=${document.querySelectorAll('[data-testid="UserCell"]').length}`,
+      `profileLinks=${document.querySelectorAll('a[href^="/"]').length}`,
+      `identities=${identities.length}`,
+      `matched=${matched.length}`
+    ].join(' ');
+    if (message === lastEngagementDiagnostic) return;
+    lastEngagementDiagnostic = message;
+    try { window.AutoBanBridge.reportScanDiagnostic(message); } catch (_) {}
+  }
+
   function processTweet(el) {
     const tweetText = el.querySelector('[data-testid="tweetText"]');
     const text = extractTweetText(tweetText);
@@ -544,6 +771,15 @@
     syncPageStats();
     ['[data-testid="tweet"]', 'article[role="article"]']
       .forEach(sel => document.querySelectorAll(sel).forEach(processTweet));
+    if (/^\/notifications(?:\/|$)/u.test(location.pathname)) {
+      document.querySelectorAll('[data-testid="cellInnerDiv"]')
+        .forEach(processNotification);
+    }
+    if (isEngagementActivityPage()) {
+      const rows = engagementActorRows();
+      reportEngagementDiagnostic(rows);
+      rows.forEach(processEngagementActor);
+    }
   }
 
   function scheduleScan() {
