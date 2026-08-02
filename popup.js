@@ -206,12 +206,12 @@ function renderBlockHistory(value) {
     const unblock = document.createElement('button');
     unblock.type = 'button';
     if (record.unblockedAt) {
-      unblock.textContent = '已取消屏蔽';
-      unblock.disabled = true;
+      unblock.textContent = '重新屏蔽和隐藏';
+      unblock.addEventListener('click', () => requestReblock(record, unblock));
       const unblockedTime = new Date(record.unblockedAt).toLocaleString();
       unblock.title = `取消时间：${unblockedTime}`;
     } else {
-      unblock.textContent = '取消屏蔽';
+      unblock.textContent = '取消屏蔽和隐藏';
       unblock.addEventListener('click', () => requestUnblock(record, unblock));
     }
     actions.appendChild(unblock);
@@ -221,18 +221,36 @@ function renderBlockHistory(value) {
 }
 
 function requestUnblock(record, button) {
-  if (!confirm(`确定取消屏蔽 @${record.username}？`)) return;
+  if (!confirm(`确定取消屏蔽和隐藏 @${record.username}？`)) return;
   button.disabled = true;
   button.textContent = '处理中…';
   chrome.runtime.sendMessage({ type: 'UNBLOCK_USER', record }, response => {
     if (chrome.runtime.lastError || !response?.ok) {
       button.disabled = false;
-      button.textContent = '重试取消屏蔽';
+      button.textContent = '重试取消屏蔽和隐藏';
       button.title = response?.error || chrome.runtime.lastError?.message || '操作失败';
       return;
     }
-    button.textContent = '已取消屏蔽';
-    button.title = 'X 已确认取消屏蔽成功';
+    chrome.storage.local.get(['blockHistory'], result => {
+      renderBlockHistory(result.blockHistory);
+    });
+  });
+}
+
+function requestReblock(record, button) {
+  if (!confirm(`确定重新屏蔽和隐藏 @${record.username}？`)) return;
+  button.disabled = true;
+  button.textContent = '处理中…';
+  chrome.runtime.sendMessage({ type: 'REBLOCK_USER', record }, response => {
+    if (chrome.runtime.lastError || !response?.ok) {
+      button.disabled = false;
+      button.textContent = '重试重新屏蔽和隐藏';
+      button.title = response?.error || chrome.runtime.lastError?.message || '操作失败';
+      return;
+    }
+    chrome.storage.local.get(['blockHistory'], result => {
+      renderBlockHistory(result.blockHistory);
+    });
   });
 }
 

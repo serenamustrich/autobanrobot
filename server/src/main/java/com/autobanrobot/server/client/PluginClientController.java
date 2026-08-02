@@ -27,7 +27,7 @@ public class PluginClientController {
     }
 
     @GetMapping("/stats")
-    public PluginUserStatsResponse stats() {
+    public ClientStatsResponse stats() {
         return service.stats();
     }
 }

@@ -1,6 +1,6 @@
 package com.autobanrobot.server.client;
 
-public record PluginUserStatsResponse(
+public record ClientUserStatsResponse(
     long onlineUsers,
     long cumulativeUsers,
     long onlineWindowSeconds

@@ -11,6 +11,13 @@ public interface BanEventRepository extends JpaRepository<BanEvent, Long> {
 
     Optional<BanEvent> findByClientEventId(String clientEventId);
 
+    Optional<BanEvent> findTopByUsernameIgnoreCaseAndPageUrlAndContentAndBlockedAtGreaterThanEqualOrderByBlockedAtDesc(
+        String username,
+        String pageUrl,
+        String content,
+        Instant blockedAt
+    );
+
     Page<BanEvent> findByUsernameContainingIgnoreCase(String username, Pageable pageable);
 
     long countByBlockedAtGreaterThanEqual(Instant blockedAt);

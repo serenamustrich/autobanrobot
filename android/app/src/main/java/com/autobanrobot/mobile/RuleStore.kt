@@ -8,7 +8,11 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class RuleStore(private val context: Context) {
-    private companion object { const val TAG = "AutoBanRuleStore" }
+    private companion object {
+        const val TAG = "AutoBanRuleStore"
+        const val ACCOUNT_WHITELIST_KEY = "account_whitelist"
+        val DEFAULT_ACCOUNT_WHITELIST = setOf("aagodofwealth")
+    }
     private val prefs = context.getSharedPreferences("autoban_settings", Context.MODE_PRIVATE)
 
     var autoBanEnabled: Boolean
@@ -32,6 +36,49 @@ class RuleStore(private val context: Context) {
         val current = keywords()
         if (current.any { it == keyword }) return false
         setKeywords(current + keyword)
+        return true
+    }
+
+    fun accountWhitelist(): Set<String> {
+        val saved = prefs.getString(ACCOUNT_WHITELIST_KEY, null) ?: return DEFAULT_ACCOUNT_WHITELIST
+        return try {
+            val array = JSONArray(saved)
+            DEFAULT_ACCOUNT_WHITELIST + buildSet {
+                for (index in 0 until array.length()) {
+                    val username = array.optString(index).trim()
+                    if (BlockJob.isValidUsername(username)) add(username.lowercase())
+                }
+            }
+        } catch (error: Exception) {
+            Log.w(TAG, "账号白名单解析失败，使用空白名单", error)
+            emptySet()
+        }
+    }
+
+    fun rememberAccount(username: String): Boolean {
+        val normalized = username.trim().takeIf { BlockJob.isValidUsername(it) }?.lowercase() ?: return false
+        val current = accountWhitelist().toMutableSet()
+        if (!current.add(normalized)) return false
+        prefs.edit().putString(ACCOUNT_WHITELIST_KEY, JSONArray(current.toList().sorted()).toString()).apply()
+        return true
+    }
+
+    fun isWhitelisted(username: String): Boolean = accountWhitelist().contains(username.trim().lowercase())
+
+    fun displayAccount(username: String): String {
+        return if (username.trim().equals("aagodofwealth", ignoreCase = true)) {
+            "AAAGodofWealth"
+        } else {
+            username.trim()
+        }
+    }
+
+    fun removeAccount(username: String): Boolean {
+        val normalized = username.trim().lowercase()
+        if (normalized.isBlank() || normalized in DEFAULT_ACCOUNT_WHITELIST) return false
+        val current = accountWhitelist().toMutableSet()
+        if (!current.remove(normalized)) return false
+        prefs.edit().putString(ACCOUNT_WHITELIST_KEY, JSONArray(current.toList().sorted()).toString()).apply()
         return true
     }
 

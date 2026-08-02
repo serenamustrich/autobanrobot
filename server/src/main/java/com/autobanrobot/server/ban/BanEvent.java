@@ -32,6 +32,9 @@ public class BanEvent {
     @Column(name = "client_event_id", nullable = false, length = 64)
     private String clientEventId;
 
+    @Column(name = "client_type", nullable = false, length = 16, columnDefinition = "varchar(16) default 'plugin'")
+    private String clientType;
+
     @Column(nullable = false, length = 64)
     private String username;
 
@@ -68,6 +71,7 @@ public class BanEvent {
 
     public BanEvent(
         String clientEventId,
+        String clientType,
         String username,
         String displayName,
         String reason,
@@ -79,6 +83,7 @@ public class BanEvent {
         Instant receivedAt
     ) {
         this.clientEventId = clientEventId;
+        this.clientType = clientType;
         this.username = username;
         this.displayName = displayName;
         this.reason = reason;
@@ -96,6 +101,10 @@ public class BanEvent {
 
     public String getClientEventId() {
         return clientEventId;
+    }
+
+    public String getClientType() {
+        return clientType;
     }
 
     public String getUsername() {

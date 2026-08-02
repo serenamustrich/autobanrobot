@@ -3,6 +3,7 @@ const QUEUE_ALARM = 'autobanrobot-process-queue';
 const MAX_ATTEMPTS = 3;
 const MAX_BLOCK_HISTORY = 500;
 const BLOCK_INTERVAL_MS = 500;
+const HISTORY_HIDE_MIGRATION_KEY = 'historyHideMigrationV1';
 const UPLOAD_QUEUE_KEY = 'pendingBanUploadQueue';
 const UPLOAD_ALARM = 'autobanrobot-upload-ban-events';
 const UPLOAD_ENDPOINT = 'https://ban.richccy.com/api/bans';
@@ -17,6 +18,7 @@ const MIN_ONLINE_RULE_VERSION = 9;
 const INSTALLATION_ID_KEY = 'anonymousInstallationId';
 const LATEST_RELEASE_API =
   'https://api.github.com/repos/serenamustrich/autobanrobot/releases/latest';
+const DEFAULT_ACCOUNT_WHITELIST = ['AAAGodofWealth'];
 
 let bearer = null;
 let csrf = null;
@@ -25,6 +27,7 @@ let queueOperation = Promise.resolve();
 let queueScheduleId = 0;
 let uploadProcessing = false;
 let uploadScheduleId = 0;
+let historyHideMigrationRunning = false;
 
 function isExtensionShutdownError(error) {
   return /(?:No SW|Extension context invalidated|message port closed)/i.test(
@@ -60,6 +63,13 @@ async function initializeKeywords() {
   if (Array.isArray(stored.keywords)) return;
   const response = await fetch(chrome.runtime.getURL('default-keywords.json'));
   await chrome.storage.local.set({ keywords: await response.json() });
+}
+
+async function initializeAccountWhitelist() {
+  const stored = await chrome.storage.local.get(['accountWhitelist']);
+  const current = Array.isArray(stored.accountWhitelist) ? stored.accountWhitelist : [];
+  const merged = [...new Set([...DEFAULT_ACCOUNT_WHITELIST, ...current])];
+  await chrome.storage.local.set({ accountWhitelist: merged });
 }
 
 async function migrateLegacyRuleStates() {
@@ -222,7 +232,8 @@ async function sendHeartbeat() {
     body: JSON.stringify({
       installationId,
       platform: 'chrome-edge',
-      version: chrome.runtime.getManifest().version
+      version: chrome.runtime.getManifest().version,
+      clientType: 'plugin'
     })
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -273,7 +284,7 @@ async function checkForUpdate() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  Promise.all([initializeKeywords(), migrateLegacyRuleStates(), initializeRules()]).catch(error => {
+  Promise.all([initializeKeywords(), initializeAccountWhitelist(), migrateLegacyRuleStates(), initializeRules()]).catch(error => {
     console.error('Failed to initialize extension settings:', error);
   });
   scheduleQueue();
@@ -284,9 +295,11 @@ chrome.runtime.onInstalled.addListener(() => {
   sendHeartbeat().catch(() => {});
   scheduleRuleRefresh();
   refreshRules().catch(() => {});
+  withQueueLock(migrateHistoryHides).catch(() => {});
 });
 
 chrome.runtime.onStartup.addListener(() => {
+  initializeAccountWhitelist().catch(() => {});
   scheduleQueue();
   scheduleUpload();
   scheduleUpdateChecks();
@@ -295,6 +308,7 @@ chrome.runtime.onStartup.addListener(() => {
   sendHeartbeat().catch(() => {});
   scheduleRuleRefresh();
   refreshRules().catch(() => {});
+  withQueueLock(migrateHistoryHides).catch(() => {});
 });
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
@@ -320,10 +334,11 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
       settleExtensionCall(
         chrome.storage.session.set({ bearer, csrf }),
         'Failed to persist session authentication'
-      );
-      scheduleQueue();
-    }
-  },
+    );
+    scheduleQueue();
+    withQueueLock(migrateHistoryHides).catch(() => {});
+  }
+},
   { urls: ['https://twitter.com/i/api/*', 'https://x.com/i/api/*'] },
   ['requestHeaders']
 );
@@ -368,6 +383,33 @@ function confirmsUnblock(payload, username) {
   );
 }
 
+function confirmsMute(payload, username) {
+  if (!payload || payload.errors?.length) return false;
+  const sameUser =
+    typeof payload.screen_name !== 'string' ||
+    payload.screen_name.toLocaleLowerCase() === username.toLocaleLowerCase();
+  return sameUser && (
+    payload.muting === true ||
+    payload.relationship?.source?.muting === true
+  );
+}
+
+function confirmsUnmute(payload, username) {
+  if (!payload || payload.errors?.length) return false;
+  const sameUser =
+    typeof payload.screen_name !== 'string' ||
+    payload.screen_name.toLocaleLowerCase() === username.toLocaleLowerCase();
+  return sameUser && (
+    payload.muting === false ||
+    payload.relationship?.source?.muting === false
+  );
+}
+
+function isRetryableStatus(status) {
+  return status === 0 || status === 408 || status === 425 ||
+    status === 429 || status >= 500;
+}
+
 async function fetchRelationship(job) {
   try {
     const query = new URLSearchParams({ target_screen_name: job.username });
@@ -382,8 +424,126 @@ async function fetchRelationship(job) {
   }
 }
 
+async function attemptMuteOnly(record) {
+  await authReady;
+  if (!bearer || !csrf) {
+    return { state: 'retry', message: '尚未获取 X 登录凭据' };
+  }
+  const username = String(record?.username ?? '').trim();
+  if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
+    return { state: 'failed', message: '账号用户名无效' };
+  }
+  const target = {
+    ...record,
+    username,
+    hostname: record?.hostname === 'twitter.com' ||
+      String(record?.pageUrl ?? '').includes('twitter.com')
+      ? 'twitter.com'
+      : 'x.com'
+  };
+  const relationship = await fetchRelationship(target);
+  const source = relationship.payload?.relationship?.source;
+  if (!relationship.ok || !source) {
+    return {
+      state: isRetryableStatus(relationship.status) ? 'retry' : 'failed',
+      message: relationship.status
+        ? `无法确认当前隐藏状态（HTTP ${relationship.status}）`
+        : '无法确认当前隐藏状态'
+    };
+  }
+  if (source.muting === true) return { state: 'already-muted', message: '该账号已经处于隐藏状态' };
+
+  try {
+    const response = await fetch(
+      `https://${target.hostname}/i/api/1.1/mutes/users/create.json`,
+      {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: `screen_name=${encodeURIComponent(username)}`,
+        credentials: 'include'
+      }
+    );
+    const payload = parseJson(await response.text());
+    if (!response.ok || payload?.errors?.length) {
+      return {
+        state: isRetryableStatus(response.status) ? 'retry' : 'failed',
+        message: `隐藏请求失败（HTTP ${response.status}）`
+      };
+    }
+    const verification = await fetchRelationship(target);
+    const verifiedSource = verification.payload?.relationship?.source;
+    if (verification.ok && verifiedSource && verifiedSource.muting === false) {
+      return { state: 'retry', message: 'X 未确认隐藏成功' };
+    }
+    return { state: 'success', message: '已确认隐藏' };
+  } catch (error) {
+    return { state: 'retry', message: `隐藏异常：${error.message}` };
+  }
+}
+
+async function migrateHistoryHides() {
+  await authReady;
+  if (historyHideMigrationRunning || !bearer || !csrf) return;
+  const stored = await chrome.storage.local.get([
+    'blockHistory',
+    HISTORY_HIDE_MIGRATION_KEY
+  ]);
+  if (stored[HISTORY_HIDE_MIGRATION_KEY] === true) return;
+  historyHideMigrationRunning = true;
+  try {
+    const history = Array.isArray(stored.blockHistory) ? stored.blockHistory : [];
+    const updated = history.map(item => ({ ...item }));
+    let complete = true;
+    for (let index = 0; index < updated.length; index += 1) {
+      const record = updated[index];
+      if (record.unblockedAt || record.hidden) continue;
+      const outcome = await attemptMuteOnly(record);
+      if (outcome.state === 'success' || outcome.state === 'already-muted') {
+        record.hidden = true;
+        record.hiddenAt = new Date().toISOString();
+        await broadcastResult(
+          record,
+          'success',
+          '历史记录同步：已确认隐藏',
+          true
+        );
+      } else {
+        complete = false;
+      }
+      await new Promise(resolve => setTimeout(resolve, BLOCK_INTERVAL_MS));
+    }
+    await chrome.storage.local.set({ blockHistory: updated });
+    if (complete) {
+      await chrome.storage.local.set({ [HISTORY_HIDE_MIGRATION_KEY]: true });
+    }
+  } finally {
+    historyHideMigrationRunning = false;
+  }
+}
+
+async function restoreHistoryVisuals(tabId) {
+  const stored = await chrome.storage.local.get(['blockHistory']);
+  const history = Array.isArray(stored.blockHistory) ? stored.blockHistory : [];
+  let restored = 0;
+  for (const record of history) {
+    if (record.unblockedAt || !record.hidden) continue;
+    restored += 1;
+    await broadcastResult(
+      { ...record, sourceTabId: tabId },
+      'success',
+      '历史记录同步：已恢复',
+      true
+    );
+  }
+  return { ok: true, restored };
+}
+
 async function attemptBlock(job) {
-  const relationship = await fetchRelationship(job);
+  const target = {
+    ...job,
+    hostname: job.hostname === 'twitter.com' ? 'twitter.com' : 'x.com'
+  };
+  const relationship = await fetchRelationship(target);
   const source = relationship.payload?.relationship?.source;
   if (!relationship.ok || !source) {
     return {
@@ -399,40 +559,63 @@ async function attemptBlock(job) {
   if (source.following === true) {
     return { state: 'skipped', message: '你正在关注该账号' };
   }
-  if (source.blocking === true) {
-    return { state: 'already-blocked', message: '该账号已经处于屏蔽状态' };
-  }
-
   try {
-    const response = await fetch(
-      `https://${job.hostname}/i/api/1.1/blocks/create.json`,
-      {
-        method: 'POST',
-        headers: apiHeaders(),
-        body: `screen_name=${encodeURIComponent(job.username)}`,
-        credentials: 'include'
+    let muted = source.muting === true;
+    let blocking = source.blocking === true;
+
+    if (!muted) {
+      const response = await fetch(
+        `https://${target.hostname}/i/api/1.1/mutes/users/create.json`,
+        {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: `screen_name=${encodeURIComponent(target.username)}`,
+          credentials: 'include'
+        }
+      );
+      const payload = parseJson(await response.text());
+      if (!response.ok || payload?.errors?.length) {
+        return {
+          state: isRetryableStatus(response.status) ? 'retry' : 'failed',
+          message: `隐藏请求失败（HTTP ${response.status}）`
+        };
       }
-    );
-    const payload = parseJson(await response.text());
-    if (!response.ok) {
-      const retryable =
-        response.status === 408 || response.status === 425 ||
-        response.status === 429 || response.status >= 500;
-      return {
-        state: retryable ? 'retry' : 'failed',
-        message: `HTTP ${response.status}`
-      };
+      muted = true;
     }
 
-    if (confirmsBlock(payload, job.username)) {
-      return { state: 'success' };
+    if (!blocking) {
+      const response = await fetch(
+        `https://${target.hostname}/i/api/1.1/blocks/create.json`,
+        {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: `screen_name=${encodeURIComponent(target.username)}`,
+          credentials: 'include'
+        }
+      );
+      const payload = parseJson(await response.text());
+      if (!response.ok || payload?.errors?.length) {
+        return {
+          state: isRetryableStatus(response.status) ? 'retry' : 'failed',
+          message: `屏蔽请求失败（HTTP ${response.status}）`
+        };
+      }
+      blocking = confirmsBlock(payload, target.username) || response.ok;
     }
 
-    const verification = await fetchRelationship(job);
-    if (verification.ok && confirmsBlock(verification.payload, job.username)) {
-      return { state: 'success' };
+    const verification = await fetchRelationship(target);
+    const verifiedSource = verification.payload?.relationship?.source;
+    const confirmedBlocking = verification.ok && verifiedSource
+      ? verifiedSource.blocking === true
+      : blocking;
+    const confirmedMuted = verification.ok && verifiedSource &&
+      typeof verifiedSource.muting === 'boolean'
+      ? verifiedSource.muting === true
+      : muted;
+    if (confirmedBlocking && confirmedMuted) {
+      return { state: 'success', message: '已确认屏蔽和隐藏' };
     }
-    return { state: 'retry', message: 'API 未确认屏蔽成功' };
+    return { state: 'retry', message: 'X 未同时确认屏蔽和隐藏成功' };
   } catch (error) {
     return { state: 'retry', message: `异常: ${error.message}` };
   }
@@ -463,37 +646,59 @@ async function attemptUnblock(record) {
         : '无法确认当前屏蔽状态'
     };
   }
-  if (source.blocking === false) {
-    return { state: 'already-unblocked', message: '该账号已经取消屏蔽' };
-  }
-
   try {
-    const response = await fetch(
-      `https://${hostname}/i/api/1.1/blocks/destroy.json`,
-      {
-        method: 'POST',
-        headers: apiHeaders(),
-        body: `screen_name=${encodeURIComponent(username)}`,
-        credentials: 'include'
+    let muted = source.muting === true;
+    let blocking = source.blocking === true;
+
+    if (source.muting !== false) {
+      const response = await fetch(
+        `https://${hostname}/i/api/1.1/mutes/users/destroy.json`,
+        {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: `screen_name=${encodeURIComponent(username)}`,
+          credentials: 'include'
+        }
+      );
+      const payload = parseJson(await response.text());
+      if (!response.ok || payload?.errors?.length) {
+        return { state: isRetryableStatus(response.status) ? 'retry' : 'failed', message: `取消隐藏失败（HTTP ${response.status}）` };
       }
-    );
-    const payload = parseJson(await response.text());
-    if (!response.ok || payload?.errors?.length) {
-      return {
-        state: 'failed',
-        message: `取消屏蔽失败（HTTP ${response.status}）`
-      };
+      muted = false;
     }
+
+    if (source.blocking !== false) {
+      const response = await fetch(
+        `https://${hostname}/i/api/1.1/blocks/destroy.json`,
+        {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: `screen_name=${encodeURIComponent(username)}`,
+          credentials: 'include'
+        }
+      );
+      const payload = parseJson(await response.text());
+      if (!response.ok || payload?.errors?.length) {
+        return { state: isRetryableStatus(response.status) ? 'retry' : 'failed', message: `取消屏蔽失败（HTTP ${response.status}）` };
+      }
+      blocking = false;
+    }
+
     const verification = await fetchRelationship(target);
-    if (
-      verification.ok &&
-      confirmsUnblock(verification.payload, username)
-    ) {
-      return { state: 'success', message: '已确认取消屏蔽' };
+    const verifiedSource = verification.payload?.relationship?.source;
+    const confirmedBlocking = verification.ok && verifiedSource
+      ? verifiedSource.blocking === false
+      : !blocking;
+    const confirmedMuted = verification.ok && verifiedSource &&
+      typeof verifiedSource.muting === 'boolean'
+      ? verifiedSource.muting === false
+      : !muted;
+    if (confirmedBlocking && confirmedMuted) {
+      return { state: 'success', message: '已确认取消屏蔽和隐藏' };
     }
-    return { state: 'failed', message: 'X 未确认取消屏蔽成功' };
+    return { state: 'retry', message: 'X 未同时确认取消屏蔽和隐藏成功' };
   } catch (error) {
-    return { state: 'failed', message: `取消屏蔽异常：${error.message}` };
+    return { state: 'retry', message: `取消屏蔽和隐藏异常：${error.message}` };
   }
 }
 
@@ -525,12 +730,36 @@ async function unblockHistoryRecord(record) {
   return { ok: true, state: outcome.state, unblockedAt };
 }
 
-async function broadcastResult(job, state, message = '') {
-  if (!job.sourceTabId) return;
-  await chrome.tabs.sendMessage(job.sourceTabId, {
+async function reblockHistoryRecord(record) {
+  const username = String(record?.username ?? '').trim();
+  if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
+    return { ok: false, error: '账号用户名无效' };
+  }
+  const stored = await chrome.storage.local.get([QUEUE_KEY]);
+  const queue = Array.isArray(stored[QUEUE_KEY]) ? stored[QUEUE_KEY] : [];
+  await chrome.storage.local.set({
+    [QUEUE_KEY]: queue.filter(job =>
+      String(job.username ?? '').toLocaleLowerCase() !== username.toLocaleLowerCase()
+    )
+  });
+  const outcome = await attemptBlock(record);
+  if (outcome.state !== 'success') return { ok: false, error: outcome.message };
+  await recordSuccess(record);
+  return { ok: true, state: outcome.state, message: outcome.message };
+}
+
+async function broadcastResult(job, state, message = '', historical = false) {
+  const tabIds = job.sourceTabId
+    ? [job.sourceTabId]
+    : historical
+      ? (await chrome.tabs.query({
+          url: ['https://x.com/*', 'https://twitter.com/*']
+        })).map(tab => tab.id).filter(Number.isInteger)
+      : [];
+  await Promise.all(tabIds.map(tabId => chrome.tabs.sendMessage(tabId, {
       type: 'BLOCK_RESULT',
-      result: { ...job, state, message }
-  }).catch(() => {});
+      result: { ...job, state, message, historical }
+    }).catch(() => {})));
 }
 
 async function recordSuccess(job) {
@@ -551,6 +780,10 @@ async function recordSuccess(job) {
     configuredKeywords: Array.isArray(stored.keywords) ? stored.keywords : [],
     content: job.content,
     pageUrl: job.pageUrl,
+    hostname: job.hostname === 'twitter.com' ? 'twitter.com' : 'x.com',
+    csrf: job.csrf ?? '',
+    action: 'block+mute',
+    hidden: true,
     blockedAt: new Date().toISOString()
   };
   await chrome.storage.local.set({
@@ -602,7 +835,8 @@ async function processUploadQueue() {
           configuredKeywords: record.configuredKeywords,
           content: record.content,
           pageUrl: record.pageUrl,
-          blockedAt: record.blockedAt
+          blockedAt: record.blockedAt,
+          clientType: 'plugin'
         })
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -644,13 +878,9 @@ async function processQueue() {
       await broadcastResult(job, 'success');
     } else if (outcome.state === 'skipped') {
       await broadcastResult(job, 'skipped', outcome.message);
-    } else if (outcome.state === 'already-blocked') {
-      await broadcastResult(job, 'already-blocked', outcome.message);
-    } else if (outcome.state === 'retry' && (job.attempts ?? 0) + 1 < MAX_ATTEMPTS) {
+    } else {
       job.attempts = (job.attempts ?? 0) + 1;
       queue.push(job);
-    } else {
-      await broadcastResult(job, 'failed', outcome.message);
     }
 
     await chrome.storage.local.set({ [QUEUE_KEY]: queue });
@@ -732,8 +962,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }
+  if (message.type === 'RESTORE_HISTORY_VISUALS') {
+    withQueueLock(() => restoreHistoryVisuals(sender.tab?.id))
+      .then(sendResponse)
+      .catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
   if (message.type === 'UNBLOCK_USER') {
     withQueueLock(() => unblockHistoryRecord(message.record))
+      .then(sendResponse)
+      .catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+  if (message.type === 'REBLOCK_USER') {
+    withQueueLock(() => reblockHistoryRecord(message.record))
       .then(sendResponse)
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;

@@ -9,5 +9,7 @@ public interface PluginClientRepository extends JpaRepository<PluginClient, Long
 
     Optional<PluginClient> findByInstallationId(String installationId);
 
-    long countByLastSeenAtGreaterThanEqual(Instant threshold);
+    long countByLastSeenAtGreaterThanEqualAndClientType(Instant threshold, String clientType);
+
+    long countByClientType(String clientType);
 }

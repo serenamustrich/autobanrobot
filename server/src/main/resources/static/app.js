@@ -22,8 +22,7 @@ const translations = {
     banTab: 'Ban 清单', keywordTab: '关键词分析', popularTab: '热门关键词', targetTab: '垃圾推广目标账号',
     confirmedTotal: '累计已确认屏蔽', allRecords: '所有已接收记录',
     todayAdded: '今日新增', serverDate: '按服务器本地日期',
-    onlineUsers: '插件在线用户数', onlineWindow: '最近 2 分钟发送过心跳',
-    cumulativeUsers: '插件累计用户数', anonymousInstalls: '不同匿名安装实例',
+    pluginUsers: '插件用户', appUsers: 'App用户', onlineLabel: '在线', cumulativeLabel: '累计',
     blockRecords: '屏蔽记录', searchLabel: '搜索用户名',
     searchPlaceholder: '搜索 @username',
     account: '账号', matchedRule: '命中关键词 / 规则',
@@ -58,8 +57,7 @@ const translations = {
     banTab: 'Ban List', keywordTab: 'Keyword Analytics', popularTab: 'Popular Keywords', targetTab: 'Spam Promotion Targets',
     confirmedTotal: 'Confirmed Bans', allRecords: 'All received records',
     todayAdded: 'Added Today', serverDate: 'Server local date',
-    onlineUsers: 'Online Plugin Users', onlineWindow: 'Heartbeat received in the last 2 minutes',
-    cumulativeUsers: 'Cumulative Plugin Users', anonymousInstalls: 'Distinct anonymous installations',
+    pluginUsers: 'Plugin Users', appUsers: 'App Users', onlineLabel: 'Online', cumulativeLabel: 'Total',
     blockRecords: 'Block Records', searchLabel: 'Search username',
     searchPlaceholder: 'Search @username',
     account: 'Account', matchedRule: 'Matched Keyword / Rule',
@@ -94,8 +92,7 @@ const translations = {
     banTab: 'Bloqueos', keywordTab: 'Análisis de palabras clave', popularTab: 'Palabras clave populares', targetTab: 'Objetivos de promoción spam',
     confirmedTotal: 'Bloqueos confirmados', allRecords: 'Todos los registros recibidos',
     todayAdded: 'Añadidos hoy', serverDate: 'Fecha local del servidor',
-    onlineUsers: 'Usuarios del plugin en línea', onlineWindow: 'Heartbeat recibido en los últimos 2 minutos',
-    cumulativeUsers: 'Usuarios acumulados', anonymousInstalls: 'Instalaciones anónimas distintas',
+    pluginUsers: 'Usuarios del plugin', appUsers: 'Usuarios de la app', onlineLabel: 'En línea', cumulativeLabel: 'Total',
     blockRecords: 'Registros de bloqueo', searchLabel: 'Buscar usuario',
     searchPlaceholder: 'Buscar @usuario',
     account: 'Cuenta', matchedRule: 'Palabra clave / regla',
@@ -130,8 +127,7 @@ const translations = {
     banTab: 'Ban 一覧', keywordTab: 'キーワード分析', popularTab: '人気キーワード', targetTab: 'スパム宣伝対象アカウント',
     confirmedTotal: '確認済み Ban 累計', allRecords: '受信した全記録',
     todayAdded: '本日の追加', serverDate: 'サーバーのローカル日付',
-    onlineUsers: 'オンラインプラグインユーザー', onlineWindow: '直近 2 分以内にハートビート受信',
-    cumulativeUsers: 'プラグイン累計ユーザー', anonymousInstalls: '異なる匿名インストール',
+    pluginUsers: 'プラグインユーザー', appUsers: 'アプリユーザー', onlineLabel: 'オンライン', cumulativeLabel: '累計',
     blockRecords: 'ブロック記録', searchLabel: 'ユーザー名を検索',
     searchPlaceholder: '@username を検索',
     account: 'アカウント', matchedRule: '一致キーワード / ルール',
@@ -166,8 +162,7 @@ const translations = {
     banTab: 'Ban 목록', keywordTab: '키워드 분석', popularTab: '인기 키워드', targetTab: '스팸 홍보 대상 계정',
     confirmedTotal: '확인된 누적 Ban', allRecords: '수신한 전체 기록',
     todayAdded: '오늘 추가', serverDate: '서버 현지 날짜 기준',
-    onlineUsers: '온라인 플러그인 사용자', onlineWindow: '최근 2분 이내 하트비트 수신',
-    cumulativeUsers: '플러그인 누적 사용자', anonymousInstalls: '서로 다른 익명 설치',
+    pluginUsers: '플러그인 사용자', appUsers: '앱 사용자', onlineLabel: '온라인', cumulativeLabel: '누적',
     blockRecords: '차단 기록', searchLabel: '사용자 이름 검색',
     searchPlaceholder: '@username 검색',
     account: '계정', matchedRule: '일치 키워드 / 규칙',
@@ -202,8 +197,7 @@ const translations = {
     banTab: 'Ban-Liste', keywordTab: 'Schlüsselwortanalyse', popularTab: 'Beliebte Schlüsselwörter', targetTab: 'Spam-Werbeziele',
     confirmedTotal: 'Bestätigte Bans', allRecords: 'Alle empfangenen Einträge',
     todayAdded: 'Heute hinzugefügt', serverDate: 'Lokales Serverdatum',
-    onlineUsers: 'Online-Plugin-Nutzer', onlineWindow: 'Heartbeat in den letzten 2 Minuten',
-    cumulativeUsers: 'Plugin-Nutzer gesamt', anonymousInstalls: 'Unterschiedliche anonyme Installationen',
+    pluginUsers: 'Plugin-Nutzer', appUsers: 'App-Nutzer', onlineLabel: 'Online', cumulativeLabel: 'Gesamt',
     blockRecords: 'Sperreinträge', searchLabel: 'Benutzernamen suchen',
     searchPlaceholder: '@username suchen',
     account: 'Konto', matchedRule: 'Schlüsselwort / Regel',
@@ -238,8 +232,7 @@ const translations = {
     banTab: 'Blocages', keywordTab: 'Analyse des mots-clés', popularTab: 'Mots-clés populaires', targetTab: 'Cibles de promotion spam',
     confirmedTotal: 'Blocages confirmés', allRecords: 'Tous les enregistrements reçus',
     todayAdded: 'Ajouts du jour', serverDate: 'Date locale du serveur',
-    onlineUsers: 'Utilisateurs du plugin en ligne', onlineWindow: 'Heartbeat reçu dans les 2 dernières minutes',
-    cumulativeUsers: 'Utilisateurs cumulés', anonymousInstalls: 'Installations anonymes distinctes',
+    pluginUsers: 'Utilisateurs du plugin', appUsers: "Utilisateurs de l'app", onlineLabel: 'En ligne', cumulativeLabel: 'Total',
     blockRecords: 'Enregistrements', searchLabel: 'Rechercher un identifiant',
     searchPlaceholder: 'Rechercher @username',
     account: 'Compte', matchedRule: 'Mot-clé / règle',
@@ -274,8 +267,7 @@ const translations = {
     banTab: 'Блокировки', keywordTab: 'Аналитика ключевых слов', popularTab: 'Популярные ключевые слова', targetTab: 'Целевые аккаунты спам-рекламы',
     confirmedTotal: 'Подтверждённые блокировки', allRecords: 'Все полученные записи',
     todayAdded: 'Добавлено сегодня', serverDate: 'Локальная дата сервера',
-    onlineUsers: 'Пользователи плагина онлайн', onlineWindow: 'Heartbeat за последние 2 минуты',
-    cumulativeUsers: 'Всего пользователей плагина', anonymousInstalls: 'Уникальные анонимные установки',
+    pluginUsers: 'Пользователи плагина', appUsers: 'Пользователи приложения', onlineLabel: 'Онлайн', cumulativeLabel: 'Всего',
     blockRecords: 'Записи блокировок', searchLabel: 'Поиск имени пользователя',
     searchPlaceholder: 'Поиск @username',
     account: 'Аккаунт', matchedRule: 'Ключевое слово / правило',
@@ -310,8 +302,7 @@ const translations = {
     banTab: 'Elenco Ban', keywordTab: 'Analisi parole chiave', popularTab: 'Parole chiave popolari', targetTab: 'Account obiettivo dello spam',
     confirmedTotal: 'Ban confermati', allRecords: 'Tutti i record ricevuti',
     todayAdded: 'Aggiunti oggi', serverDate: 'Data locale del server',
-    onlineUsers: 'Utenti plugin online', onlineWindow: 'Heartbeat negli ultimi 2 minuti',
-    cumulativeUsers: 'Utenti plugin cumulativi', anonymousInstalls: 'Installazioni anonime distinte',
+    pluginUsers: 'Utenti del plugin', appUsers: "Utenti dell'app", onlineLabel: 'Online', cumulativeLabel: 'Totale',
     blockRecords: 'Record dei blocchi', searchLabel: 'Cerca nome utente',
     searchPlaceholder: 'Cerca @username',
     account: 'Account', matchedRule: 'Parola chiave / regola',
@@ -394,8 +385,10 @@ const elements = {
   search: document.getElementById('searchInput'),
   connection: document.getElementById('connection'),
   connectionText: document.getElementById('connectionText'),
-  onlineUsers: document.getElementById('onlineUsers'),
-  cumulativeUsers: document.getElementById('cumulativeUsers'),
+  pluginOnlineUsers: document.getElementById('pluginOnlineUsers'),
+  pluginCumulativeUsers: document.getElementById('pluginCumulativeUsers'),
+  appOnlineUsers: document.getElementById('appOnlineUsers'),
+  appCumulativeUsers: document.getElementById('appCumulativeUsers'),
   backToTop: document.getElementById('backToTop')
 };
 
@@ -444,8 +437,12 @@ async function loadStats() {
 
 async function loadUserStats() {
   const data = await fetchJson('/api/clients/stats');
-  elements.onlineUsers.textContent = data.onlineUsers.toLocaleString();
-  elements.cumulativeUsers.textContent = data.cumulativeUsers.toLocaleString();
+  const plugin = data.plugin ?? data;
+  const app = data.app ?? { onlineUsers: 0, cumulativeUsers: 0 };
+  elements.pluginOnlineUsers.textContent = plugin.onlineUsers.toLocaleString();
+  elements.pluginCumulativeUsers.textContent = plugin.cumulativeUsers.toLocaleString();
+  elements.appOnlineUsers.textContent = app.onlineUsers.toLocaleString();
+  elements.appCumulativeUsers.textContent = app.cumulativeUsers.toLocaleString();
 }
 
 async function loadKeywords() {

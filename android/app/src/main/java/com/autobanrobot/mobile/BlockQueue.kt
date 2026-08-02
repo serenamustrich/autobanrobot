@@ -68,15 +68,24 @@ class BlockQueue(
     private val rules: RuleStore,
     private val auth: AuthState,
     private val api: XApiClient,
+    private val onProgress: (String) -> Unit = {},
     private val onResult: (BlockJob, ApiOutcome) -> Unit
 ) {
-    private companion object { const val TAG = "AutoBanBlockQueue" }
+    private companion object {
+        const val BLOCK_INTERVAL_MS = 500L
+        const val OWNER_USERNAME = "aagodofwealth"
+        const val HISTORY_HIDE_MIGRATION_KEY = "history_hide_migration_v1"
+        const val PROCESSED_ACCOUNTS_KEY = "processed_accounts"
+        const val TAG = "AutoBanBlockQueue"
+    }
     private val prefs = context.getSharedPreferences("autoban_queue", Context.MODE_PRIVATE)
     private val executor = Executors.newSingleThreadExecutor()
     private val processing = AtomicBoolean(false)
     private val jobs = mutableListOf<BlockJob>()
-    private var pageReady = false
-    private var pageHost = "x.com"
+    private val cancelledUsers = mutableSetOf<String>()
+    private var activeUsername: String? = null
+    private var activeState = "等待处理"
+    private var viewerLookupAt = 0L
 
     init {
         val saved = try {
@@ -89,15 +98,37 @@ class BlockQueue(
     }
 
     fun updateAuth(bearer: String?, csrf: String?) {
-        if (!bearer.isNullOrBlank()) auth.bearer = bearer
+        if (!bearer.isNullOrBlank() && bearer != auth.bearer) {
+            auth.bearer = bearer
+            auth.viewerUsername = null
+            auth.viewerLookupPending = true
+            val capturedBearer = bearer
+            Log.i(TAG, "开始验证当前登录账号")
+            Thread {
+                val detected = api.currentUsername()
+                Log.i(TAG, "当前登录账号验证完成 username=${detected ?: "未确认"}")
+                if (auth.bearer == capturedBearer) {
+                    auth.viewerUsername = detected
+                    auth.viewerLookupPending = false
+                    processSoon()
+                }
+            }.start()
+        }
         if (!csrf.isNullOrBlank()) auth.csrf = csrf
         processSoon()
     }
 
     fun setPageReady(hostname: String?, ready: Boolean) {
-        pageHost = if (hostname == "twitter.com") "twitter.com" else "x.com"
-        pageReady = ready
         if (ready) processSoon()
+    }
+
+    fun updateViewerUsername(username: String?) {
+        val normalized = username?.trim()?.takeIf { BlockJob.isValidUsername(it) } ?: return
+        // Do not infer the logged-in account from feed/profile DOM. That can
+        // match another tweet author and must never create a whitelist entry.
+        if (normalized.equals(OWNER_USERNAME, ignoreCase = true)) {
+            auth.viewerUsername = OWNER_USERNAME
+        }
     }
 
     fun enqueue(payload: String) {
@@ -109,16 +140,56 @@ class BlockQueue(
                 Log.w(TAG, "忽略无法解析的 Ban 入队消息", error)
                 null
             } ?: return@execute
+            if (isWhitelisted(job.username)) {
+                onResult(job, ApiOutcome("skipped", "忽略白名单账号"))
+                return@execute
+            }
+            if (isProcessed(job.username)) return@execute
             synchronized(jobs) {
                 val existing = jobs.indexOfFirst { it.username.equals(job.username, true) }
                 if (existing >= 0) jobs[existing] = job else jobs += job
                 persist()
             }
+            onProgress("处理中 @${job.username}")
             processInternal()
         }
     }
 
     fun queueSize(): Int = synchronized(jobs) { jobs.size }
+
+    fun queueSnapshot(): JSONArray = synchronized(jobs) {
+        JSONArray().also { snapshot ->
+            jobs.forEach { job ->
+                snapshot.put(job.toJson().apply {
+                    put("operationState", if (job.username.equals(activeUsername, true)) activeState else "等待处理")
+                })
+            }
+        }
+    }
+
+    fun removeQueued(username: String, onComplete: () -> Unit = {}) {
+        executor.execute {
+            synchronized(jobs) {
+                cancelledUsers += username.trim().lowercase()
+                jobs.removeAll { it.username.equals(username, true) }
+                persist()
+                if (activeUsername.equals(username, true)) activeState = "已移出队列"
+            }
+            onComplete()
+        }
+    }
+
+    fun retryQueued(username: String, onComplete: () -> Unit = {}) {
+        executor.execute {
+            synchronized(jobs) {
+                cancelledUsers.remove(username.trim().lowercase())
+                jobs.firstOrNull { it.username.equals(username, true) }?.attempts = 0
+                persist()
+            }
+            onComplete()
+            processInternal()
+        }
+    }
 
     fun history(): JSONArray {
         return try {
@@ -133,6 +204,22 @@ class BlockQueue(
         prefs.edit().putString("history", "[]").apply()
     }
 
+    fun restoreHistoryVisuals() {
+        executor.execute {
+            val history = history()
+            var restored = 0
+            for (index in 0 until history.length()) {
+                val item = history.optJSONObject(index) ?: continue
+                if (item.optString("unblockedAt").isNotBlank() || !item.optBoolean("hidden")) continue
+                BlockJob.fromJson(item)?.let { job ->
+                    restored += 1
+                    onResult(job, ApiOutcome("success", "历史记录同步：已恢复"))
+                }
+            }
+            onProgress(if (restored == 0) "历史屏蔽和隐藏标记已同步" else "已恢复 $restored 条历史屏蔽和隐藏标记")
+        }
+    }
+
     fun unblock(record: JSONObject, onComplete: (ApiOutcome) -> Unit) {
         executor.execute {
             val username = record.optString("username").trim()
@@ -142,6 +229,7 @@ class BlockQueue(
             val outcome = api.unblock(record)
             if (outcome.state == "success" || outcome.state == "already-unblocked") {
                 markUnblocked(record)
+                markProcessed(username, false)
             }
             onComplete(outcome)
         }
@@ -169,32 +257,90 @@ class BlockQueue(
     }
 
     private fun processInternal() {
-        if (!pageReady || processing.getAndSet(true)) return
+        if (processing.getAndSet(true)) return
         try {
-            flushUploads()
             while (true) {
                 val job = synchronized(jobs) { jobs.firstOrNull() } ?: break
-                if (auth.bearer.isNullOrBlank()) break
-                val outcome = api.block(job.copy(hostname = pageHost))
+                synchronized(jobs) {
+                    activeUsername = job.username
+                    activeState = "处理中"
+                }
+                if (cancelledUsers.remove(job.username.trim().lowercase())) {
+                    synchronized(jobs) {
+                        jobs.removeAll { it.username.equals(job.username, true) }
+                        persist()
+                    }
+                    onResult(job, ApiOutcome("skipped", "已移出处理队列"))
+                    continue
+                }
+                if (isWhitelisted(job.username)) {
+                    activeState = "已跳过：白名单账号"
+                    synchronized(jobs) {
+                        jobs.removeAt(0)
+                        persist()
+                    }
+                    onResult(job, ApiOutcome("skipped", "忽略白名单账号"))
+                    continue
+                }
+                if (isProcessed(job.username)) {
+                    activeState = "已跳过：本机已有处理记录"
+                    synchronized(jobs) {
+                        jobs.removeAt(0)
+                        persist()
+                    }
+                    onResult(job, ApiOutcome("skipped", "本机已有处理记录"))
+                    continue
+                }
+                if (auth.bearer.isNullOrBlank()) {
+                    activeState = "等待登录会话"
+                    onProgress("等待登录会话 @${job.username}")
+                    break
+                }
+                activeState = "请求屏蔽和隐藏"
+                val outcome = api.block(job)
                 when {
-                    outcome.state == "retry" && job.attempts < 2 -> {
+                    outcome.state == "success" -> {
+                        synchronized(jobs) {
+                            jobs.removeAt(0)
+                            persist()
+                        }
+                        recordSuccess(job, outcome)
+                        onResult(job, outcome)
+                        Thread.sleep(BLOCK_INTERVAL_MS)
+                    }
+                    outcome.state == "skipped" -> {
+                        synchronized(jobs) {
+                            jobs.removeAt(0)
+                            persist()
+                        }
+                        onResult(job, outcome)
+                        Thread.sleep(BLOCK_INTERVAL_MS)
+                    }
+                    outcome.state == "retry" -> {
+                        activeState = "等待重试"
                         synchronized(jobs) {
                             jobs.removeAt(0)
                             job.attempts += 1
                             jobs += job
                             persist()
                         }
-                        break
+                        onProgress("处理中 @${job.username}")
+                        Thread.sleep(BLOCK_INTERVAL_MS)
                     }
                     else -> {
                         synchronized(jobs) {
                             jobs.removeAt(0)
                             persist()
                         }
-                        if (outcome.state == "success" || outcome.state == "already-blocked") recordSuccess(job, outcome)
                         onResult(job, outcome)
-                        Thread.sleep(500)
+                        Thread.sleep(BLOCK_INTERVAL_MS)
                     }
+                }
+            }
+            synchronized(jobs) {
+                if (jobs.isEmpty()) {
+                    activeUsername = null
+                    activeState = "等待处理"
                 }
             }
         } finally {
@@ -202,11 +348,56 @@ class BlockQueue(
         }
     }
 
+    private fun migrateHistoryHides() {
+        if (prefs.getBoolean(HISTORY_HIDE_MIGRATION_KEY, false)) return
+        if (auth.bearer.isNullOrBlank() || auth.csrf.isNullOrBlank()) return
+        val history = history()
+        if (history.length() == 0) {
+            prefs.edit().putBoolean(HISTORY_HIDE_MIGRATION_KEY, true).apply()
+            return
+        }
+        val updated = JSONArray()
+        var complete = true
+        for (index in 0 until history.length()) {
+            val item = history.optJSONObject(index) ?: continue
+            if (item.optString("unblockedAt").isNotBlank() || item.optBoolean("hidden")) {
+                updated.put(item)
+                continue
+            }
+            val username = item.optString("username")
+            onProgress("正在同步历史隐藏：@$username")
+            val outcome = api.mute(item)
+            if (outcome.state == "success" || outcome.state == "already-muted") {
+                item.put("hidden", true)
+                item.put("hiddenAt", Instant.now().toString())
+                BlockJob.fromJson(item)?.let { job ->
+                    onResult(job, ApiOutcome("success", "历史记录同步：已确认隐藏"))
+                }
+            } else {
+                complete = false
+                onProgress("历史隐藏失败：@$username，稍后重试")
+            }
+            updated.put(item)
+            Thread.sleep(BLOCK_INTERVAL_MS)
+        }
+        prefs.edit().putString("history", updated.toString()).apply()
+        if (complete) {
+            prefs.edit().putBoolean(HISTORY_HIDE_MIGRATION_KEY, true).apply()
+            onProgress("历史记录隐藏同步完成")
+        }
+    }
+
+    private fun isWhitelisted(username: String): Boolean {
+        return username.trim().equals(OWNER_USERNAME, ignoreCase = true) || rules.isWhitelisted(username)
+    }
+
     private fun recordSuccess(job: BlockJob, outcome: ApiOutcome) {
         val record = job.toJson().apply {
             put("clientEventId", UUID.randomUUID().toString())
             put("blockedAt", java.time.Instant.now().toString())
             put("confirmedState", outcome.state)
+            put("action", "block+mute")
+            put("hidden", true)
         }
         val history = history()
         val filtered = JSONArray()
@@ -217,6 +408,7 @@ class BlockQueue(
             if (filtered.length() >= 500) break
         }
         prefs.edit().putString("history", filtered.toString()).apply()
+        markProcessed(job.username, true)
         if (!api.upload(record)) {
             val pending = readUploadQueue()
             pending.put(record)
@@ -241,6 +433,37 @@ class BlockQueue(
             updated.put(item)
         }
         prefs.edit().putString("history", updated.toString()).apply()
+    }
+
+    private fun isProcessed(username: String): Boolean {
+        val normalized = username.trim().lowercase()
+        if (normalized.isBlank()) return false
+        val stored = try {
+            JSONObject(prefs.getString(PROCESSED_ACCOUNTS_KEY, "{}") ?: "{}")
+        } catch (_: Exception) {
+            JSONObject()
+        }
+        if (stored.optBoolean(normalized, false)) return true
+        val history = history()
+        for (index in 0 until history.length()) {
+            val item = history.optJSONObject(index) ?: continue
+            if (item.optString("unblockedAt").isBlank() &&
+                item.optString("username").trim().equals(username.trim(), true)
+            ) return true
+        }
+        return false
+    }
+
+    private fun markProcessed(username: String, processed: Boolean) {
+        val normalized = username.trim().lowercase()
+        if (normalized.isBlank()) return
+        val stored = try {
+            JSONObject(prefs.getString(PROCESSED_ACCOUNTS_KEY, "{}") ?: "{}")
+        } catch (_: Exception) {
+            JSONObject()
+        }
+        if (processed) stored.put(normalized, true) else stored.remove(normalized)
+        prefs.edit().putString(PROCESSED_ACCOUNTS_KEY, stored.toString()).apply()
     }
 
     private fun flushUploads() {

@@ -62,6 +62,7 @@ class BanEventControllerTest {
                       "username": "@spam_account",
                       "matchedKeywords": ["同城"],
                       "configuredKeywords": ["同城", "上门", "主页联系"],
+                      "clientType": "app",
                       "blockedAt": "2026-07-30T01:02:03Z"
                     }
                     """))

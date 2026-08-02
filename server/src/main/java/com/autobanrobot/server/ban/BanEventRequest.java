@@ -15,6 +15,7 @@ public record BanEventRequest(
     @Size(max = 1000) List<@Size(max = 100) String> configuredKeywords,
     @Size(max = 1000) String content,
     @Size(max = 1000) String pageUrl,
-    Instant blockedAt
+    Instant blockedAt,
+    @Size(max = 16) String clientType
 ) {
 }

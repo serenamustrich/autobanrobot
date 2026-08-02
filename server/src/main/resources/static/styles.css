@@ -237,6 +237,15 @@ h2 { margin-bottom: 0; font-size: 24px; letter-spacing: -.02em; }
   line-height: 1;
   letter-spacing: -.035em;
 }
+.metric-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.metric-pair strong {
+  margin-bottom: 5px;
+  font-size: 28px;
+}
 .metric-note { color: #9aa6b6; font-size: 12px; }
 
 .panel {

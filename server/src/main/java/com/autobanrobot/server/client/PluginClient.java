@@ -27,6 +27,9 @@ public class PluginClient {
     @Column(name = "installation_id", nullable = false, length = 64)
     private String installationId;
 
+    @Column(name = "client_type", nullable = false, length = 16, columnDefinition = "varchar(16) default 'plugin'")
+    private String clientType;
+
     @Column(nullable = false, length = 32)
     private String platform;
 
@@ -49,7 +52,19 @@ public class PluginClient {
         Instant firstSeenAt,
         Instant lastSeenAt
     ) {
+        this(installationId, "plugin", platform, pluginVersion, firstSeenAt, lastSeenAt);
+    }
+
+    public PluginClient(
+        String installationId,
+        String clientType,
+        String platform,
+        String pluginVersion,
+        Instant firstSeenAt,
+        Instant lastSeenAt
+    ) {
         this.installationId = installationId;
+        this.clientType = clientType;
         this.platform = platform;
         this.pluginVersion = pluginVersion;
         this.firstSeenAt = firstSeenAt;
@@ -57,6 +72,11 @@ public class PluginClient {
     }
 
     public void markSeen(String platform, String pluginVersion, Instant seenAt) {
+        markSeen("plugin", platform, pluginVersion, seenAt);
+    }
+
+    public void markSeen(String clientType, String platform, String pluginVersion, Instant seenAt) {
+        this.clientType = clientType;
         this.platform = platform;
         this.pluginVersion = pluginVersion;
         this.lastSeenAt = seenAt;
@@ -68,6 +88,10 @@ public class PluginClient {
 
     public String getInstallationId() {
         return installationId;
+    }
+
+    public String getClientType() {
+        return clientType;
     }
 
     public String getPlatform() {

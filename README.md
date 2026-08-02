@@ -27,6 +27,25 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### v1.6.20 — 2026-08-02
+
+- Android and browser processing now share the block + hide workflow. Matched
+  posts are grayed and stamped immediately while the persistent queue continues
+  account actions in the background.
+- Added duplicate-submission guards for Android WebView injection and server
+  event ingestion.
+- Android pending accounts are persisted locally and continue retrying after an
+  app restart.
+- Android v1.0.28 adds a local-only account whitelist, visible queue status and
+  queue controls. `@AAAGodofWealth` is protected by the built-in author
+  whitelist; page authors are no longer inferred as the signed-in account.
+- 安卓端与浏览器端统一执行“屏蔽 + 隐藏”；命中内容立即置灰并加盖“扑街”印章，
+  后台队列持续处理账号操作。
+- 增加 Android WebView 注入防重复和服务端事件去重；待处理账号本地持久化，
+  APP 重启后继续处理。
+- Android v1.0.28 新增仅本机生效的白名单、可见处理队列与重试/移出操作；
+  内置保护作者账号 `@AAAGodofWealth`，不再把页面帖子作者误判为当前登录账号。
+
 ### Server v1.2.2 — 2026-08-01
 
 - Added the dedicated spam-promotion target dashboard, full popular-term

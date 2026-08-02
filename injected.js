@@ -1,6 +1,10 @@
 (() => {
+  if (window.__AUTOBANROBOT_INJECTED__) return;
+  window.__AUTOBANROBOT_INJECTED__ = true;
   let SPAM = [];
   let remoteRules = [];
+  const DEFAULT_ACCOUNT_WHITELIST = new Set(['AAAGodofWealth']);
+  let accountWhitelist = new Set(DEFAULT_ACCOUNT_WHITELIST);
 
   window.addEventListener('__twblocker_keywords__', e => {
     SPAM = e.detail?.kws ?? SPAM;
@@ -26,13 +30,37 @@
     processedSignatures = new WeakMap();
     scanAll();
   });
+  window.addEventListener('__twblocker_whitelist__', e => {
+    accountWhitelist = new Set([
+      ...DEFAULT_ACCOUNT_WHITELIST,
+      ...(Array.isArray(e.detail?.accounts) ? e.detail.accounts : [])
+    ].map(value => String(value).trim().toLowerCase()).filter(Boolean));
+    scanAll();
+  });
   const blocked = new Set();
   const exemptAccounts = new Set();
   const queuedAccounts = new Set();
   const matchedElements = new Map();
+  const stampAnchors = new Map();
   let processedSignatures = new WeakMap();
   let scanScheduled = false;
   let pageStats = createPageStats();
+
+  function positionStamp(anchor, stamp) {
+    if (!anchor?.isConnected || !stamp?.isConnected) {
+      stampAnchors.delete(anchor);
+      stamp?.remove();
+      return;
+    }
+    const rect = anchor.getBoundingClientRect();
+    const size = 56;
+    stamp.style.left = `${Math.max(8, Math.min(window.innerWidth - size - 8, rect.right - size - 12))}px`;
+    stamp.style.top = `${Math.max(8, rect.top + (rect.height - size) / 2)}px`;
+  }
+
+  const repositionStamps = () => stampAnchors.forEach((stamp, anchor) => positionStamp(anchor, stamp));
+  window.addEventListener('scroll', repositionStamps, true);
+  window.addEventListener('resize', repositionStamps);
 
   function currentPageKey() {
     return `${location.pathname}${location.search}`;
@@ -55,6 +83,7 @@
   }
 
   function toast(msg, ok = true, stats = null) {
+    if (window.__AUTOBANROBOT_MOBILE__) return;
     const show = () => {
       const el = document.createElement('div');
       el.style.cssText = `
@@ -81,11 +110,110 @@
     document.body ? show() : document.addEventListener('DOMContentLoaded', show);
   }
 
-  function updateMatchedElements(username, opacity, title = '') {
+  function applyStamp(el) {
+    if (!el?.isConnected || stampAnchors.has(el)) {
+      if (el?.isConnected) positionStamp(el, stampAnchors.get(el));
+      return;
+    }
+    const stamp = document.createElement('span');
+    stamp.dataset.autobanStamp = 'true';
+    stamp.setAttribute('aria-hidden', 'true');
+    stamp.style.cssText = `
+      position:fixed;left:0;top:0;z-index:2147483646;
+      width:56px;height:56px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      box-sizing:border-box;background:rgba(255,246,249,.72);
+      color:#d97896;font-size:16px;font-weight:800;letter-spacing:1px;
+      line-height:1;transform:rotate(-30deg);pointer-events:none;
+      font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;
+      text-shadow:0 1px 0 rgba(255,255,255,.7);`;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 64 64');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;overflow:visible;';
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+    const filterId = `autoban-ink-${Math.random().toString(36).slice(2)}`;
+    filter.setAttribute('id', filterId);
+    filter.setAttribute('x', '-15%');
+    filter.setAttribute('y', '-15%');
+    filter.setAttribute('width', '130%');
+    filter.setAttribute('height', '130%');
+    const turbulence = document.createElementNS('http://www.w3.org/2000/svg', 'feTurbulence');
+    turbulence.setAttribute('type', 'fractalNoise');
+    turbulence.setAttribute('baseFrequency', '.75');
+    turbulence.setAttribute('numOctaves', '2');
+    turbulence.setAttribute('seed', String(Math.floor(Math.random() * 1000)));
+    turbulence.setAttribute('result', 'inkNoise');
+    const displacement = document.createElementNS('http://www.w3.org/2000/svg', 'feDisplacementMap');
+    displacement.setAttribute('in', 'SourceGraphic');
+    displacement.setAttribute('in2', 'inkNoise');
+    displacement.setAttribute('scale', '.7');
+    filter.append(turbulence, displacement);
+    defs.appendChild(filter);
+    svg.appendChild(defs);
+    const circle = (radius, width, dash, opacity) => {
+      const node = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      node.setAttribute('cx', '32');
+      node.setAttribute('cy', '32');
+      node.setAttribute('r', String(radius));
+      node.setAttribute('fill', 'none');
+      node.setAttribute('stroke', '#d97896');
+      node.setAttribute('stroke-width', String(width));
+      node.setAttribute('stroke-opacity', String(opacity));
+      node.setAttribute('stroke-linecap', 'round');
+      node.setAttribute('stroke-dasharray', dash);
+      return node;
+    };
+    svg.appendChild(circle(28, 2.4, '1.2 2.7 3.4 1.6', .62));
+    svg.appendChild(circle(24.5, 1.5, '4.8 2.1 1.1 3.8', .42));
+    for (let index = 0; index < 24; index += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 26 + (Math.random() * 4 - 2);
+      const mark = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      mark.setAttribute('cx', String(32 + Math.cos(angle) * radius));
+      mark.setAttribute('cy', String(32 + Math.sin(angle) * radius));
+      mark.setAttribute('r', String(.35 + Math.random() * .8));
+      mark.setAttribute('fill', '#d97896');
+      mark.setAttribute('fill-opacity', String(.24 + Math.random() * .35));
+      svg.appendChild(mark);
+    }
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', '32');
+    label.setAttribute('y', '38');
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('fill', '#d97896');
+    label.setAttribute('fill-opacity', '.84');
+    label.setAttribute('stroke', '#d97896');
+    label.setAttribute('stroke-opacity', '.16');
+    label.setAttribute('stroke-width', '.35');
+    label.setAttribute('font-family', '-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif');
+    label.setAttribute('font-size', '18');
+    label.setAttribute('font-weight', '800');
+    label.setAttribute('letter-spacing', '1');
+    label.setAttribute('filter', `url(#${filterId})`);
+    label.textContent = '扑街';
+    svg.appendChild(label);
+    stamp.appendChild(svg);
+    document.body.appendChild(stamp);
+    stampAnchors.set(el, stamp);
+    positionStamp(el, stamp);
+  }
+
+  function removeStamp(el) {
+    const stamp = stampAnchors.get(el);
+    if (!stamp) return;
+    stampAnchors.delete(el);
+    stamp.remove();
+  }
+
+  function updateMatchedElements(username, opacity, title = '', stamped = false) {
     matchedElements.get(username)?.forEach(el => {
       if (!el?.isConnected) return;
       el.style.opacity = opacity;
       el.title = title;
+      if (stamped) applyStamp(el);
+      else removeStamp(el);
     });
   }
 
@@ -94,7 +222,11 @@
     stats.matchedAccounts.add(username);
     if (!matchedElements.has(username)) matchedElements.set(username, new Set());
     matchedElements.get(username).add(el);
+    el.style.opacity = '0.35';
+    el.title = `[处理中：屏蔽和隐藏] @${username}`;
+    applyStamp(el);
     if (
+      accountWhitelist.has(username.toLowerCase()) ||
       blocked.has(username) ||
       exemptAccounts.has(username) ||
       queuedAccounts.has(username)
@@ -120,7 +252,7 @@
     const result = event.detail;
     if (!result?.username) return;
     queuedAccounts.delete(result.username);
-    const samePage = result.pageKey === currentPageKey();
+    const samePage = result.historical === true || result.pageKey === currentPageKey();
 
     if (result.state === 'success') {
       blocked.add(result.username);
@@ -130,9 +262,10 @@
       updateMatchedElements(
         result.username,
         '0.12',
-        `[已屏蔽] @${result.username}`
+        `[已屏蔽和隐藏] @${result.username}`,
+        true
       );
-      toast(`✅ 已屏蔽 @${result.username}`, true, stats);
+      toast(`✅ 已屏蔽和隐藏 @${result.username}`, true, stats);
       return;
     }
 
@@ -154,15 +287,20 @@
       updateMatchedElements(
         result.username,
         '0.12',
-        `[已屏蔽] @${result.username}`
+        `[已屏蔽和隐藏] @${result.username}`,
+        true
       );
-      toast(`ℹ️ @${result.username} 已经处于屏蔽状态`);
+      toast(`ℹ️ @${result.username} 已经处于屏蔽和隐藏状态`);
       return;
     }
 
     if (!samePage) return;
-    updateMatchedElements(result.username, '1');
-    toast(`❌ @${result.username} ${result.message || '后台屏蔽失败'}`, false);
+    updateMatchedElements(
+      result.username,
+      '0.35',
+      `[等待重试：屏蔽和隐藏] @${result.username}`,
+      true
+    );
   });
 
   function isSingleEmoji(text) {
@@ -344,12 +482,21 @@
 
     if (blocked.has(username)) {
       el.style.opacity = '0.12';
-      el.title = `[已屏蔽] @${username}`;
+      el.title = `[已屏蔽和隐藏] @${username}`;
+      applyStamp(el);
       return;
     }
     if (exemptAccounts.has(username)) {
       el.style.opacity = '1';
       el.title = `[已跳过：你正在关注该账号] @${username}`;
+      removeStamp(el);
+      return;
+    }
+    if (accountWhitelist.has(username.toLowerCase())) {
+      exemptAccounts.add(username);
+      el.style.opacity = '1';
+      el.title = '[已跳过：白名单账号] @' + username;
+      removeStamp(el);
       return;
     }
 
@@ -372,9 +519,15 @@
       !nameSpam &&
       !contentSpam &&
       remoteMatches.length === 0
-    ) return;
+    ) {
+      el.style.opacity = '1';
+      removeStamp(el);
+      return;
+    }
 
     el.style.opacity = '0.35';
+    el.title = `[处理中：屏蔽和隐藏] @${username}`;
+    applyStamp(el);
     const reasons = [];
     if (nameSpam) reasons.push('用户名或显示名称命中关键词');
     if (contentSpam) reasons.push('内容命中关键词');

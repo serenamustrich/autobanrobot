@@ -7,6 +7,7 @@ import java.util.List;
 public record BanEventResponse(
     Long id,
     String clientEventId,
+    String clientType,
     String username,
     String displayName,
     String reason,
@@ -21,6 +22,7 @@ public record BanEventResponse(
         return new BanEventResponse(
             event.getId(),
             event.getClientEventId(),
+            event.getClientType(),
             event.getUsername(),
             event.getDisplayName(),
             event.getReason(),
@@ -31,6 +33,23 @@ public record BanEventResponse(
             event.getBlockedAt(),
             event.getReceivedAt()
         );
+    }
+
+    public BanEventResponse(
+        Long id,
+        String clientEventId,
+        String username,
+        String displayName,
+        String reason,
+        List<String> matchedKeywords,
+        List<String> configuredKeywords,
+        String content,
+        String pageUrl,
+        Instant blockedAt,
+        Instant receivedAt
+    ) {
+        this(id, clientEventId, "plugin", username, displayName, reason, matchedKeywords,
+            configuredKeywords, content, pageUrl, blockedAt, receivedAt);
     }
 
     private static List<String> splitKeywords(String value) {

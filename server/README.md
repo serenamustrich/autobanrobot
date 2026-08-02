@@ -6,7 +6,7 @@ Spring Boot JAR for receiving confirmed Ban events and serving a live dashboard.
 
 ```bash
 mvn -f server/pom.xml clean package
-java -jar server/target/autoban-server-1.2.5.jar
+java -jar server/target/autoban-server-1.2.6.jar
 ```
 
 The server requires MySQL configuration and intentionally has no embedded
@@ -20,7 +20,7 @@ Do not commit credentials. Supply them through environment variables:
 export AUTOBAN_DB_URL='jdbc:mysql://127.0.0.1:3306/autoban?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai'
 export AUTOBAN_DB_USERNAME='autoban'
 export AUTOBAN_DB_PASSWORD='replace-me'
-java -jar server/target/autoban-server-1.2.5.jar
+java -jar server/target/autoban-server-1.2.6.jar
 ```
 
 The database schema is created or updated automatically by Hibernate.
@@ -29,7 +29,8 @@ MySQL 5.7 database remains supported.
 
 ## API
 
-- `POST /api/bans`: receive an idempotent confirmed Ban event.
+- `POST /api/bans`: receive an idempotent confirmed Ban event. Payloads may set
+  `clientType` to `plugin` or `app`; omitted values remain compatible as `plugin`.
 - `GET /api/bans`: paginated list; supports `page`, `size`, and `query`.
 - `GET /api/bans/stats`: total and today counts.
 - `GET /api/bans/stream`: Server-Sent Events stream for the dashboard.
@@ -39,8 +40,10 @@ MySQL 5.7 database remains supported.
 - `GET /api/rules`: public versioned detection-rule configuration used by plugins.
 - `PUT /api/rules`: replace the online rule list and increment its version; requires
   `X-AutoBan-Admin-Token` matching `AUTOBAN_RULE_ADMIN_TOKEN`.
-- `POST /api/clients/heartbeat`: record one anonymous plugin installation heartbeat.
-- `GET /api/clients/stats`: online and cumulative anonymous plugin users.
+- `POST /api/clients/heartbeat`: record one anonymous plugin or App installation
+  heartbeat using `clientType=plugin` or `clientType=app`.
+- `GET /api/clients/stats`: returns separate online and cumulative anonymous
+  user counts for `plugin` and `app`.
 
 Set a long random `AUTOBAN_RULE_ADMIN_TOKEN` in the deployment environment. The
 token is never stored in MySQL or returned by the API. Rule configuration is

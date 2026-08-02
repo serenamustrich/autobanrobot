@@ -18,7 +18,7 @@ spring:
     properties:
       hibernate:
         jdbc:
-          time_zone: UTC
+          time_zone: Asia/Shanghai
   jackson:
     deserialization:
       fail-on-unknown-properties: false

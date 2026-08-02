@@ -11,9 +11,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.Duration;
 
 @Service
 public class BanEventService {
+
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Shanghai");
+    private static final String APP = "app";
+    private static final Duration DUPLICATE_WINDOW = Duration.ofMinutes(10);
 
     private final BanEventRepository repository;
     private final BanEventStream stream;
@@ -40,15 +45,30 @@ public class BanEventService {
         }
 
         Instant now = Instant.now();
+        String username = cleanUsername(request.username());
+        String pageUrl = safe(request.pageUrl());
+        String content = safe(request.content());
+        var duplicate = repository
+            .findTopByUsernameIgnoreCaseAndPageUrlAndContentAndBlockedAtGreaterThanEqualOrderByBlockedAtDesc(
+                username,
+                pageUrl,
+                content,
+                now.minus(DUPLICATE_WINDOW)
+            );
+        if (duplicate.isPresent()) {
+            return BanEventResponse.from(duplicate.get());
+        }
+
         BanEvent event = new BanEvent(
             request.clientEventId(),
-            cleanUsername(request.username()),
+            normalizeClientType(request.clientType()),
+            username,
             safe(request.displayName()),
             safe(request.reason()),
             joinKeywords(request.matchedKeywords()),
             joinConfiguredKeywords(request.configuredKeywords()),
-            safe(request.content()),
-            safe(request.pageUrl()),
+            content,
+            pageUrl,
             request.blockedAt() == null ? now : request.blockedAt(),
             now
         );
@@ -88,7 +108,7 @@ public class BanEventService {
     @Transactional(readOnly = true)
     public BanStatsResponse stats() {
         Instant startOfToday = LocalDate.now()
-            .atStartOfDay(ZoneId.systemDefault())
+            .atStartOfDay(BUSINESS_ZONE)
             .toInstant();
         return new BanStatsResponse(
             repository.count(),
@@ -98,6 +118,10 @@ public class BanEventService {
 
     private String cleanUsername(String username) {
         return username.trim().replaceFirst("^@", "");
+    }
+
+    private String normalizeClientType(String value) {
+        return APP.equalsIgnoreCase(value == null ? "" : value.trim()) ? APP : "plugin";
     }
 
     private String safe(String value) {

@@ -15,6 +15,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Build
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Gravity
@@ -47,6 +49,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.util.UUID
 
 private class SelectionWebView(
     context: Context,
@@ -120,6 +123,21 @@ class MainActivity : Activity() {
     private lateinit var api: XApiClient
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var pendingCameraUri: Uri? = null
+    private var whitelistInput: EditText? = null
+    private val heartbeatHandler = Handler(Looper.getMainLooper())
+    private var heartbeatActive = false
+    private val appInstallationId by lazy {
+        val preferences = getSharedPreferences("autoban_app_client", MODE_PRIVATE)
+        preferences.getString("installation_id", null) ?: UUID.randomUUID().toString().also {
+            preferences.edit().putString("installation_id", it).apply()
+        }
+    }
+    private val heartbeatRunnable = object : Runnable {
+        override fun run() {
+            Thread { api.sendHeartbeat(appInstallationId, APP_VERSION) }.start()
+            if (heartbeatActive) heartbeatHandler.postDelayed(this, APP_HEARTBEAT_INTERVAL_MS)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -127,22 +145,34 @@ class MainActivity : Activity() {
         pluginManager = PluginManager(this)
         auth = AuthState()
         api = XApiClient(auth)
-        queue = BlockQueue(this, ruleStore, auth, api) { job, outcome ->
+        queue = BlockQueue(this, ruleStore, auth, api, onProgress = { message ->
             runOnUiThread {
-                val label = when (outcome.state) {
-                    "success" -> "已确认 Ban @${job.username}"
-                    "already-blocked" -> "@${job.username} 已经处于 Ban 状态"
-                    "skipped" -> "已跳过 @${job.username}：${outcome.message}"
-                    else -> "@${job.username}：${outcome.message}"
+                if (!::status.isInitialized) return@runOnUiThread
+                if (message.equals("处理中 @AAAGodofWealth", ignoreCase = true)) {
+                    status.text = "已跳过 @AAAGodofWealth"
+                } else if (message.startsWith("处理中 @") ||
+                    message.startsWith("等待登录会话 @") ||
+                    message.startsWith("正在确认当前登录账号") ||
+                    message.startsWith("正在确认登录账号 @")
+                ) {
+                    status.text = message
                 }
-                status.text = label
+            }
+        }) { job, outcome ->
+            runOnUiThread {
+                if (outcome.state == "success" && !outcome.message.contains("历史记录同步")) {
+                    status.text = "已处理 @${job.username}"
+                    if (currentPage == "Ban记录") showHistoryPage()
+                } else if (outcome.state == "skipped") {
+                    status.text = "已跳过 @${job.username}"
+                }
                 dispatchResult(job, outcome)
             }
         }
 
         buildUi()
         ruleStore.refreshRules { refreshed ->
-            if (refreshed) runOnUiThread { status.text = "在线规则已更新" }
+            if (!refreshed) return@refreshRules
         }
         val restored = savedInstanceState?.let { webView.restoreState(it) }
         if (restored == null) {
@@ -211,9 +241,14 @@ class MainActivity : Activity() {
 
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): android.webkit.WebResourceResponse? {
                 val host = request.url.host?.lowercase(Locale.ROOT) ?: ""
-                if ((host == "x.com" || host == "twitter.com") && request.url.path?.startsWith("/i/api/") == true) {
+                // X now sends authenticated requests through both x.com/i/api/* and
+                // api.x.com/1.1/*; capture the headers from either route.
+                if (isXApiHost(host)) {
                     val bearer = header(request, "authorization")
                     val csrf = header(request, "x-csrf-token")
+                    if (!bearer.isNullOrBlank() || !csrf.isNullOrBlank()) {
+                        Log.i("AutoBanAuth", "WebView X request auth bearer=${!bearer.isNullOrBlank()} csrf=${!csrf.isNullOrBlank()} host=$host path=${request.url.path}")
+                    }
                     if (!bearer.isNullOrBlank() || !csrf.isNullOrBlank()) queue.updateAuth(bearer, csrf)
                 }
                 return super.shouldInterceptRequest(view, request)
@@ -221,7 +256,7 @@ class MainActivity : Activity() {
 
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 queue.setPageReady(Uri.parse(url).host, false)
-                status.text = "正在加载 X…"
+                view.post { installAuthCapture(view) }
             }
 
             override fun onPageFinished(view: WebView, url: String) {
@@ -229,14 +264,13 @@ class MainActivity : Activity() {
                 if (host == "x.com" || host == "twitter.com" || host == "mobile.twitter.com") {
                     ruleStore.setLastXUrl(url)
                     CookieManager.getInstance().flush()
-                    injectContent()
+                    installAuthCapture(view)
+                    injectContent { queue.restoreHistoryVisuals() }
                     queue.setPageReady(host, true)
-                    status.text = if (ruleStore.autoBanEnabled) "自动 Ban 已开启 · 队列 ${queue.queueSize()}" else "自动 Ban 已暂停"
                 }
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                if (request.isForMainFrame) status.text = "X 加载失败：${error.description}"
             }
         }
         webView.webChromeClient = object : WebChromeClient() {
@@ -274,7 +308,7 @@ class MainActivity : Activity() {
         }
 
         status = TextView(this).apply {
-            text = "准备打开 X"
+            text = "已处理 0 条"
             textSize = 12f
             setTextColor(MUTED)
             setPadding(0, dp(8), dp(8), dp(8))
@@ -342,7 +376,7 @@ class MainActivity : Activity() {
         root.requestApplyInsets()
     }
 
-    private fun injectContent() {
+    private fun injectContent(onComplete: (() -> Unit)? = null) {
         val injected = try { assets.open("content/injected.js").bufferedReader().use { it.readText() } } catch (_: Exception) { return }
         val keywords = JSONObject.quote(JSONArray(ruleStore.keywords()).toString())
         val rules = JSONObject.quote(pluginManager.mergeRules(ruleStore.rulesJson()))
@@ -351,9 +385,13 @@ class MainActivity : Activity() {
         val styles = JSONObject.quote(pluginManager.styleBundle())
         val bridgeScript = """
             (() => {
-              window.addEventListener('__twblocker_enqueue__', event => {
-                try { window.AutoBanBridge && window.AutoBanBridge.enqueueBlock(JSON.stringify(event.detail || {})); } catch (error) { console.warn('AutoBan bridge enqueue failed'); }
-              });
+              window.__AUTOBANROBOT_MOBILE__ = true;
+              if (!window.__AUTOBANROBOT_BRIDGE__) {
+                window.__AUTOBANROBOT_BRIDGE__ = true;
+                window.addEventListener('__twblocker_enqueue__', event => {
+                  try { window.AutoBanBridge && window.AutoBanBridge.enqueueBlock(JSON.stringify(event.detail || {})); } catch (error) { console.warn('AutoBan bridge enqueue failed'); }
+                });
+              }
             })();
         """.trimIndent()
         val script = """
@@ -374,13 +412,22 @@ class MainActivity : Activity() {
               window.dispatchEvent(new CustomEvent('__twblocker_rules__', { detail: { config: JSON.parse($rules), states: JSON.parse($states) } }));
             } catch (error) { console.warn('AutoBanRobot configuration failed', error); }
         """.trimIndent()
-        webView.evaluateJavascript(script, null)
+        webView.evaluateJavascript(script) { onComplete?.invoke() }
+    }
+
+    private fun installAuthCapture(view: WebView = webView) {
+        view.evaluateJavascript(AUTH_CAPTURE_SCRIPT, null)
+    }
+
+    private fun captureViewerUsername(view: WebView = webView) {
+        view.evaluateJavascript(VIEWER_USERNAME_SCRIPT, null)
     }
 
     private fun dispatchResult(job: BlockJob, outcome: ApiOutcome) {
         val result = job.toJson().apply {
             put("state", outcome.state)
             put("message", outcome.message)
+            put("historical", outcome.message.contains("历史记录同步"))
         }
         webView.evaluateJavascript(
             "window.dispatchEvent(new CustomEvent('__twblocker_block_result__',{detail:${result}}));",
@@ -416,6 +463,22 @@ class MainActivity : Activity() {
             toolbarAction.background = rounded(Color.rgb(38, 45, 51), 12f)
             toolbarAction.isClickable = true
             toolbarAction.setOnClickListener { refreshRulesFromToolbar() }
+        } else if (title == "Ban记录") {
+            toolbarAction.visibility = View.VISIBLE
+            toolbarAction.text = "白名单"
+            toolbarAction.setTextColor(Color.WHITE)
+            toolbarAction.background = rounded(Color.rgb(38, 45, 51), 12f)
+            toolbarAction.isClickable = true
+            toolbarAction.setOnClickListener { showWhitelistPage() }
+        } else if (title == "白名单") {
+            toolbarAction.visibility = View.VISIBLE
+            toolbarAction.text = "添加"
+            toolbarAction.setTextColor(Color.WHITE)
+            toolbarAction.background = rounded(Color.rgb(38, 45, 51), 12f)
+            toolbarAction.isClickable = true
+            toolbarAction.setOnClickListener {
+                whitelistInput?.requestFocus()
+            }
         } else {
             toolbarAction.visibility = View.GONE
         }
@@ -530,7 +593,6 @@ class MainActivity : Activity() {
             setOnCheckedChangeListener { _, enabled ->
                 ruleStore.autoBanEnabled = enabled
                 injectContent()
-                status.text = if (enabled) "自动 Ban 已开启" else "自动 Ban 已暂停"
             }
         })
         autoCard.addView(autoRow)
@@ -572,12 +634,10 @@ class MainActivity : Activity() {
     private fun refreshRulesFromToolbar() {
         toolbarAction.isEnabled = false
         toolbarAction.alpha = 0.55f
-        status.text = "正在更新在线规则…"
         ruleStore.refreshRules { updated ->
             runOnUiThread {
                 toolbarAction.isEnabled = true
                 toolbarAction.alpha = 1f
-                status.text = if (updated) "在线规则已更新" else "规则更新失败，继续使用本地缓存"
                 showRulesPage()
             }
         }
@@ -585,8 +645,51 @@ class MainActivity : Activity() {
 
     private fun showHistoryPage() {
         val history = queue.history()
+        val pending = queue.queueSnapshot()
         val content = pageContent()
         content.addView(pageIntro("Ban记录", "这里只展示已经被 X 接口确认成功的记录。", "${history.length()} 条已确认"))
+        if (pending.length() > 0) {
+            content.addView(sectionLabel("处理队列（${pending.length()}）"), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(18)
+            })
+            for (index in 0 until pending.length()) {
+                val item = pending.optJSONObject(index) ?: continue
+                val username = item.optString("username")
+                val queueCard = card()
+                val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+                row.addView(TextView(this).apply {
+                    text = "@${ruleStore.displayAccount(username)}"
+                    textSize = 15f
+                    setTypeface(typeface, Typeface.BOLD)
+                    setTextColor(INK)
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                })
+                row.addView(TextView(this).apply {
+                    text = item.optString("operationState", "等待处理")
+                    textSize = 12f
+                    setTextColor(BLUE)
+                })
+                queueCard.addView(row)
+                queueCard.addView(TextView(this).apply {
+                    text = "尝试次数：${item.optInt("attempts", 0)}"
+                    textSize = 12f
+                    setTextColor(MUTED)
+                    setPadding(0, dp(6), 0, 0)
+                })
+                val queueActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                queueActions.addView(outlineButton("立即重试") {
+                    queue.retryQueued(username) { runOnUiThread { showHistoryPage() } }
+                }, LinearLayout.LayoutParams(0, dp(42), 1f).apply { topMargin = dp(10) })
+                queueActions.addView(dangerOutlineButton("移出队列") {
+                    queue.removeQueued(username) { runOnUiThread { showHistoryPage() } }
+                }, LinearLayout.LayoutParams(0, dp(42), 1f).apply {
+                    topMargin = dp(10)
+                    marginStart = dp(8)
+                })
+                queueCard.addView(queueActions)
+                content.addView(queueCard, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+            }
+        }
         if (history.length() == 0) {
             val empty = card().apply {
                 gravity = Gravity.CENTER
@@ -629,35 +732,63 @@ class MainActivity : Activity() {
                         topMargin = dp(9)
                     }
                 })
+                val username = item.optString("username").trim()
+                val whitelistAction = if (ruleStore.isWhitelisted(username)) {
+                    outlineButton("移出白名单") {
+                        ruleStore.removeAccount(username)
+                        injectContent()
+                        showHistoryPage()
+                    }
+                } else {
+                    outlineButton("加入白名单") { button ->
+                        ruleStore.rememberAccount(username)
+                        injectContent()
+                        button.text = "移出白名单"
+                        button.isEnabled = true
+                        button.setOnClickListener {
+                            ruleStore.removeAccount(username)
+                            injectContent()
+                            showHistoryPage()
+                        }
+                        queue.unblock(item) { outcome ->
+                            runOnUiThread {
+                                if (outcome.state == "success" || outcome.state == "already-unblocked") {
+                                    showHistoryPage()
+                                }
+                            }
+                        }
+                    }
+                }
+                record.addView(whitelistAction, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42)).apply {
+                    topMargin = dp(10)
+                })
                 val unblockedAt = item.optString("unblockedAt")
                 val action = if (unblockedAt.isBlank()) {
-                    dangerOutlineButton("取消屏蔽") { button ->
+                    dangerOutlineButton("取消屏蔽和隐藏") { button ->
                         button.isEnabled = false
                         button.text = "处理中…"
                         queue.unblock(item) { outcome ->
                             runOnUiThread {
                                 if (outcome.state == "success" || outcome.state == "already-unblocked") {
-                                    status.text = "已取消屏蔽 @${item.optString("username")}"
                                     showHistoryPage()
                                 } else {
                                     button.isEnabled = true
-                                    button.text = "重试取消屏蔽"
+                                    button.text = "重试取消屏蔽和隐藏"
                                 }
                             }
                         }
                     }
                 } else {
-                    outlineButton("重新屏蔽") { button ->
+                    outlineButton("重新屏蔽和隐藏") { button ->
                         button.isEnabled = false
                         button.text = "处理中…"
                         queue.reblock(item) { outcome ->
                             runOnUiThread {
                                 if (outcome.state == "success" || outcome.state == "already-blocked") {
-                                    status.text = "已重新屏蔽 @${item.optString("username")}"
                                     showHistoryPage()
                                 } else {
                                     button.isEnabled = true
-                                    button.text = "重试重新屏蔽"
+                                    button.text = "重试重新屏蔽和隐藏"
                                 }
                             }
                         }
@@ -675,6 +806,61 @@ class MainActivity : Activity() {
             showHistoryPage()
         }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply { topMargin = dp(16) })
         showPage("Ban记录", scrollPage(content))
+    }
+
+    private fun showWhitelistPage() {
+        val accounts = ruleStore.accountWhitelist().toList().sorted()
+        val content = pageContent()
+        content.addView(pageIntro("本机白名单", "仅在此设备生效，不会上传服务端。白名单账号不会进入自动 Ban 队列。", "${accounts.size} 个账号"))
+
+        val addCard = card()
+        whitelistInput = EditText(this).apply {
+            hint = "输入 X 用户名，例如 AAAGodofWealth"
+            textSize = 14f
+            isSingleLine = true
+            setPadding(dp(12), 0, dp(12), 0)
+            background = rounded(Color.WHITE, 12f, BORDER)
+        }
+        addCard.addView(whitelistInput, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)))
+        addCard.addView(primaryButton("加入本机白名单") {
+            val username = whitelistInput?.text?.toString().orEmpty().trim()
+            if (BlockJob.isValidUsername(username)) {
+                ruleStore.rememberAccount(username)
+                injectContent()
+                showWhitelistPage()
+            } else {
+                whitelistInput?.error = "请输入有效的 X 用户名"
+            }
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)).apply { topMargin = dp(10) })
+        content.addView(addCard, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14) })
+
+        accounts.forEach { username ->
+            val row = card()
+            val line = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+            line.addView(TextView(this).apply {
+                text = "@${ruleStore.displayAccount(username)}"
+                textSize = 15f
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(INK)
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            if (username.lowercase() == "aagodofwealth") {
+                line.addView(TextView(this).apply {
+                    text = "默认"
+                    textSize = 12f
+                    setTextColor(BLUE)
+                })
+            } else {
+                line.addView(outlineButton("移除") {
+                    ruleStore.removeAccount(username)
+                    injectContent()
+                    showWhitelistPage()
+                }, LinearLayout.LayoutParams(dp(72), dp(38)))
+            }
+            row.addView(line)
+            content.addView(row, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+        }
+        showPage("白名单", scrollPage(content))
     }
 
     private fun formatLocalTime(value: String): String {
@@ -854,6 +1040,7 @@ class MainActivity : Activity() {
     }
 
     override fun onPause() {
+        stopAppHeartbeat()
         CookieManager.getInstance().flush()
         webView.onPause()
         super.onPause()
@@ -862,6 +1049,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         webView.onResume()
+        startAppHeartbeat()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -871,6 +1059,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        stopAppHeartbeat()
         fileChooserCallback?.onReceiveValue(null)
         fileChooserCallback = null
         pendingCameraUri?.let(::deletePendingCameraUri)
@@ -881,7 +1070,23 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 
+    private fun startAppHeartbeat() {
+        if (heartbeatActive) return
+        heartbeatActive = true
+        heartbeatHandler.post(heartbeatRunnable)
+    }
+
+    private fun stopAppHeartbeat() {
+        heartbeatActive = false
+        heartbeatHandler.removeCallbacks(heartbeatRunnable)
+    }
+
     private fun header(request: WebResourceRequest, name: String): String? = request.requestHeaders.entries.firstOrNull { it.key.equals(name, true) }?.value
+
+    private fun isXApiHost(host: String): Boolean {
+        return host == "x.com" || host.endsWith(".x.com") ||
+            host == "twitter.com" || host.endsWith(".twitter.com")
+    }
 
     private fun createGalleryIntent(params: WebChromeClient.FileChooserParams?): Intent {
         val allowMultiple = params?.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
@@ -1083,6 +1288,8 @@ class MainActivity : Activity() {
         private const val REQUEST_PLUGIN = 9001
         private const val REQUEST_FILE_CHOOSER = 9003
         private const val MAX_POST_MEDIA = 4
+        private const val APP_HEARTBEAT_INTERVAL_MS = 60_000L
+        private const val APP_VERSION = "1.0.28"
         private const val PAGE_HOME = "home"
         private val INK = Color.rgb(15, 20, 25)
         private val MUTED = Color.rgb(113, 118, 123)
@@ -1092,12 +1299,102 @@ class MainActivity : Activity() {
         private val BLUE = Color.rgb(29, 155, 240)
         private val RED = Color.rgb(224, 36, 94)
         private val GREEN = Color.rgb(0, 186, 124)
+        private val AUTH_CAPTURE_SCRIPT = """
+            (() => {
+              if (window.__AUTOBANROBOT_AUTH_CAPTURE__) return;
+              window.__AUTOBANROBOT_AUTH_CAPTURE__ = true;
+              let bearer = '';
+              let csrf = '';
+              const emit = (name, value) => {
+                const key = String(name || '').toLowerCase();
+                if (key === 'authorization') bearer = String(value || '');
+                if (key === 'x-csrf-token') csrf = String(value || '');
+                if ((bearer || csrf) && window.AutoBanBridge) {
+                  try { window.AutoBanBridge.updateAuth(bearer, csrf); } catch (_) {}
+                }
+              };
+              const readHeaders = headers => {
+                if (!headers) return;
+                if (typeof headers.forEach === 'function') {
+                  headers.forEach((value, name) => emit(name, value));
+                  return;
+                }
+                if (Array.isArray(headers)) {
+                  headers.forEach(pair => emit(pair && pair[0], pair && pair[1]));
+                  return;
+                }
+                Object.entries(headers).forEach(([name, value]) => emit(name, value));
+              };
+              const originalFetch = window.fetch;
+              window.fetch = function(input, init) {
+                try {
+                  if (input instanceof Request) readHeaders(input.headers);
+                  readHeaders(init && init.headers);
+                } catch (_) {}
+                return originalFetch.apply(this, arguments);
+              };
+              const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+              XMLHttpRequest.prototype.setRequestHeader = function(name, value) {
+                emit(name, value);
+                return originalSetRequestHeader.apply(this, arguments);
+              };
+            })();
+        """.trimIndent()
+        private val VIEWER_USERNAME_SCRIPT = """
+            (() => {
+              const send = () => {
+                const links = [...document.querySelectorAll('a[href]')];
+                const pathOf = item => {
+                  try { return new URL(item.getAttribute('href') || '', location.origin).pathname; }
+                  catch (_) { return ''; }
+                };
+                const preferred = links.find(item =>
+                  item.matches('a[data-testid="AppTabBar_Profile_Link"], a[aria-label*="Profile" i], a[aria-label*="个人资料"]')
+                );
+                const reserved = new Set([
+                  'home', 'explore', 'notifications', 'messages', 'bookmarks', 'lists',
+                  'communities', 'i', 'settings', 'compose', 'search'
+                ]);
+                const topProfile = links.find(item => {
+                  const rect = item.getBoundingClientRect();
+                  const path = pathOf(item).replace(/^\//u, '').replace(/\/$/u, '');
+                  return rect.top >= 0 && rect.top < 220 && rect.left >= 0 && rect.left < 220 &&
+                    /^[A-Za-z0-9_]{1,15}$/u.test(path) && !reserved.has(path.toLowerCase());
+                });
+                const link = preferred || topProfile || links.find(item => {
+                  const testId = String(item.getAttribute('data-testid') || '').toLowerCase();
+                  const label = String(item.getAttribute('aria-label') || '').toLowerCase();
+                  const path = pathOf(item).replace(/^\//u, '').replace(/\/$/u, '');
+                  return (testId.includes('profile') || label.includes('profile') || label.includes('个人资料')) &&
+                    /^[A-Za-z0-9_]{1,15}$/u.test(path);
+                });
+                const match = /^\/([A-Za-z0-9_]{1,15})\/?$/u.exec(pathOf(link));
+                if (match && window.AutoBanBridge) {
+                  try { window.AutoBanBridge.updateViewerUsername(match[1]); } catch (_) {}
+                }
+              };
+              send();
+              setTimeout(send, 1000);
+              setTimeout(send, 3000);
+            })();
+        """.trimIndent()
     }
 
     inner class AndroidBridge {
         @JavascriptInterface
         fun enqueueBlock(payload: String) {
             if (ruleStore.autoBanEnabled) queue.enqueue(payload)
+        }
+
+        @JavascriptInterface
+        fun updateAuth(bearer: String?, csrf: String?) {
+            queue.updateAuth(bearer, csrf)
+        }
+
+        @JavascriptInterface
+        fun updateViewerUsername(username: String?) {
+            Log.i("AutoBanAuth", "页面识别当前账号 username=${username ?: "空"}")
+            queue.updateViewerUsername(username)
         }
 
         @JavascriptInterface

@@ -7,17 +7,32 @@ android {
     namespace = "com.autobanrobot.mobile"
     compileSdk = 35
 
+    val releaseKeystore = rootProject.file("../.private/android/AutoBanRobot-release.jks")
+    val releaseStorePassword = providers.environmentVariable("AUTOBAN_RELEASE_STORE_PASSWORD").orNull
+    val releaseKeyAlias = providers.environmentVariable("AUTOBAN_RELEASE_KEY_ALIAS").orNull
+    val releaseKeyPassword = providers.environmentVariable("AUTOBAN_RELEASE_KEY_PASSWORD").orNull
+
+    signingConfigs {
+        create("release") {
+            storeFile = releaseKeystore
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
+        }
+    }
+
     defaultConfig {
         applicationId = "com.autobanrobot.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 29
+        versionName = "1.0.28"
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
