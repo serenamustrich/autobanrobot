@@ -42,7 +42,11 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ### Server v1.2.4 — 2026-08-02
 
-- 为服务端页面脚本增加版本化地址，避免新菜单 HTML 搭配浏览器缓存的旧 JavaScript，确保多语言和页面路由立即生效。
+- 服务端页面继续由 JAR 统一提供 HTML、CSS 和 JavaScript 资源。
+
+### Server v1.2.5 — 2026-08-02
+
+- 前端每次加载页面都会读取服务端版本；版本变化时清理 Cache Storage 并强制重新加载当前页面，保留当前菜单和 URL 状态。
 
 ### v1.6.18 — 2026-08-01
 
