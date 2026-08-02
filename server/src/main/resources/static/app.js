@@ -18,7 +18,7 @@ const translations = {
     connected: '实时数据已连接',
     reconnecting: '连接中断，正在自动重试',
     loadFailed: '服务器数据加载失败',
-    banTab: 'Ban 清单', keywordTab: '关键词分析', targetTab: '垃圾推广目标账号',
+    banTab: 'Ban 清单', keywordTab: '关键词分析', popularTab: '热门关键词', targetTab: '垃圾推广目标账号',
     confirmedTotal: '累计已确认屏蔽', allRecords: '所有已接收记录',
     todayAdded: '今日新增', serverDate: '按服务器本地日期',
     onlineUsers: '插件在线用户数', onlineWindow: '最近 2 分钟发送过心跳',
@@ -54,7 +54,7 @@ const translations = {
     connected: 'Live data connected',
     reconnecting: 'Connection lost, retrying automatically',
     loadFailed: 'Failed to load server data',
-    banTab: 'Ban List', keywordTab: 'Keyword Analytics', targetTab: 'Spam Promotion Targets',
+    banTab: 'Ban List', keywordTab: 'Keyword Analytics', popularTab: 'Popular Keywords', targetTab: 'Spam Promotion Targets',
     confirmedTotal: 'Confirmed Bans', allRecords: 'All received records',
     todayAdded: 'Added Today', serverDate: 'Server local date',
     onlineUsers: 'Online Plugin Users', onlineWindow: 'Heartbeat received in the last 2 minutes',
@@ -90,7 +90,7 @@ const translations = {
     connected: 'Datos en tiempo real conectados',
     reconnecting: 'Conexión perdida; reintentando automáticamente',
     loadFailed: 'No se pudieron cargar los datos del servidor',
-    banTab: 'Bloqueos', keywordTab: 'Análisis de palabras clave', targetTab: 'Objetivos de promoción spam',
+    banTab: 'Bloqueos', keywordTab: 'Análisis de palabras clave', popularTab: 'Palabras clave populares', targetTab: 'Objetivos de promoción spam',
     confirmedTotal: 'Bloqueos confirmados', allRecords: 'Todos los registros recibidos',
     todayAdded: 'Añadidos hoy', serverDate: 'Fecha local del servidor',
     onlineUsers: 'Usuarios del plugin en línea', onlineWindow: 'Heartbeat recibido en los últimos 2 minutos',
@@ -126,7 +126,7 @@ const translations = {
     connected: 'リアルタイムデータ接続済み',
     reconnecting: '接続が切れました。自動再接続中',
     loadFailed: 'サーバーデータを読み込めません',
-    banTab: 'Ban 一覧', keywordTab: 'キーワード分析', targetTab: 'スパム宣伝対象アカウント',
+    banTab: 'Ban 一覧', keywordTab: 'キーワード分析', popularTab: '人気キーワード', targetTab: 'スパム宣伝対象アカウント',
     confirmedTotal: '確認済み Ban 累計', allRecords: '受信した全記録',
     todayAdded: '本日の追加', serverDate: 'サーバーのローカル日付',
     onlineUsers: 'オンラインプラグインユーザー', onlineWindow: '直近 2 分以内にハートビート受信',
@@ -162,7 +162,7 @@ const translations = {
     connected: '실시간 데이터 연결됨',
     reconnecting: '연결 끊김, 자동 재연결 중',
     loadFailed: '서버 데이터를 불러오지 못했습니다',
-    banTab: 'Ban 목록', keywordTab: '키워드 분석', targetTab: '스팸 홍보 대상 계정',
+    banTab: 'Ban 목록', keywordTab: '키워드 분석', popularTab: '인기 키워드', targetTab: '스팸 홍보 대상 계정',
     confirmedTotal: '확인된 누적 Ban', allRecords: '수신한 전체 기록',
     todayAdded: '오늘 추가', serverDate: '서버 현지 날짜 기준',
     onlineUsers: '온라인 플러그인 사용자', onlineWindow: '최근 2분 이내 하트비트 수신',
@@ -198,7 +198,7 @@ const translations = {
     connected: 'Live-Daten verbunden',
     reconnecting: 'Verbindung getrennt, automatischer Neuversuch',
     loadFailed: 'Serverdaten konnten nicht geladen werden',
-    banTab: 'Ban-Liste', keywordTab: 'Schlüsselwortanalyse', targetTab: 'Spam-Werbeziele',
+    banTab: 'Ban-Liste', keywordTab: 'Schlüsselwortanalyse', popularTab: 'Beliebte Schlüsselwörter', targetTab: 'Spam-Werbeziele',
     confirmedTotal: 'Bestätigte Bans', allRecords: 'Alle empfangenen Einträge',
     todayAdded: 'Heute hinzugefügt', serverDate: 'Lokales Serverdatum',
     onlineUsers: 'Online-Plugin-Nutzer', onlineWindow: 'Heartbeat in den letzten 2 Minuten',
@@ -234,7 +234,7 @@ const translations = {
     connected: 'Données en temps réel connectées',
     reconnecting: 'Connexion perdue, nouvelle tentative automatique',
     loadFailed: 'Impossible de charger les données du serveur',
-    banTab: 'Blocages', keywordTab: 'Analyse des mots-clés', targetTab: 'Cibles de promotion spam',
+    banTab: 'Blocages', keywordTab: 'Analyse des mots-clés', popularTab: 'Mots-clés populaires', targetTab: 'Cibles de promotion spam',
     confirmedTotal: 'Blocages confirmés', allRecords: 'Tous les enregistrements reçus',
     todayAdded: 'Ajouts du jour', serverDate: 'Date locale du serveur',
     onlineUsers: 'Utilisateurs du plugin en ligne', onlineWindow: 'Heartbeat reçu dans les 2 dernières minutes',
@@ -270,7 +270,7 @@ const translations = {
     connected: 'Данные в реальном времени подключены',
     reconnecting: 'Соединение потеряно, выполняется повторная попытка',
     loadFailed: 'Не удалось загрузить данные сервера',
-    banTab: 'Блокировки', keywordTab: 'Аналитика ключевых слов', targetTab: 'Целевые аккаунты спам-рекламы',
+    banTab: 'Блокировки', keywordTab: 'Аналитика ключевых слов', popularTab: 'Популярные ключевые слова', targetTab: 'Целевые аккаунты спам-рекламы',
     confirmedTotal: 'Подтверждённые блокировки', allRecords: 'Все полученные записи',
     todayAdded: 'Добавлено сегодня', serverDate: 'Локальная дата сервера',
     onlineUsers: 'Пользователи плагина онлайн', onlineWindow: 'Heartbeat за последние 2 минуты',
@@ -306,7 +306,7 @@ const translations = {
     connected: 'Dati in tempo reale connessi',
     reconnecting: 'Connessione interrotta, nuovo tentativo automatico',
     loadFailed: 'Impossibile caricare i dati del server',
-    banTab: 'Elenco Ban', keywordTab: 'Analisi parole chiave', targetTab: 'Account obiettivo dello spam',
+    banTab: 'Elenco Ban', keywordTab: 'Analisi parole chiave', popularTab: 'Parole chiave popolari', targetTab: 'Account obiettivo dello spam',
     confirmedTotal: 'Ban confermati', allRecords: 'Tutti i record ricevuti',
     todayAdded: 'Aggiunti oggi', serverDate: 'Data locale del server',
     onlineUsers: 'Utenti plugin online', onlineWindow: 'Heartbeat negli ultimi 2 minuti',
@@ -575,12 +575,13 @@ function connectStream() {
 }
 
 function applyPage(page, updateUrl = true, replaceUrl = false) {
-  const selectedPage = ['bans', 'keywords', 'targets'].includes(page) ? page : 'bans';
+  const selectedPage = ['bans', 'keywords', 'popular', 'targets'].includes(page) ? page : 'bans';
   document.querySelectorAll('.page-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.page === selectedPage);
   });
   document.getElementById('bansPage').hidden = selectedPage !== 'bans';
   document.getElementById('keywordsPage').hidden = selectedPage !== 'keywords';
+  document.getElementById('popularPage').hidden = selectedPage !== 'popular';
   document.getElementById('targetsPage').hidden = selectedPage !== 'targets';
   localStorage.setItem(PAGE_KEY, selectedPage);
   if (updateUrl) {
@@ -655,7 +656,7 @@ setInterval(() => {
   loadUserStats().catch(error => console.error('用户统计刷新失败', error));
 }, 15_000);
 
-const initialPage = ['bans', 'keywords', 'targets'].includes(location.hash.slice(1))
+const initialPage = ['bans', 'keywords', 'popular', 'targets'].includes(location.hash.slice(1))
   ? location.hash.slice(1)
   : localStorage.getItem(PAGE_KEY);
 applyPage(initialPage, true, true);
