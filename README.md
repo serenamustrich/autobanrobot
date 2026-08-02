@@ -35,6 +35,11 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 - 服务端升级至 1.2.2：新增独立的垃圾推广目标账号页面，热门词同步不再限制
   前 50 条，并清理账号显示名称末尾误采集的 X 发布时间。
 
+### Server v1.2.3 — 2026-08-02
+
+- 将“可同步热门关键词”独立为“热门关键词”页面，关键词分析页仅保留命中排行。
+- Server v1.2.3 separates the syncable popular-keyword dashboard from keyword analytics.
+
 ### v1.6.18 — 2026-08-01
 
 - Fixed X relative timestamps and dates being appended to captured display
