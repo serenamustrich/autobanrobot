@@ -8,6 +8,7 @@ const state = {
 
 const LANGUAGE_KEY = 'autobanrobot-dashboard-language';
 const PAGE_KEY = 'autobanrobot-dashboard-page';
+const SERVER_VERSION_KEY = 'autobanrobot-dashboard-server-version';
 const translations = {
   'zh-CN': {
     pageTitle: 'AutoBanRobot · Ban 清单',
@@ -551,6 +552,37 @@ function setConnection(mode, textKey) {
   elements.connectionText.textContent = t(connectionTextKey);
 }
 
+async function ensureCurrentServerVersion() {
+  const response = await fetch('/api/version', {
+    cache: 'no-store',
+    headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' }
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const payload = await response.json();
+  const serverVersion = String(payload?.version ?? '').trim();
+  if (!serverVersion) return true;
+
+  const currentUrl = new URL(location.href);
+  const redirectedVersion = currentUrl.searchParams.get('_autoban_server_version');
+  const localVersion = localStorage.getItem(SERVER_VERSION_KEY);
+  localStorage.setItem(SERVER_VERSION_KEY, serverVersion);
+  if (!localVersion || localVersion === serverVersion || redirectedVersion === serverVersion) {
+    if (redirectedVersion === serverVersion) {
+      currentUrl.searchParams.delete('_autoban_server_version');
+      history.replaceState(null, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+    }
+    return true;
+  }
+
+  if (window.caches) {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+  }
+  currentUrl.searchParams.set('_autoban_server_version', serverVersion);
+  location.replace(currentUrl.toString());
+  return false;
+}
+
 function connectStream() {
   const stream = new EventSource('/api/bans/stream');
   stream.addEventListener('connected', () => {
@@ -645,19 +677,21 @@ elements.next.addEventListener('click', async () => {
   await loadPage();
 });
 
-Promise.all([loadPage(), loadStats(), loadAnalytics(), loadUserStats()])
-  .then(connectStream)
-  .catch(error => {
-    console.error(error);
-    setConnection('offline', 'loadFailed');
-  });
+async function initializeDashboard() {
+  if (!(await ensureCurrentServerVersion())) return;
+  const initialPage = ['bans', 'keywords', 'popular', 'targets'].includes(location.hash.slice(1))
+    ? location.hash.slice(1)
+    : localStorage.getItem(PAGE_KEY);
+  applyPage(initialPage, true, true);
+  applyLanguage(currentLanguage);
+  await Promise.all([loadPage(), loadStats(), loadAnalytics(), loadUserStats()]);
+  connectStream();
+  setInterval(() => {
+    loadUserStats().catch(error => console.error('用户统计刷新失败', error));
+  }, 15_000);
+}
 
-setInterval(() => {
-  loadUserStats().catch(error => console.error('用户统计刷新失败', error));
-}, 15_000);
-
-const initialPage = ['bans', 'keywords', 'popular', 'targets'].includes(location.hash.slice(1))
-  ? location.hash.slice(1)
-  : localStorage.getItem(PAGE_KEY);
-applyPage(initialPage, true, true);
-applyLanguage(currentLanguage);
+initializeDashboard().catch(error => {
+  console.error(error);
+  setConnection('offline', 'loadFailed');
+});
