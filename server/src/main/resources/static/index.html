@@ -55,6 +55,7 @@
     <nav class="page-tabs" aria-label="页面">
       <button class="page-tab active" type="button" data-page="bans" data-i18n="banTab">Ban 清单</button>
       <button class="page-tab" type="button" data-page="keywords" data-i18n="keywordTab">关键词分析</button>
+      <button class="page-tab" type="button" data-page="popular" data-i18n="popularTab">热门关键词</button>
       <button class="page-tab" type="button" data-page="targets" data-i18n="targetTab">垃圾推广目标账号</button>
     </nav>
 
@@ -128,33 +129,6 @@
       <div class="analytics-section">
         <div class="toolbar">
           <div>
-            <p class="section-kicker">SYNC PREVIEW</p>
-            <h2 data-i18n="syncPreview">可同步热门关键词</h2>
-          </div>
-          <p class="ranking-note" data-i18n="syncPreviewNote">插件“加载热门关键词”将获取以下内容</p>
-        </div>
-        <div class="table-wrap analytics-table">
-          <table>
-            <thead>
-              <tr>
-                <th data-i18n="rank">排名</th>
-                <th data-i18n="syncTerm">同步屏蔽词</th>
-                <th data-i18n="source">来源</th>
-                <th data-i18n="count">次数</th>
-              </tr>
-            </thead>
-            <tbody id="popularRows"></tbody>
-          </table>
-          <div class="empty" id="popularEmpty" hidden>
-            <div class="empty-icon">📥</div>
-            <h3 data-i18n="noPopularTerms">暂无可同步内容</h3>
-          </div>
-        </div>
-      </div>
-
-      <div class="analytics-section">
-        <div class="toolbar">
-          <div>
             <p class="section-kicker">KEYWORD HITS</p>
             <h2 data-i18n="keywordRanking">关键词命中排行</h2>
           </div>
@@ -179,6 +153,35 @@
         </div>
       </div>
 
+    </section>
+
+    <section class="panel page-view" id="popularPage" hidden>
+      <div class="analytics-section">
+        <div class="toolbar">
+          <div>
+            <p class="section-kicker">SYNC PREVIEW</p>
+            <h2 data-i18n="syncPreview">可同步热门关键词</h2>
+          </div>
+          <p class="ranking-note" data-i18n="syncPreviewNote">插件“加载热门关键词”将获取以下内容</p>
+        </div>
+        <div class="table-wrap analytics-table">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="rank">排名</th>
+                <th data-i18n="syncTerm">同步屏蔽词</th>
+                <th data-i18n="source">来源</th>
+                <th data-i18n="count">次数</th>
+              </tr>
+            </thead>
+            <tbody id="popularRows"></tbody>
+          </table>
+          <div class="empty" id="popularEmpty" hidden>
+            <div class="empty-icon">📥</div>
+            <h3 data-i18n="noPopularTerms">暂无可同步内容</h3>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="panel page-view" id="targetsPage" hidden>
