@@ -1,5 +1,10 @@
 # AutoBanRobot
 
+### Android v1.0.42 — 2026-08-03
+
+- System edge-back now tries the visible X back control, then X SPA history, then WebView history; it reloads only when none exists. This prevents the Messages inbox from being refreshed by a back gesture.
+- 系统左右边缘返回现在依次尝试 X 可见返回按钮、X 页面路由历史、WebView 历史；三者都没有才刷新，私信列表不再被误刷新。
+
 ### Server v1.2.7 / Android v1.0.41 / Extension v1.6.29 — 2026-08-03
 
 - Added a code-segment lure rule for 3–6 short lines plus exactly one standalone Emoji in any position, covering the observed `31 / 78dv / 🍌 / rz53` format without matching ordinary multi-line posts.

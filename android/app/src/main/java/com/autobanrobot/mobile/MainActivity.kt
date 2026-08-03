@@ -1109,8 +1109,11 @@ class MainActivity : Activity() {
     }
 
     private fun clickPageBackOrReload() {
-        webView.evaluateJavascript(PAGE_BACK_BUTTON_SCRIPT) { clicked ->
-            if (clicked != "true") webView.reload()
+        webView.evaluateJavascript(PAGE_BACK_BUTTON_SCRIPT) { backAction ->
+            when (backAction) {
+                "1", "2" -> Unit
+                else -> if (webView.canGoBack()) webView.goBack() else webView.reload()
+            }
         }
     }
 
@@ -1364,13 +1367,14 @@ class MainActivity : Activity() {
         private const val REQUEST_FILE_CHOOSER = 9003
         private const val MAX_POST_MEDIA = 4
         private const val APP_HEARTBEAT_INTERVAL_MS = 60_000L
-        private const val APP_VERSION = "1.0.41"
+        private const val APP_VERSION = "1.0.42"
         private const val HISTORY_PAGE_SIZE = 10
         private const val PAGE_HOME = "home"
         private const val PAGE_BACK_BUTTON_SCRIPT = """
             (() => {
               const selectors = [
                 '[data-testid="app-bar-back"]',
+                '[data-testid*="back" i]',
                 '[aria-label="Back"]',
                 '[aria-label="返回"]',
                 '[aria-label="上一页"]'
@@ -1386,9 +1390,18 @@ class MainActivity : Activity() {
                   rect.top < Math.min(window.innerHeight * 0.3, 220) &&
                   style.visibility !== 'hidden' && style.display !== 'none';
               });
-              if (!target) return false;
-              target.click();
-              return true;
+              if (target) {
+                target.click();
+                return 1;
+              }
+              // X uses SPA history for routes such as /messages. A messages
+              // inbox has no visible arrow but should still return to the
+              // preceding X route rather than reload the current inbox.
+              if (window.history.length > 1) {
+                window.history.back();
+                return 2;
+              }
+              return 0;
             })()
         """
         private val INK = Color.rgb(15, 20, 25)
