@@ -28,6 +28,7 @@ struct BrowserView: UIViewRepresentable {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default()
         configuration.userContentController = content
+        configuration.mediaTypesRequiringUserActionForPlayback = .all
         let webView = SelectionKeywordWebView(frame: .zero, configuration: configuration)
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/150.0.7871.47 Mobile/15E148 Safari/604.1"
         webView.navigationDelegate = context.coordinator
@@ -109,6 +110,58 @@ struct BrowserView: UIViewRepresentable {
       document.addEventListener('selectionchange', reportSelection);
       window.addEventListener('DOMContentLoaded', reportCookieCsrf, { once: true });
       setTimeout(reportCookieCsrf, 1500);
+
+      // X can start muted video while scrolling and a single accidental tap can
+      // enter its media viewer. Require a deliberate double-tap instead.
+      const videoIntentUntil = new WeakMap();
+      const nativeMediaPlay = HTMLMediaElement.prototype.play;
+      const videoContainer = node => node && node.closest && node.closest(
+        '[data-testid="videoPlayer"], [data-testid="videoComponent"], video'
+      );
+      const videoFor = node => {
+        const container = videoContainer(node);
+        return container && (container.matches && container.matches('video') ? container : container.querySelector && container.querySelector('video'));
+      };
+      const mayPlay = video => (videoIntentUntil.get(video) || 0) >= Date.now();
+      const lockVideo = video => {
+        if (!video) return;
+        video.autoplay = false;
+        video.removeAttribute('autoplay');
+        video.pause();
+      };
+      HTMLMediaElement.prototype.play = function(...args) {
+        if (this instanceof HTMLVideoElement && !mayPlay(this)) {
+          lockVideo(this);
+          return Promise.resolve();
+        }
+        return nativeMediaPlay.apply(this, args);
+      };
+      document.addEventListener('click', event => {
+        const video = videoFor(event.target);
+        if (!video) return;
+        if (event.detail >= 2) {
+          videoIntentUntil.set(video, Date.now() + 10_000);
+          return;
+        }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        lockVideo(video);
+      }, true);
+      document.addEventListener('play', event => {
+        const video = event.target;
+        if (!video || !video.matches || !video.matches('video')) return;
+        if (!mayPlay(video)) lockVideo(video);
+      }, true);
+      const lockVideosIn = node => {
+        if (!node || node.nodeType !== Node.ELEMENT_NODE) return;
+        if (node.matches && node.matches('video')) lockVideo(node);
+        if (node.querySelectorAll) node.querySelectorAll('video').forEach(lockVideo);
+      };
+      new MutationObserver(records => records.forEach(record => {
+        record.addedNodes.forEach(lockVideosIn);
+        if (record.type === 'attributes' && record.target.matches('video')) lockVideo(record.target);
+      })).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['autoplay'] });
+      document.querySelectorAll('video').forEach(lockVideo);
     })();
     """
 
@@ -180,27 +233,35 @@ struct BrowserView: UIViewRepresentable {
         }
 
         func installBackGestures(on webView: WKWebView) {
-            for edge in [UIRectEdge.left, .right] {
-                let recognizer = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleBackGesture(_:)))
-                recognizer.edges = edge
-                recognizer.delegate = self
-                recognizer.cancelsTouchesInView = false
-                webView.addGestureRecognizer(recognizer)
-            }
+            let recognizer = UIPanGestureRecognizer(target: self, action: #selector(handleBackGesture(_:)))
+            recognizer.delegate = self
+            recognizer.cancelsTouchesInView = false
+            recognizer.delaysTouchesBegan = false
+            recognizer.maximumNumberOfTouches = 1
+            webView.addGestureRecognizer(recognizer)
         }
 
-        @objc private func handleBackGesture(_ recognizer: UIScreenEdgePanGestureRecognizer) {
+        @objc private func handleBackGesture(_ recognizer: UIPanGestureRecognizer) {
             guard recognizer.state == .ended, let webView else { return }
             let translation = recognizer.translation(in: webView)
-            guard abs(translation.x) >= 72, abs(translation.x) > abs(translation.y) else { return }
+            guard abs(translation.x) >= 44, abs(translation.x) > abs(translation.y) else { return }
             pageBackOrReload(webView)
         }
 
         func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-            guard let pan = gestureRecognizer as? UIScreenEdgePanGestureRecognizer,
+            guard let pan = gestureRecognizer as? UIPanGestureRecognizer,
                   let webView else { return true }
             let velocity = pan.velocity(in: webView)
-            return abs(velocity.x) > abs(velocity.y)
+            let start = pan.location(in: webView)
+            let isBackEdge = start.x <= 56 || start.x >= webView.bounds.width - 56
+            return isBackEdge && abs(velocity.x) > abs(velocity.y)
+        }
+
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            true
         }
 
         private func pageBackOrReload(_ webView: WKWebView) {
