@@ -431,6 +431,24 @@
     return normalizeForMatch(text).replace(/[^\p{Script=Han}]/gu, '');
   }
 
+  function matchExactMentionKeyword(text, keyword) {
+    const match = /^@([A-Za-z0-9_]{1,15})$/u.exec(keyword);
+    if (!match) return false;
+
+    // @account keywords represent real mentions. Do not remove the @ here:
+    // doing so makes @yo match the "yo" inside ordinary words such as
+    // "everyone".
+    const mention = match[1].replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+    const mentionPattern = new RegExp(
+      `(^|[^\\p{L}\\p{N}_])@${mention}(?=$|[^\\p{L}\\p{N}_])`,
+      'iu'
+    );
+    const mentionText = String(text ?? '')
+      .normalize('NFKC')
+      .replace(/[\u200B-\u200D\u2060\uFEFF]/gu, '');
+    return mentionPattern.test(mentionText);
+  }
+
   function matchingRemoteRules(text, scope = 'content', context = {}) {
     return remoteRules.filter(rule => {
       if ((rule.scope ?? 'content') !== scope) return false;
@@ -463,6 +481,9 @@
     return SPAM.filter(keyword => {
       const normalizedKeyword = normalizeForMatch(keyword);
       if (!normalizedKeyword) return false;
+      if (/^@[A-Za-z0-9_]{1,15}$/u.test(normalizedKeyword)) {
+        return matchExactMentionKeyword(text, normalizedKeyword);
+      }
       if (normalizedText.includes(normalizedKeyword)) return true;
 
       const noiseStrippedKeyword = normalizeWithoutSymbolNoise(keyword);

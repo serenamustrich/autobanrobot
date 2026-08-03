@@ -64,6 +64,11 @@ Twitter/X spam-account blocker for Chrome, Microsoft Edge, and Safari.
 
 ## Release notes / 更新说明
 
+### Extension v1.6.30 — 2026-08-03
+
+- Fixed `@account` keyword matching so it requires a complete standalone mention; `@yo` no longer matches ordinary words such as `everyone` or partial usernames such as `@yoda`.
+- 修复 `@账号` 关键词匹配，必须命中完整的独立提及；`@yo` 不再误命中 `everyone` 或部分账号 `@yoda`。
+
 ### v1.6.27 — 2026-08-02
 
 - Fixed engagement display-name extraction when X places an empty avatar link
