@@ -409,6 +409,7 @@
         }[rule.matcher];
         return typeof matcher === 'function' && matcher(text);
       }
+      if (typeof rule.pattern !== 'string' || !rule.pattern.trim()) return false;
       const target = rule.normalization === 'compact'
         ? normalizeForMatch(text)
         : rule.normalization === 'noSymbols'
