@@ -36,6 +36,9 @@ struct BrowserView: UIViewRepresentable {
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         context.coordinator.attach(webView)
         context.coordinator.installBackGestures(on: webView)
+        UIMenuController.shared.menuItems = [
+            UIMenuItem(title: "添加屏蔽关键词", action: #selector(SelectionKeywordWebView.addSelectionToKeywords(_:)))
+        ]
         webView.load(URLRequest(url: URL(string: "https://x.com/home")!))
         return webView
     }
@@ -56,7 +59,7 @@ struct BrowserView: UIViewRepresentable {
         enqueueBlock: payload => send('enqueue', String(payload || '')),
         updateAuth: (bearer, csrf) => send('auth', { bearer: String(bearer || ''), csrf: String(csrf || '') }),
         updateViewerUsername: username => send('viewer', String(username || '')),
-        updateSelectedText: payload => send('selection', payload || {}),
+        updateSelectedText: text => send('selection', String(text || '')),
         reportScanDiagnostic: diagnostic => send('diagnostic', String(diagnostic || ''))
       };
       window.addEventListener('__twblocker_enqueue__', event => {
@@ -101,13 +104,7 @@ struct BrowserView: UIViewRepresentable {
         const selected = String(window.getSelection && window.getSelection().toString() || '')
           .replace(/\\s+/gu, ' ')
           .trim();
-        const range = window.getSelection && window.getSelection().rangeCount
-          ? window.getSelection().getRangeAt(0) : null;
-        const rect = range && range.getBoundingClientRect();
-        window.AutoBanBridge.updateSelectedText({
-          text: selected,
-          rect: rect ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height } : null
-        });
+        window.AutoBanBridge.updateSelectedText(selected);
       };
       document.addEventListener('selectionchange', reportSelection);
       window.addEventListener('DOMContentLoaded', reportCookieCsrf, { once: true });
@@ -118,46 +115,17 @@ struct BrowserView: UIViewRepresentable {
     final class SelectionKeywordWebView: WKWebView {
         var selectedKeywordText = ""
         var addSelectedKeyword: ((String) -> Void)?
-        private let selectionButton = UIButton(type: .system)
 
-        override init(frame: CGRect, configuration: WKWebViewConfiguration) {
-            super.init(frame: frame, configuration: configuration)
-            selectionButton.configuration = .filled()
-            selectionButton.configuration?.title = "添加屏蔽关键词"
-            selectionButton.configuration?.image = UIImage(systemName: "plus.circle.fill")
-            selectionButton.configuration?.imagePadding = 5
-            selectionButton.configuration?.baseBackgroundColor = .systemRed
-            selectionButton.configuration?.baseForegroundColor = .white
-            selectionButton.configuration?.cornerStyle = .capsule
-            selectionButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
-            selectionButton.isHidden = true
-            selectionButton.addTarget(self, action: #selector(addSelectionToKeywords(_:)), for: .touchUpInside)
-            addSubview(selectionButton)
-        }
-
-        required init?(coder: NSCoder) { nil }
-
-        func updateSelectedText(_ text: String, rect: CGRect?) {
-            selectedKeywordText = text
-            guard !text.isEmpty, let rect, rect.width > 0, rect.height > 0 else {
-                selectionButton.isHidden = true
-                return
+        override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+            if action == #selector(addSelectionToKeywords(_:)) {
+                return !selectedKeywordText.isEmpty
             }
-            let buttonSize = CGSize(width: 142, height: 34)
-            let horizontal = min(max(10, rect.midX - buttonSize.width / 2), bounds.width - buttonSize.width - 10)
-            let preferredAbove = rect.minY - buttonSize.height - 16
-            let fallbackBelow = min(rect.maxY + 16, bounds.height - buttonSize.height - 12)
-            let vertical = preferredAbove >= 12 ? preferredAbove : fallbackBelow
-            selectionButton.frame = CGRect(origin: CGPoint(x: horizontal, y: vertical), size: buttonSize)
-            selectionButton.isHidden = false
-            bringSubviewToFront(selectionButton)
+            return super.canPerformAction(action, withSender: sender)
         }
 
         @objc func addSelectionToKeywords(_ sender: Any?) {
             guard !selectedKeywordText.isEmpty else { return }
             addSelectedKeyword?(selectedKeywordText)
-            selectedKeywordText = ""
-            selectionButton.isHidden = true
         }
     }
 
@@ -316,18 +284,9 @@ struct BrowserView: UIViewRepresentable {
             case "viewer":
                 state.updateViewerUsername(body["payload"] as? String ?? "")
             case "selection":
-                let payload = body["payload"] as? [String: Any] ?? [:]
-                let text = (payload["text"] as? String ?? "")
+                let text = (body["payload"] as? String ?? "")
                     .trimmingCharacters(in: .whitespacesAndNewlines)
-                let sourceRect = payload["rect"] as? [String: Any]
-                let rect = sourceRect.flatMap { values -> CGRect? in
-                    guard let left = (values["left"] as? NSNumber)?.doubleValue,
-                          let top = (values["top"] as? NSNumber)?.doubleValue,
-                          let width = (values["width"] as? NSNumber)?.doubleValue,
-                          let height = (values["height"] as? NSNumber)?.doubleValue else { return nil }
-                    return CGRect(x: left, y: top, width: width, height: height)
-                }
-                (webView as? SelectionKeywordWebView)?.updateSelectedText(text, rect: rect)
+                (webView as? SelectionKeywordWebView)?.selectedKeywordText = text
             case "diagnostic":
                 state.reportScanDiagnostic(body["payload"] as? String ?? "")
             default: break
