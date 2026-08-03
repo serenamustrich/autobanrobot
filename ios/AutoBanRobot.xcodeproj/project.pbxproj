@@ -1,0 +1,583 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		078672E8FC1E7045C552CB45 /* BlockJobTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CAF48E9914F3C96F2BDA457 /* BlockJobTests.swift */; };
+		2D0BC93FBAE63303C5F80909 /* BrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8AAC8073620B85113706104 /* BrowserView.swift */; };
+		331AA3CDFAD90B0E6F61EA93 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6BB7D931C3ED579BFDD1172B /* Assets.xcassets */; };
+		39B9D6989DE17D23E5E79F8E /* AutoBanLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C73BA0AA8AD2FA1C7ABBD346 /* AutoBanLiveActivityAttributes.swift */; };
+		3E8BD45EC6872CF88E82110E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4884FA72F5139CEF9BA2ADB4 /* ContentView.swift */; };
+		502096F1C88785F9CC443F30 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF6494B8F3E18502D042D576 /* LiveActivityManager.swift */; };
+		7888F6DB46678281EEB6A176 /* injected.js in Resources */ = {isa = PBXBuildFile; fileRef = 4607D592DE9CB422EEFCDC0C /* injected.js */; };
+		7E8B316235AADF010F4FC1D4 /* AutoBanRobotLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FD024A59C242C01F883C81C /* AutoBanRobotLiveActivity.swift */; };
+		87E3724D054D92A6B5691B6B /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3602E4EFE0AD439B6810EC78 /* AppState.swift */; };
+		98BBCB63E50B152D2D4EF2C9 /* AutoBanRobotLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C9285BE66BC27E7B2DB51D1A /* AutoBanRobotLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9A576ECEE55DD362ED65D0C5 /* default-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = EDB991B1F262340DBBF021EA /* default-rules.json */; };
+		A30B85684DCA065B7428B5BC /* XAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 481AD55A71DC908648733874 /* XAPIClient.swift */; };
+		A76BCC4FFBB4A347EC3FA24D /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49064D1AAB7936C6F999C05 /* Models.swift */; };
+		D92406EA07D34F0B67B3C992 /* AutoBanRobotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA23268C33949A7C931E2D5E /* AutoBanRobotApp.swift */; };
+		E7E1F6E3E5846A2F12BEA38C /* default-keywords.json in Resources */ = {isa = PBXBuildFile; fileRef = 88769A9FBC6D6FA9D5E1F9C6 /* default-keywords.json */; };
+		F0425438460C08427472A243 /* AutoBanLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C73BA0AA8AD2FA1C7ABBD346 /* AutoBanLiveActivityAttributes.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A381530E9349B96633FF2E7F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4BB1D00E5C54A9A9ABEE2760 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0E4A2B071B4A4BF97293F9A5;
+			remoteInfo = AutoBanRobotLiveActivity;
+		};
+		C1D1F806B06FDCEA37C0B327 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4BB1D00E5C54A9A9ABEE2760 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DFF3EB919AB2E4A19AA1C13E;
+			remoteInfo = AutoBanRobot;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		7F295FF7CCA771C9ADD0F462 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				98BBCB63E50B152D2D4EF2C9 /* AutoBanRobotLiveActivity.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		2CAF48E9914F3C96F2BDA457 /* BlockJobTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockJobTests.swift; sourceTree = "<group>"; };
+		3602E4EFE0AD439B6810EC78 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		3FD024A59C242C01F883C81C /* AutoBanRobotLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoBanRobotLiveActivity.swift; sourceTree = "<group>"; };
+		4607D592DE9CB422EEFCDC0C /* injected.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = injected.js; sourceTree = "<group>"; };
+		481AD55A71DC908648733874 /* XAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XAPIClient.swift; sourceTree = "<group>"; };
+		4884FA72F5139CEF9BA2ADB4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		48DC8DEE85756618E8128BCA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6BB7D931C3ED579BFDD1172B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		88769A9FBC6D6FA9D5E1F9C6 /* default-keywords.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "default-keywords.json"; sourceTree = "<group>"; };
+		ACD4B84E762AB2004A3ECB21 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		B49064D1AAB7936C6F999C05 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		C73BA0AA8AD2FA1C7ABBD346 /* AutoBanLiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoBanLiveActivityAttributes.swift; sourceTree = "<group>"; };
+		C91D36695A5B324F0E4311D3 /* AutoBanRobot.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = AutoBanRobot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9285BE66BC27E7B2DB51D1A /* AutoBanRobotLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = AutoBanRobotLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D762EB0749979EFCBCB09A46 /* AutoBanRobotTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = AutoBanRobotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D8AAC8073620B85113706104 /* BrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserView.swift; sourceTree = "<group>"; };
+		DA23268C33949A7C931E2D5E /* AutoBanRobotApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoBanRobotApp.swift; sourceTree = "<group>"; };
+		EDB991B1F262340DBBF021EA /* default-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "default-rules.json"; sourceTree = "<group>"; };
+		EF6494B8F3E18502D042D576 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		125C4B89C786B1BD09066C52 /* AutoBanRobot */ = {
+			isa = PBXGroup;
+			children = (
+				88769A9FBC6D6FA9D5E1F9C6 /* default-keywords.json */,
+				EDB991B1F262340DBBF021EA /* default-rules.json */,
+				4607D592DE9CB422EEFCDC0C /* injected.js */,
+			);
+			name = AutoBanRobot;
+			path = ..;
+			sourceTree = "<group>";
+		};
+		14D34C28BD3B953F6E34D21A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C91D36695A5B324F0E4311D3 /* AutoBanRobot.app */,
+				C9285BE66BC27E7B2DB51D1A /* AutoBanRobotLiveActivity.appex */,
+				D762EB0749979EFCBCB09A46 /* AutoBanRobotTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1B5E4F6A1DB8C3D13DBF6EF7 /* AutoBanRobotTests */ = {
+			isa = PBXGroup;
+			children = (
+				2CAF48E9914F3C96F2BDA457 /* BlockJobTests.swift */,
+			);
+			path = AutoBanRobotTests;
+			sourceTree = "<group>";
+		};
+		3E1761809A7FC8CF7FAF2221 /* AutoBanRobotLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				3FD024A59C242C01F883C81C /* AutoBanRobotLiveActivity.swift */,
+				48DC8DEE85756618E8128BCA /* Info.plist */,
+			);
+			path = AutoBanRobotLiveActivity;
+			sourceTree = "<group>";
+		};
+		472B4C46FE074804AB49DF2D = {
+			isa = PBXGroup;
+			children = (
+				CF4D398F841A65A74FB74674 /* AutoBanRobot */,
+				125C4B89C786B1BD09066C52 /* AutoBanRobot */,
+				3E1761809A7FC8CF7FAF2221 /* AutoBanRobotLiveActivity */,
+				1B5E4F6A1DB8C3D13DBF6EF7 /* AutoBanRobotTests */,
+				D34B980393C6E61711C0F4D1 /* Shared */,
+				14D34C28BD3B953F6E34D21A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CF4D398F841A65A74FB74674 /* AutoBanRobot */ = {
+			isa = PBXGroup;
+			children = (
+				3602E4EFE0AD439B6810EC78 /* AppState.swift */,
+				6BB7D931C3ED579BFDD1172B /* Assets.xcassets */,
+				DA23268C33949A7C931E2D5E /* AutoBanRobotApp.swift */,
+				D8AAC8073620B85113706104 /* BrowserView.swift */,
+				4884FA72F5139CEF9BA2ADB4 /* ContentView.swift */,
+				ACD4B84E762AB2004A3ECB21 /* Info.plist */,
+				EF6494B8F3E18502D042D576 /* LiveActivityManager.swift */,
+				B49064D1AAB7936C6F999C05 /* Models.swift */,
+				481AD55A71DC908648733874 /* XAPIClient.swift */,
+			);
+			path = AutoBanRobot;
+			sourceTree = "<group>";
+		};
+		D34B980393C6E61711C0F4D1 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				C73BA0AA8AD2FA1C7ABBD346 /* AutoBanLiveActivityAttributes.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0E4A2B071B4A4BF97293F9A5 /* AutoBanRobotLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 18E5A22EE07B07EA57E3B830 /* Build configuration list for PBXNativeTarget "AutoBanRobotLiveActivity" */;
+			buildPhases = (
+				C133AE45357019B88DD6ED51 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AutoBanRobotLiveActivity;
+			packageProductDependencies = (
+			);
+			productName = AutoBanRobotLiveActivity;
+			productReference = C9285BE66BC27E7B2DB51D1A /* AutoBanRobotLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		DFF3EB919AB2E4A19AA1C13E /* AutoBanRobot */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 10F4170B4936A477F706508B /* Build configuration list for PBXNativeTarget "AutoBanRobot" */;
+			buildPhases = (
+				071834F79B95A77F153D0460 /* Sources */,
+				83762CB9BF2D42F0E436A1EB /* Resources */,
+				7F295FF7CCA771C9ADD0F462 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6C45AF72DD0E76A98017676E /* PBXTargetDependency */,
+			);
+			name = AutoBanRobot;
+			packageProductDependencies = (
+			);
+			productName = AutoBanRobot;
+			productReference = C91D36695A5B324F0E4311D3 /* AutoBanRobot.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E0C35667FB3A895238993DE0 /* AutoBanRobotTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4279A51DE5C4BB54465E43B9 /* Build configuration list for PBXNativeTarget "AutoBanRobotTests" */;
+			buildPhases = (
+				2C4853FEC90D435342D89C0B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D2569120C12EC7DAC322B81D /* PBXTargetDependency */,
+			);
+			name = AutoBanRobotTests;
+			packageProductDependencies = (
+			);
+			productName = AutoBanRobotTests;
+			productReference = D762EB0749979EFCBCB09A46 /* AutoBanRobotTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4BB1D00E5C54A9A9ABEE2760 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					0E4A2B071B4A4BF97293F9A5 = {
+						DevelopmentTeam = FZGF362JJD;
+						ProvisioningStyle = Automatic;
+					};
+					DFF3EB919AB2E4A19AA1C13E = {
+						DevelopmentTeam = FZGF362JJD;
+						ProvisioningStyle = Automatic;
+					};
+					E0C35667FB3A895238993DE0 = {
+						DevelopmentTeam = FZGF362JJD;
+					};
+				};
+			};
+			buildConfigurationList = 4A92AE34CD58D31678ED6F8D /* Build configuration list for PBXProject "AutoBanRobot" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 472B4C46FE074804AB49DF2D;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 14D34C28BD3B953F6E34D21A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DFF3EB919AB2E4A19AA1C13E /* AutoBanRobot */,
+				0E4A2B071B4A4BF97293F9A5 /* AutoBanRobotLiveActivity */,
+				E0C35667FB3A895238993DE0 /* AutoBanRobotTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		83762CB9BF2D42F0E436A1EB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				331AA3CDFAD90B0E6F61EA93 /* Assets.xcassets in Resources */,
+				E7E1F6E3E5846A2F12BEA38C /* default-keywords.json in Resources */,
+				9A576ECEE55DD362ED65D0C5 /* default-rules.json in Resources */,
+				7888F6DB46678281EEB6A176 /* injected.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		071834F79B95A77F153D0460 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				87E3724D054D92A6B5691B6B /* AppState.swift in Sources */,
+				F0425438460C08427472A243 /* AutoBanLiveActivityAttributes.swift in Sources */,
+				D92406EA07D34F0B67B3C992 /* AutoBanRobotApp.swift in Sources */,
+				2D0BC93FBAE63303C5F80909 /* BrowserView.swift in Sources */,
+				3E8BD45EC6872CF88E82110E /* ContentView.swift in Sources */,
+				502096F1C88785F9CC443F30 /* LiveActivityManager.swift in Sources */,
+				A76BCC4FFBB4A347EC3FA24D /* Models.swift in Sources */,
+				A30B85684DCA065B7428B5BC /* XAPIClient.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2C4853FEC90D435342D89C0B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				078672E8FC1E7045C552CB45 /* BlockJobTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C133AE45357019B88DD6ED51 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				39B9D6989DE17D23E5E79F8E /* AutoBanLiveActivityAttributes.swift in Sources */,
+				7E8B316235AADF010F4FC1D4 /* AutoBanRobotLiveActivity.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6C45AF72DD0E76A98017676E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0E4A2B071B4A4BF97293F9A5 /* AutoBanRobotLiveActivity */;
+			targetProxy = A381530E9349B96633FF2E7F /* PBXContainerItemProxy */;
+		};
+		D2569120C12EC7DAC322B81D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DFF3EB919AB2E4A19AA1C13E /* AutoBanRobot */;
+			targetProxy = C1D1F806B06FDCEA37C0B327 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		48C5DBD2DC54F418B709FF4C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = AutoBanRobot/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.autobanrobot.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		4D025CE1EB0419C35544B438 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.autobanrobot.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AutoBanRobot.app/AutoBanRobot";
+			};
+			name = Debug;
+		};
+		735FDA0455000F7B3E1A7F6D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = AutoBanRobotLiveActivity/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.autobanrobot.ios.liveactivity;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		8636A3FB2BEB148F0C087D60 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = FZGF362JJD;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		ABB572D80A31C504C92FEEF2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = AutoBanRobot/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.autobanrobot.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BF0F95CF9198DBD93275921D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.autobanrobot.ios.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AutoBanRobot.app/AutoBanRobot";
+			};
+			name = Release;
+		};
+		C1AAB07BA89B16A31B3E688E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = AutoBanRobotLiveActivity/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.autobanrobot.ios.liveactivity;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		F0CE273778AB0A289844B107 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = FZGF362JJD;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		10F4170B4936A477F706508B /* Build configuration list for PBXNativeTarget "AutoBanRobot" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ABB572D80A31C504C92FEEF2 /* Debug */,
+				48C5DBD2DC54F418B709FF4C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		18E5A22EE07B07EA57E3B830 /* Build configuration list for PBXNativeTarget "AutoBanRobotLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				735FDA0455000F7B3E1A7F6D /* Debug */,
+				C1AAB07BA89B16A31B3E688E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4279A51DE5C4BB54465E43B9 /* Build configuration list for PBXNativeTarget "AutoBanRobotTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D025CE1EB0419C35544B438 /* Debug */,
+				BF0F95CF9198DBD93275921D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4A92AE34CD58D31678ED6F8D /* Build configuration list for PBXProject "AutoBanRobot" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8636A3FB2BEB148F0C087D60 /* Debug */,
+				F0CE273778AB0A289844B107 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 4BB1D00E5C54A9A9ABEE2760 /* Project object */;
+}
