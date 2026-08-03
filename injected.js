@@ -360,6 +360,25 @@
     return middle.length === 1;
   }
 
+  function isStructuredFourSegmentCodeEmoji(text) {
+    const lines = text
+      .split(/\r?\n/u)
+      .map(line => line.trim())
+      .filter(Boolean);
+    if (lines.length < 3 || lines.length > 6) return false;
+
+    const emojiLines = lines.filter(isSingleEmoji);
+    if (emojiLines.length !== 1) return false;
+
+    // This targets the observed lure format such as "31 / 78dv / 🍌 / rz53".
+    // Emoji position is intentionally unconstrained. Short code-like lines
+    // plus at least one digit distinguish the lure from normal multi-line text.
+    const codeLines = lines.filter(line => !isSingleEmoji(line));
+    return codeLines.length >= 2 &&
+      codeLines.every(line => /^[A-Za-z0-9._-]{1,16}$/u.test(line)) &&
+      codeLines.some(line => /\d/u.test(line));
+  }
+
   function normalizeForMatch(text) {
     return text
       .normalize('NFKC')
@@ -385,7 +404,8 @@
         const matcher = {
           singleEmoji: isSingleEmoji,
           structuredEmojiTime: isStructuredEmojiTime,
-          structuredThreeSegment: isStructuredThreeSegment
+          structuredThreeSegment: isStructuredThreeSegment,
+          structuredFourSegmentCodeEmoji: isStructuredFourSegmentCodeEmoji
         }[rule.matcher];
         return typeof matcher === 'function' && matcher(text);
       }

@@ -662,9 +662,15 @@ class MainActivity : Activity() {
 
     private fun showHistoryPage() {
         val history = queue.history()
+        val confirmedBanTotal = queue.confirmedBanTotal()
         val pending = queue.queueSnapshot()
         val content = pageContent()
-        content.addView(pageIntro("Ban记录", "这里只展示已经被 X 接口确认成功的记录。", "${history.length()} 条已确认"))
+        var loadNextHistoryPage: (() -> Unit)? = null
+        content.addView(pageIntro(
+            "Ban记录",
+            "累计数字永久递增；本机仅保留最近 1000 条已被 X 接口确认成功的记录。",
+            "累计 $confirmedBanTotal 条已确认"
+        ))
         if (pending.length() > 0) {
             content.addView(sectionLabel("处理队列（${pending.length()}）"), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                 topMargin = dp(18)
@@ -720,8 +726,19 @@ class MainActivity : Activity() {
             }
             content.addView(empty, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14) })
         } else {
-            for (index in 0 until history.length()) {
-                val item = history.optJSONObject(index) ?: continue
+            val records = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            content.addView(records, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            val historyLoadStatus = TextView(this).apply {
+                textSize = 12f
+                setTextColor(MUTED)
+                gravity = Gravity.CENTER
+                setPadding(0, dp(14), 0, dp(4))
+            }
+            content.addView(historyLoadStatus, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            var nextHistoryIndex = 0
+            var loadingHistoryPage = false
+
+            fun appendHistoryRecord(item: JSONObject) {
                 val record = card()
                 record.addView(TextView(this).apply {
                     val displayName = item.optString("displayName").trim()
@@ -814,15 +831,39 @@ class MainActivity : Activity() {
                 record.addView(action, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42)).apply {
                     topMargin = dp(10)
                 })
-                content.addView(record, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+                records.addView(record, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
             }
+
+            fun appendHistoryPage() {
+                if (loadingHistoryPage || nextHistoryIndex >= history.length()) return
+                loadingHistoryPage = true
+                val endExclusive = minOf(nextHistoryIndex + HISTORY_PAGE_SIZE, history.length())
+                for (index in nextHistoryIndex until endExclusive) {
+                    history.optJSONObject(index)?.let(::appendHistoryRecord)
+                }
+                nextHistoryIndex = endExclusive
+                historyLoadStatus.text = if (nextHistoryIndex < history.length()) {
+                    "继续下滑加载更多（$nextHistoryIndex/${history.length()}）"
+                } else {
+                    "已加载全部 ${history.length()} 条本机记录"
+                }
+                loadingHistoryPage = false
+            }
+            loadNextHistoryPage = ::appendHistoryPage
+            appendHistoryPage()
         }
         content.addView(outlineButton("清空本地记录") {
             queue.clearHistory()
             Toast.makeText(this, "已清空本地记录，不会解除 X 上的 Ban", Toast.LENGTH_SHORT).show()
             showHistoryPage()
         }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply { topMargin = dp(16) })
-        showPage("Ban记录", scrollPage(content))
+        val page = scrollPage(content)
+        page.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            if (scrollY + page.height >= content.height - dp(320)) {
+                loadNextHistoryPage?.invoke()
+            }
+        }
+        showPage("Ban记录", page)
     }
 
     private fun showWhitelistPage() {
@@ -1323,7 +1364,8 @@ class MainActivity : Activity() {
         private const val REQUEST_FILE_CHOOSER = 9003
         private const val MAX_POST_MEDIA = 4
         private const val APP_HEARTBEAT_INTERVAL_MS = 60_000L
-        private const val APP_VERSION = "1.0.38"
+        private const val APP_VERSION = "1.0.41"
+        private const val HISTORY_PAGE_SIZE = 10
         private const val PAGE_HOME = "home"
         private const val PAGE_BACK_BUTTON_SCRIPT = """
             (() => {

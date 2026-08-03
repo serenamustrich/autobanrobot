@@ -73,8 +73,10 @@ class BlockQueue(
 ) {
     private companion object {
         const val BLOCK_INTERVAL_MS = 500L
+        const val MAX_LOCAL_HISTORY_RECORDS = 1_000
         const val OWNER_USERNAME = "aagodofwealth"
         const val HISTORY_HIDE_MIGRATION_KEY = "history_hide_migration_v1"
+        const val CONFIRMED_BAN_TOTAL_KEY = "confirmed_ban_total"
         const val PROCESSED_ACCOUNTS_KEY = "processed_accounts"
         const val TAG = "AutoBanBlockQueue"
     }
@@ -198,6 +200,18 @@ class BlockQueue(
             Log.w(TAG, "本地 Ban 历史损坏，使用空历史", error)
             JSONArray()
         }
+    }
+
+    fun confirmedBanTotal(): Long {
+        val stored = prefs.getLong(CONFIRMED_BAN_TOTAL_KEY, -1L)
+        if (stored >= 0L) return stored
+
+        // Older builds only retained a bounded history. Use its current size as
+        // the migration baseline, then keep this counter independent from the
+        // local rolling record window.
+        val migrated = history().length().toLong()
+        prefs.edit().putLong(CONFIRMED_BAN_TOTAL_KEY, migrated).apply()
+        return migrated
     }
 
     fun clearHistory() {
@@ -392,6 +406,12 @@ class BlockQueue(
     }
 
     private fun recordSuccess(job: BlockJob, outcome: ApiOutcome) {
+        val currentConfirmedBanTotal = confirmedBanTotal()
+        val nextConfirmedBanTotal = if (currentConfirmedBanTotal == Long.MAX_VALUE) {
+            Long.MAX_VALUE
+        } else {
+            currentConfirmedBanTotal + 1L
+        }
         val record = job.toJson().apply {
             put("clientEventId", UUID.randomUUID().toString())
             put("blockedAt", java.time.Instant.now().toString())
@@ -405,9 +425,12 @@ class BlockQueue(
         for (index in 0 until history.length()) {
             val old = history.optJSONObject(index) ?: continue
             if (!old.optString("username").equals(job.username, true)) filtered.put(old)
-            if (filtered.length() >= 500) break
+            if (filtered.length() >= MAX_LOCAL_HISTORY_RECORDS) break
         }
-        prefs.edit().putString("history", filtered.toString()).apply()
+        prefs.edit()
+            .putString("history", filtered.toString())
+            .putLong(CONFIRMED_BAN_TOTAL_KEY, nextConfirmedBanTotal)
+            .apply()
         markProcessed(job.username, true)
         if (!api.upload(record)) {
             val pending = readUploadQueue()

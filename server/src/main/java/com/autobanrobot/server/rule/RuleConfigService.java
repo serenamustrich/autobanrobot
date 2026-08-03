@@ -110,7 +110,8 @@ public class RuleConfigService {
             boolean validMatcher = pattern.isBlank() &&
                 (matcher.equals("singleEmoji") ||
                  matcher.equals("structuredEmojiTime") ||
-                 matcher.equals("structuredThreeSegment"));
+                 matcher.equals("structuredThreeSegment") ||
+                 matcher.equals("structuredFourSegmentCodeEmoji"));
             if (id.isBlank() || id.length() > 64 || name.isBlank() || name.length() > 120 ||
                 !(validPattern || validMatcher) ||
                 !(scope.equals("content") || scope.equals("username") || scope.equals("displayName")) ||

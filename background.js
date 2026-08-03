@@ -1,7 +1,7 @@
 const QUEUE_KEY = 'pendingBlockQueue';
 const QUEUE_ALARM = 'autobanrobot-process-queue';
 const MAX_ATTEMPTS = 3;
-const MAX_BLOCK_HISTORY = 500;
+const MAX_BLOCK_HISTORY = 1000;
 const BLOCK_INTERVAL_MS = 500;
 const HISTORY_HIDE_MIGRATION_KEY = 'historyHideMigrationV1';
 const UPLOAD_QUEUE_KEY = 'pendingBanUploadQueue';
@@ -101,13 +101,25 @@ async function migrateLegacyRuleStates() {
 }
 
 async function initializeRules() {
-  const stored = await chrome.storage.local.get(['remoteRuleConfig']);
-  if (
-    stored.remoteRuleConfig?.rules &&
-    stored.remoteRuleConfig.version >= MIN_ONLINE_RULE_VERSION
-  ) return;
   const response = await fetch(chrome.runtime.getURL('default-rules.json'));
-  await chrome.storage.local.set({ remoteRuleConfig: await response.json() });
+  const bundled = await response.json();
+  const stored = await chrome.storage.local.get(['remoteRuleConfig']);
+  const current = stored.remoteRuleConfig;
+  if (!current?.rules || current.version < MIN_ONLINE_RULE_VERSION) {
+    await chrome.storage.local.set({ remoteRuleConfig: bundled });
+    return;
+  }
+
+  const knownIds = new Set(current.rules.map(rule => rule?.id).filter(Boolean));
+  const missingRules = bundled.rules.filter(rule => rule?.id && !knownIds.has(rule.id));
+  if (!missingRules.length) return;
+  await chrome.storage.local.set({
+    remoteRuleConfig: {
+      ...current,
+      version: Math.max(current.version ?? 0, bundled.version ?? 0),
+      rules: [...current.rules, ...missingRules]
+    }
+  });
 }
 
 function isValidRuleConfig(config) {

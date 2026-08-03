@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -8,9 +10,17 @@ android {
     compileSdk = 35
 
     val releaseKeystore = rootProject.file("../.private/android/AutoBanRobot-release.jks")
-    val releaseStorePassword = providers.environmentVariable("AUTOBAN_RELEASE_STORE_PASSWORD").orNull
-    val releaseKeyAlias = providers.environmentVariable("AUTOBAN_RELEASE_KEY_ALIAS").orNull
-    val releaseKeyPassword = providers.environmentVariable("AUTOBAN_RELEASE_KEY_PASSWORD").orNull
+    val releaseSigningProperties = Properties().apply {
+        val localSigningFile = rootProject.file("../签名资料")
+        if (localSigningFile.isFile) {
+            localSigningFile.inputStream().use(::load)
+        }
+    }
+    fun releaseSigningValue(name: String): String? =
+        providers.environmentVariable(name).orNull ?: releaseSigningProperties.getProperty(name)
+    val releaseStorePassword = releaseSigningValue("AUTOBAN_RELEASE_STORE_PASSWORD")
+    val releaseKeyAlias = releaseSigningValue("AUTOBAN_RELEASE_KEY_ALIAS")
+    val releaseKeyPassword = releaseSigningValue("AUTOBAN_RELEASE_KEY_PASSWORD")
 
     signingConfigs {
         create("release") {
@@ -25,8 +35,8 @@ android {
         applicationId = "com.autobanrobot.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 39
-        versionName = "1.0.38"
+        versionCode = 42
+        versionName = "1.0.41"
     }
 
     buildTypes {

@@ -83,7 +83,9 @@ class RuleStore(private val context: Context) {
     }
 
     fun rulesJson(): String {
-        return prefs.getString("rules_json", null) ?: readAsset("content/default-rules.json")
+        val bundled = readAsset("content/default-rules.json")
+        val cached = prefs.getString("rules_json", null) ?: return bundled
+        return mergeMissingBundledRules(cached, bundled)
     }
 
     fun ruleStatesJson(): String = prefs.getString("rule_states", "{}") ?: "{}"
@@ -160,6 +162,42 @@ class RuleStore(private val context: Context) {
     }
 
     private fun readAsset(path: String): String = context.assets.open(path).bufferedReader().use { it.readText() }
+
+    /**
+     * A user can already have a server-cached rule configuration when an APK
+     * ships a new zero-config matcher. Keep the cached rules and their states,
+     * but append only newly bundled rule IDs so a client update is effective
+     * before the server JAR is redeployed.
+     */
+    private fun mergeMissingBundledRules(cached: String, bundled: String): String {
+        return try {
+            val cachedConfig = JSONObject(cached)
+            val bundledConfig = JSONObject(bundled)
+            val cachedRules = cachedConfig.optJSONArray("rules") ?: return bundled
+            val bundledRules = bundledConfig.optJSONArray("rules") ?: return cached
+            val knownIds = buildSet {
+                for (index in 0 until cachedRules.length()) {
+                    cachedRules.optJSONObject(index)?.optString("id")?.takeIf(String::isNotBlank)?.let(::add)
+                }
+            }
+            var changed = false
+            for (index in 0 until bundledRules.length()) {
+                val rule = bundledRules.optJSONObject(index) ?: continue
+                val id = rule.optString("id")
+                if (id.isNotBlank() && id !in knownIds) {
+                    cachedRules.put(rule)
+                    changed = true
+                }
+            }
+            if (!changed) return cached
+            cachedConfig.put("version", maxOf(cachedConfig.optLong("version", 0), bundledConfig.optLong("version", 0)))
+            cachedConfig.put("rules", cachedRules)
+            cachedConfig.toString()
+        } catch (error: Exception) {
+            Log.w(TAG, "规则缓存解析失败，使用内置规则", error)
+            bundled
+        }
+    }
 
     private fun parseStringArray(raw: String): List<String> {
         return try {

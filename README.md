@@ -1,5 +1,24 @@
 # AutoBanRobot
 
+### Server v1.2.7 / Android v1.0.41 / Extension v1.6.29 — 2026-08-03
+
+- Added a code-segment lure rule for 3–6 short lines plus exactly one standalone Emoji in any position, covering the observed `31 / 78dv / 🍌 / rz53` format without matching ordinary multi-line posts.
+- The Android app and browser extension merge newly bundled rule IDs into an existing cached rule set, so this matcher becomes available after the client update even before a server restart.
+- 新增“编码分段 + 单 Emoji”规则，Emoji 可在任意行，覆盖已发现的 `31 / 78dv / 🍌 / rz53` 引流格式，同时避免误伤普通多行正文。
+- Android 和浏览器插件会把新内置规则合并到已有缓存规则中；客户端升级后无需等待服务端重启即可生效。
+
+### Android v1.0.40 — 2026-08-03
+
+- Ban history now uses incremental pagination: the page renders 10 local records first and appends the next 10 only after scrolling toward the bottom.
+- Ban 记录页面现改为增量分页：首次仅渲染 10 条本机记录，继续下滑接近底部时再加载后 10 条。
+
+### v1.6.28 / Android v1.0.39 — 2026-08-03
+
+- Ban totals now grow independently of local history. Android retains only the latest 1,000 confirmed records while its cumulative total remains unbounded; clearing local history does not reset that total.
+- Chrome and Edge now retain the latest 1,000 confirmed records as well; their existing cumulative counter remains independent.
+- Ban 累计数字现已与本机历史分离：Android 仅保留最近 1,000 条已确认记录，但累计数字持续递增；清空本机记录不会重置累计数字。
+- Chrome 和 Edge 本机记录同步保留最近 1,000 条，原有累计数字仍独立递增。
+
 ### Android v1.0.38 — 2026-08-02
 
 - Corrected system back-gesture semantics: either screen-edge back gesture now clicks the visible top-left back control, matching a direct tap. The current page reloads only when that control is absent.

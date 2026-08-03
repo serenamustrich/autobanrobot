@@ -1,6 +1,6 @@
 {
-  "version": 10,
-  "updatedAt": "2026-08-01T00:00:00Z",
+  "version": 11,
+  "updatedAt": "2026-08-03T00:00:00Z",
   "rules": [
     {
       "id": "single-emoji-content",
@@ -35,6 +35,14 @@
       "enabled": true,
       "scope": "content",
       "matcher": "structuredThreeSegment"
+    },
+    {
+      "id": "four-segment-code-emoji",
+      "name": "编码分段 + 单 Emoji",
+      "description": "3–6 行短编码内容中恰有一行单 Emoji，Emoji 可出现在任意行",
+      "enabled": true,
+      "scope": "content",
+      "matcher": "structuredFourSegmentCodeEmoji"
     },
     {
       "id": "emoji-copy-tcn-link",
