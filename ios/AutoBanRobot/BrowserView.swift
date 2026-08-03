@@ -30,6 +30,9 @@ struct BrowserView: UIViewRepresentable {
         configuration.userContentController = content
         configuration.mediaTypesRequiringUserActionForPlayback = .all
         let webView = SelectionKeywordWebView(frame: .zero, configuration: configuration)
+        // X requires the established mobile-UA path for reliable in-app
+        // connectivity. The timeline-tab correction below handles the WebKit
+        // sticky-layout defect without changing that network contract.
         webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/150.0.7871.47 Mobile/15E148 Safari/604.1"
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator

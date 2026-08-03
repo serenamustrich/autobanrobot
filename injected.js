@@ -81,6 +81,43 @@
   window.addEventListener('scroll', repositionStamps, true);
   window.addEventListener('resize', repositionStamps);
 
+  // On iOS X occasionally loses the sticky containing block for the home
+  // timeline tabs and renders them halfway through the feed. Pin only that
+  // recognisable "For you / Following" tab list when it has drifted; other
+  // X pages and every non-tab element are left alone.
+  let timelineTabPinScheduled = false;
+  function isHomeTimelineTabList(tabList) {
+    const text = String(tabList?.textContent || '').replace(/\s+/gu, ' ').trim();
+    return /(?:为你推荐|For you|推薦|正在关注|Following|正在追蹤)/iu.test(text);
+  }
+  function pinDriftedTimelineTabs() {
+    timelineTabPinScheduled = false;
+    if (!/^\/home\/?$/u.test(location.pathname)) return;
+    const tabList = Array.from(document.querySelectorAll('[role="tablist"]'))
+      .find(isHomeTimelineTabList);
+    if (!tabList) return;
+    const rect = tabList.getBoundingClientRect();
+    // A normal header is already at the visible top. Only promote it after
+    // it has visibly fallen into the feed, avoiding needless X layout edits.
+    if (rect.top <= Math.max(120, window.innerHeight * 0.24)) return;
+    tabList.dataset.autobanTimelinePinned = 'true';
+    tabList.style.setProperty('position', 'fixed', 'important');
+    tabList.style.setProperty('top', 'max(env(safe-area-inset-top), 44px)', 'important');
+    tabList.style.setProperty('left', '0', 'important');
+    tabList.style.setProperty('right', '0', 'important');
+    tabList.style.setProperty('width', '100vw', 'important');
+    tabList.style.setProperty('z-index', '2147483000', 'important');
+    tabList.style.setProperty('background', 'var(--background, #fff)', 'important');
+  }
+  function scheduleTimelineTabPin() {
+    if (timelineTabPinScheduled) return;
+    timelineTabPinScheduled = true;
+    requestAnimationFrame(pinDriftedTimelineTabs);
+  }
+  window.addEventListener('scroll', scheduleTimelineTabPin, true);
+  window.addEventListener('resize', scheduleTimelineTabPin);
+  setInterval(scheduleTimelineTabPin, 1000);
+
   function currentPageKey() {
     return `${location.pathname}${location.search}`;
   }
