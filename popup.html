@@ -131,6 +131,35 @@
       color:#444;font-size:10px;margin-top:3px;white-space:nowrap;
       overflow:hidden;text-overflow:ellipsis;
     }
+    .account-card { padding:13px;border:1px solid #d0dff2;border-radius:16px;background:#f4f8ff; }
+    .account-profile-name { color:#0f1419;font-size:18px;font-weight:750;line-height:1.2; }
+    .account-profile-copy { margin-top:4px;color:#71767b;font-size:10px;line-height:1.4; }
+    .account-card button { min-height:34px;border-radius:10px;font-weight:650; }
+    .account-mode-tabs { display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;background:#e8edf2;border-radius:11px;margin-bottom:12px; }
+    .account-mode-tabs button { margin:0;padding:6px 3px;min-height:30px;background:transparent;color:#536471;border:0;border-radius:8px;font-size:11px; }
+    .account-mode-tabs button[aria-selected="true"] { background:#fff;color:#0f1419;box-shadow:0 1px 3px rgba(15,20,25,.12); }
+    .account-form input, .account-form select { width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cfd9de;border-radius:10px;margin-bottom:8px;background:#fff;color:#0f1419;font:12px -apple-system,BlinkMacSystemFont,sans-serif;outline:none; }
+    .account-form input:focus, .account-form select:focus { border-color:#1d9bf0;box-shadow:0 0 0 3px rgba(29,155,240,.12); }
+    .account-form button { margin-top:0;min-height:36px;border-radius:10px;font-weight:650; }
+    .account-secondary-action { margin-top:7px !important;background:#fff !important;color:#1d9bf0 !important;border:1px solid #b9d9f5 !important; }
+    .account-metrics { display:grid;grid-template-columns:1fr 1px 1fr;align-items:center;gap:12px;margin-top:13px; }
+    .account-metric-divider { width:1px;height:38px;background:#dfe7ee; }
+    .account-metric-label { color:#71767b;font-size:10px; }
+    .account-metric-value { margin-top:3px;color:#1d9bf0;font-size:20px;font-weight:750;line-height:1; }
+    .account-metric-value.red { color:#e0245e; }
+    .achievement-current { display:flex;align-items:center;gap:11px;margin-top:14px; }
+    .achievement-current img { width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 5px 8px rgba(29,155,240,.16)); }
+    .achievement-copy { min-width:0; }
+    .achievement-kicker { color:#71767b;font-size:10px; }
+    .achievement-name { margin-top:3px;color:#0f1419;font-size:14px;font-weight:750; }
+    .achievement-next { margin-top:4px;color:#71767b;font-size:10px;line-height:1.35; }
+    .achievement-wall { display:flex;gap:7px;overflow-x:auto;margin:13px -1px 0;padding:2px 1px 4px;scrollbar-width:none; }
+    .achievement-wall::-webkit-scrollbar { display:none; }
+    .achievement-tile { flex:0 0 59px;margin:0 !important;padding:5px 3px 4px !important;min-height:72px !important;background:#f1f3f5 !important;color:#71767b !important;border:0 !important;border-radius:11px !important; }
+    .achievement-tile.unlocked { background:#e8f1ff !important;color:#1d9bf0 !important; }
+    .achievement-tile img { display:block;width:48px;height:48px;object-fit:contain;margin:0 auto;opacity:.34; }
+    .achievement-tile.unlocked img { opacity:1; }
+    .achievement-tile span { display:block;margin-top:1px;font-size:9px;font-weight:700; }
     .saved {
       position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:10;
       margin:0;padding:7px 11px;border-radius:999px;background:#071a14;color:#7ee2b8;
@@ -192,24 +221,54 @@
   <div class="subsection"><div class="subsection-title">说明</div><div class="hint">所有规则统一显示并支持在线更新；只有插件执行能力变更时才需安装新版本。</div></div>
   </section>
   <section class="tab-panel" id="accountPanel" role="tabpanel" hidden>
-    <div class="panel-head"><div class="panel-title" id="accountPanelTitle">AutoBan 账号</div><div class="panel-meta" id="accountState">未登录</div></div>
     <div id="accountSignedOut">
-      <input id="accountUsername" autocomplete="username" placeholder="账号名" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px;margin-bottom:7px">
-      <input id="accountPassword" type="password" autocomplete="current-password" placeholder="密码（至少 8 位）" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px;margin-bottom:7px">
-      <select id="securityQuestion" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px;margin-bottom:7px"></select>
-      <input id="securityAnswer" type="password" placeholder="密保答案（注册时填写）" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px">
-      <button id="accountLogin" type="button">登录</button><button id="accountRegister" class="secondary" type="button">注册</button>
-      <button id="accountRecover" class="secondary" type="button">找回密码</button>
-      <div id="accountRecovery" hidden style="margin-top:8px;padding-top:8px;border-top:1px solid #eff3f4">
-        <div class="hint" id="recoveryQuestionLabel"></div>
-        <input id="recoveryAnswer" type="password" placeholder="密保答案" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px;margin-top:7px">
-        <input id="recoveryPassword" type="password" placeholder="新密码（至少 8 位）" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px;margin-top:7px">
-        <button id="recoveryReset" type="button">重置密码并登录</button>
+      <div class="account-card">
+        <div class="account-mode-tabs" role="tablist" aria-label="账号操作">
+          <button id="accountModeLogin" type="button" aria-selected="true">登录</button>
+          <button id="accountModeRegister" type="button" aria-selected="false">注册</button>
+          <button id="accountModeRecovery" type="button" aria-selected="false">找回密码</button>
+        </div>
+        <div class="account-form" id="accountLoginForm">
+          <input id="accountUsername" autocomplete="username" placeholder="账号名">
+          <input id="accountPassword" type="password" autocomplete="current-password" placeholder="密码（至少 8 位）">
+          <button id="accountLogin" type="button">登录</button>
+        </div>
+        <div class="account-form" id="accountRegisterForm" hidden>
+          <input id="registerUsername" autocomplete="username" placeholder="账号名">
+          <input id="registerPassword" type="password" autocomplete="new-password" placeholder="密码（至少 8 位）">
+          <select id="securityQuestion"></select>
+          <input id="securityAnswer" type="password" placeholder="密保答案">
+          <button id="accountRegister" type="button">注册</button>
+        </div>
+        <div class="account-form" id="accountRecoveryForm" hidden>
+          <input id="recoveryUsername" autocomplete="username" placeholder="账号名">
+          <button id="accountRecover" type="button">验证账号</button>
+          <div id="accountRecovery" hidden>
+            <div class="hint" id="recoveryQuestionLabel"></div>
+            <input id="recoveryAnswer" type="password" placeholder="密保答案" style="margin-top:8px">
+            <input id="recoveryPassword" type="password" autocomplete="new-password" placeholder="新密码（至少 8 位）">
+            <button id="recoveryReset" type="button">重置密码并登录</button>
+          </div>
+        </div>
       </div>
     </div>
     <div id="accountSignedIn" hidden>
-      <div class="update-card"><div class="update-version" id="accountUsernameLabel"></div><div class="update-status" id="accountSyncStatus">已登录</div></div>
-      <button id="accountSync" class="secondary" type="button">立即同步</button><button id="accountLogout" class="secondary" type="button">退出登录</button>
+      <div class="account-card">
+        <div class="account-profile-name" id="accountUsernameLabel"></div>
+        <div class="account-profile-copy" id="accountProfileCopy">关键词和白名单会在此设备自动同步</div>
+        <button id="accountSync" type="button">立即同步</button>
+        <div class="account-metrics">
+          <div><div class="account-metric-label" id="accountGlobalLabel">全网累计 Ban</div><div class="account-metric-value" id="accountGlobalTotal">—</div></div>
+          <div class="account-metric-divider"></div>
+          <div><div class="account-metric-label" id="accountContributionLabel">本机贡献</div><div class="account-metric-value red" id="accountContribution">0</div></div>
+        </div>
+        <div class="achievement-current">
+          <img id="accountAchievementArtwork" alt="">
+          <div class="achievement-copy"><div class="achievement-kicker" id="accountAchievementKicker">当前成就</div><div class="achievement-name" id="accountAchievementName"></div><div class="achievement-next" id="accountAchievementNext"></div></div>
+        </div>
+        <div class="achievement-wall" id="accountAchievementWall" aria-label="成就徽章"></div>
+      </div>
+      <button id="accountLogout" class="account-secondary-action" type="button">退出登录</button>
     </div>
     <div class="popular-status" id="accountStatus"></div>
   </section>

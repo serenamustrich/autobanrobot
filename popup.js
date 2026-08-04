@@ -4,7 +4,8 @@ function localizeAccountUi() {
   const labels = {
     accountTitle: 'accountTitle', accountLogin: 'login', accountRegister: 'register',
     accountRecover: 'recoverPassword', recoveryReset: 'resetPassword',
-    accountSync: 'syncNow', accountLogout: 'logout'
+    accountSync: 'syncNow', accountLogout: 'logout',
+    accountModeLogin: 'login', accountModeRegister: 'register', accountModeRecovery: 'recoverPassword'
   };
   for (const [id, key] of Object.entries(labels)) {
     const node = document.getElementById(id);
@@ -12,13 +13,21 @@ function localizeAccountUi() {
   }
   const placeholders = {
     accountUsername: 'accountUsername', accountPassword: 'accountPassword',
+    registerUsername: 'accountUsername', registerPassword: 'accountPassword', recoveryUsername: 'accountUsername',
     securityAnswer: 'securityAnswer', recoveryAnswer: 'securityAnswer', recoveryPassword: 'newPassword'
   };
   for (const [id, key] of Object.entries(placeholders)) {
     const node = document.getElementById(id);
     if (node) node.placeholder = t(key);
   }
-  document.getElementById('accountPanelTitle').textContent = t('accountTitle');
+  const staticCopy = {
+    accountProfileCopy: 'accountSyncDescription', accountGlobalLabel: 'accountGlobalBan',
+    accountContributionLabel: 'accountLocalContribution', accountAchievementKicker: 'accountCurrentAchievement'
+  };
+  for (const [id, key] of Object.entries(staticCopy)) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = t(key);
+  }
 }
 
 localizeAccountUi();
@@ -43,7 +52,9 @@ chrome.storage.local.get([
     Array.isArray(r.pendingBlockQueue) ? r.pendingBlockQueue.length : 0;
   renderBlockHistory(r.blockHistory);
   renderUpdateInfo(r.updateInfo);
+  accountContribution = Number(r.blockCount ?? 0);
   renderAccount(r.accountSession, r.accountSyncAt);
+  refreshAccountGlobalTotal();
   updateKeywordSummary();
   updateRuleSummary();
   showTab(r.popupActiveTab || 'keywords', false);
@@ -349,14 +360,70 @@ const securityQuestions = {
 const questionSelect = document.getElementById('securityQuestion');
 Object.entries(securityQuestions).forEach(([key, label]) => { const option = document.createElement('option'); option.value = key; option.textContent = label; questionSelect.append(option); });
 
+const contributionAchievements = [
+  [1, 'achievement1', 10], [2, 'achievement2', 30], [3, 'achievement3', 100], [4, 'achievement4', 300], [5, 'achievement5', 1000],
+  [6, 'achievement6', 3000], [7, 'achievement7', 10000], [8, 'achievement8', 30000], [9, 'achievement9', 100000], [10, 'achievement10', 300000]
+];
+let accountContribution = 0;
+let accountGlobalTotal = null;
+let renderedAccountSession = null;
+
+function accountBadgeUrl(level) {
+  return chrome.runtime.getURL(`assets/badges/contribution-badge-${String(level).padStart(2, '0')}.png`);
+}
+
+function renderAchievementSummary(contribution) {
+  const current = [...contributionAchievements].reverse().find(([, , threshold]) => contribution >= threshold);
+  const next = contributionAchievements.find(([, , threshold]) => contribution < threshold);
+  const display = current || contributionAchievements[0];
+  document.getElementById('accountContribution').textContent = contribution.toLocaleString();
+  document.getElementById('accountAchievementArtwork').src = accountBadgeUrl(display[0]);
+  document.getElementById('accountAchievementArtwork').style.opacity = current ? '1' : '.38';
+  document.getElementById('accountAchievementName').textContent = current
+    ? `Lv.${current[0]} ${t(current[1])}`
+    : t('accountFirstAchievement');
+  document.getElementById('accountAchievementNext').textContent = next
+    ? t('accountNextAchievement', [(next[2] - contribution).toLocaleString(), next[0], t(next[1])])
+    : t('accountAllAchievements');
+  const wall = document.getElementById('accountAchievementWall');
+  wall.replaceChildren();
+  contributionAchievements.forEach(([level, title, threshold]) => {
+    const unlocked = contribution >= threshold;
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = `achievement-tile${unlocked ? ' unlocked' : ''}`;
+    tile.title = t('accountAchievementRequirement', [level, t(title), threshold.toLocaleString()]);
+    const image = document.createElement('img');
+    image.src = accountBadgeUrl(level);
+    image.alt = `Lv.${level} ${t(title)}`;
+    const label = document.createElement('span');
+    label.textContent = `Lv.${level}`;
+    tile.append(image, label);
+    wall.appendChild(tile);
+  });
+}
+
+async function refreshAccountGlobalTotal() {
+  try {
+    const response = await fetch('https://ban.richccy.com/api/bans/stats', { cache: 'no-store' });
+    if (!response.ok) return;
+    const body = await response.json();
+    accountGlobalTotal = Math.max(0, Number(body?.total ?? 0));
+    document.getElementById('accountGlobalTotal').textContent = accountGlobalTotal.toLocaleString();
+  } catch {
+    // Keep the placeholder while offline; local contribution remains available.
+  }
+}
+
 function renderAccount(session, syncedAt) {
+  renderedAccountSession = session;
   const signedIn = Boolean(session?.accessToken);
   document.getElementById('accountSignedOut').hidden = signedIn;
   document.getElementById('accountSignedIn').hidden = !signedIn;
-  document.getElementById('accountState').textContent = signedIn ? `@${session.username}` : t('accountSignedOut');
   if (signedIn) {
-    document.getElementById('accountUsernameLabel').textContent = `@${session.username}`;
-    document.getElementById('accountSyncStatus').textContent = syncedAt ? new Date(syncedAt).toLocaleString() : t('accountWaitingSync');
+    document.getElementById('accountUsernameLabel').textContent = session.username;
+    document.getElementById('accountGlobalTotal').textContent = accountGlobalTotal === null ? '—' : accountGlobalTotal.toLocaleString();
+    renderAchievementSummary(accountContribution);
   }
 }
 
@@ -364,8 +431,8 @@ function accountMessage(action, payload = {}) {
   return new Promise(resolve => chrome.runtime.sendMessage({ type: action, ...payload }, resolve));
 }
 async function submitAccount(mode) {
-  const username = document.getElementById('accountUsername').value.trim();
-  const password = document.getElementById('accountPassword').value;
+  const username = document.getElementById(mode === 'register' ? 'registerUsername' : 'accountUsername').value.trim();
+  const password = document.getElementById(mode === 'register' ? 'registerPassword' : 'accountPassword').value;
   const status = document.getElementById('accountStatus');
   status.textContent = t('accountWorking');
   const payload = mode === 'register'
@@ -379,9 +446,18 @@ async function submitAccount(mode) {
 document.getElementById('accountLogin').addEventListener('click', () => submitAccount('login'));
 document.getElementById('accountRegister').addEventListener('click', () => submitAccount('register'));
 document.getElementById('accountLogout').addEventListener('click', async () => { await accountMessage('ACCOUNT_LOGOUT'); renderAccount(null, null); });
-document.getElementById('accountSync').addEventListener('click', async () => { const result = await accountMessage('ACCOUNT_SYNC'); document.getElementById('accountStatus').textContent = result?.ok ? t('accountSynced') : localizeAccountError(result?.error); });
+document.getElementById('accountSync').addEventListener('click', async () => {
+  const button = document.getElementById('accountSync');
+  button.disabled = true;
+  button.textContent = t('accountWorking');
+  const result = await accountMessage('ACCOUNT_SYNC');
+  button.disabled = false;
+  button.textContent = t('syncNow');
+  document.getElementById('accountStatus').textContent = result?.ok ? t('accountSynced') : localizeAccountError(result?.error);
+  if (result?.ok) refreshAccountGlobalTotal();
+});
 document.getElementById('accountRecover').addEventListener('click', async () => {
-  const username = document.getElementById('accountUsername').value.trim();
+  const username = document.getElementById('recoveryUsername').value.trim();
   const result = await accountMessage('ACCOUNT_RECOVERY_QUESTION', { username });
   if (!result?.ok) { document.getElementById('accountStatus').textContent = localizeAccountError(result?.error); return; }
   document.getElementById('accountRecovery').hidden = false;
@@ -392,12 +468,26 @@ document.getElementById('recoveryReset').addEventListener('click', async () => {
   const status = document.getElementById('accountStatus');
   const recovery = document.getElementById('accountRecovery');
   const result = await accountMessage('ACCOUNT_RECOVERY_RESET', { payload: {
-    username: document.getElementById('accountUsername').value.trim(), securityQuestionKey: recovery.dataset.question,
+    username: document.getElementById('recoveryUsername').value.trim(), securityQuestionKey: recovery.dataset.question,
     securityAnswer: document.getElementById('recoveryAnswer').value, newPassword: document.getElementById('recoveryPassword').value
   }});
   status.textContent = result?.ok ? t('accountResetDone') : localizeAccountError(result?.error);
   if (result?.ok) chrome.storage.local.get(['accountSession', 'accountSyncAt'], value => renderAccount(value.accountSession, value.accountSyncAt));
 });
+
+function setAccountMode(mode) {
+  document.getElementById('accountLoginForm').hidden = mode !== 'login';
+  document.getElementById('accountRegisterForm').hidden = mode !== 'register';
+  document.getElementById('accountRecoveryForm').hidden = mode !== 'recovery';
+  document.getElementById('accountRecovery').hidden = true;
+  document.querySelectorAll('[id^="accountMode"]').forEach(button => {
+    button.setAttribute('aria-selected', String(button.id === `accountMode${mode[0].toUpperCase()}${mode.slice(1)}`));
+  });
+  document.getElementById('accountStatus').textContent = '';
+}
+document.getElementById('accountModeLogin').addEventListener('click', () => setAccountMode('login'));
+document.getElementById('accountModeRegister').addEventListener('click', () => setAccountMode('register'));
+document.getElementById('accountModeRecovery').addEventListener('click', () => setAccountMode('recovery'));
 
 function localizeAccountError(code) {
   if (!code) return t('errorAuthFailed');
@@ -408,7 +498,9 @@ function localizeAccountError(code) {
 chrome.storage.onChanged.addListener(changes => {
   if (changes.blockHistory) renderBlockHistory(changes.blockHistory.newValue);
   if (changes.blockCount) {
-    document.getElementById('count').textContent = changes.blockCount.newValue ?? 0;
+    accountContribution = Number(changes.blockCount.newValue ?? 0);
+    document.getElementById('count').textContent = accountContribution;
+    if (renderedAccountSession?.accessToken) renderAchievementSummary(accountContribution);
   }
   if (changes.pendingBlockQueue) {
     document.getElementById('queueCount').textContent =
