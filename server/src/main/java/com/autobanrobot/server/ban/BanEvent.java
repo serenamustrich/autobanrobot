@@ -16,7 +16,9 @@ import java.time.Instant;
     name = "ban_event",
     indexes = {
         @Index(name = "idx_ban_event_blocked_at", columnList = "blocked_at"),
-        @Index(name = "idx_ban_event_username", columnList = "username")
+        @Index(name = "idx_ban_event_username", columnList = "username"),
+        @Index(name = "idx_ban_event_installation_id", columnList = "installation_id"),
+        @Index(name = "idx_ban_event_account_id", columnList = "account_id")
     },
     uniqueConstraints = @UniqueConstraint(
         name = "uk_ban_event_client_event_id",
@@ -31,6 +33,12 @@ public class BanEvent {
 
     @Column(name = "client_event_id", nullable = false, length = 64)
     private String clientEventId;
+
+    @Column(name = "installation_id", length = 64)
+    private String installationId;
+
+    @Column(name = "account_id")
+    private Long accountId;
 
     @Column(name = "client_type", nullable = false, length = 16, columnDefinition = "varchar(16) default 'plugin'")
     private String clientType;
@@ -71,6 +79,8 @@ public class BanEvent {
 
     public BanEvent(
         String clientEventId,
+        String installationId,
+        Long accountId,
         String clientType,
         String username,
         String displayName,
@@ -83,6 +93,8 @@ public class BanEvent {
         Instant receivedAt
     ) {
         this.clientEventId = clientEventId;
+        this.installationId = installationId;
+        this.accountId = accountId;
         this.clientType = clientType;
         this.username = username;
         this.displayName = displayName;
@@ -102,6 +114,12 @@ public class BanEvent {
     public String getClientEventId() {
         return clientEventId;
     }
+
+    public String getInstallationId() {
+        return installationId;
+    }
+    public Long getAccountId() { return accountId; }
+    public void assignAccount(Long accountId) { this.accountId = accountId; }
 
     public String getClientType() {
         return clientType;

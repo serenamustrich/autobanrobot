@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>AutoBanRobot · 设备态势</title>
+  <style>
+    :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #07111f; color: #e9f2ff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: radial-gradient(circle at 50% -25%, #17335a 0, #07111f 52%, #030913 100%); }
+    main { width: min(1440px, calc(100% - 36px)); margin: 0 auto; padding: 38px 0 56px; }
+    .topline { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    h1 { margin: 0; font-size: clamp(24px, 4vw, 38px); letter-spacing: -.04em; }
+    .sub { margin: 8px 0 0; color: #9db1cb; font-size: 14px; }
+    .live { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #285b68; color: #9fe7ca; border-radius: 999px; padding: 8px 12px; background: #0a2026; white-space: nowrap; font-size: 13px; }
+    .live i { display: block; width: 8px; height: 8px; border-radius: 50%; background: #45db9a; box-shadow: 0 0 12px #45db9a; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .stat, .panel { background: rgba(11, 27, 47, .78); border: 1px solid rgba(134, 174, 219, .16); box-shadow: 0 18px 40px rgba(0,0,0,.18); border-radius: 16px; }
+    .stat { padding: 18px; min-height: 106px; }
+    .stat b { display: block; font-size: clamp(24px, 3vw, 34px); letter-spacing: -.04em; margin-bottom: 8px; }
+    .stat span { color: #9fb2cb; font-size: 13px; }
+    .panel { overflow: hidden; }
+    .map-head, .table-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px 14px; }
+    h2 { font-size: 16px; margin: 0; }
+    .hint { font-size: 12px; color: #85a0bf; }
+    #map { position: relative; height: min(50vw, 520px); min-height: 275px; overflow: hidden; background: linear-gradient(135deg, #071929 0%, #0a2743 50%, #071929 100%); border-top: 1px solid rgba(134,174,219,.1); }
+    #map::before { content: ""; position: absolute; inset: 0; opacity: .46; background-image: linear-gradient(rgba(120,174,224,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(120,174,224,.08) 1px, transparent 1px); background-size: 44px 44px; }
+    #map svg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .62; }
+    .land { fill: #244b69; stroke: #5d86a2; stroke-width: .45; }
+    .marker { position: absolute; z-index: 2; width: 13px; height: 13px; transform: translate(-50%, -50%); border: 2px solid #e9f7ff; background: #ff5b62; border-radius: 50%; box-shadow: 0 0 0 6px rgba(255,91,98,.14), 0 0 18px #ff5b62; cursor: default; }
+    .marker::after { content: attr(data-label); position: absolute; left: 11px; top: -10px; color: #eef6ff; font-size: 11px; white-space: nowrap; text-shadow: 0 1px 5px #000; opacity: 0; transform: translateY(3px); transition: .16s; pointer-events: none; }
+    .marker:hover::after { opacity: 1; transform: translateY(0); }
+    .map-empty { position: absolute; z-index: 1; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #9bb4ce; font-size: 13px; text-align: center; }
+    .table-wrap { overflow-x: auto; border-top: 1px solid rgba(134,174,219,.12); }
+    table { width: 100%; min-width: 780px; border-collapse: collapse; font-size: 13px; }
+    th { color: #8fa6c1; font-weight: 500; text-align: left; background: rgba(1, 10, 20, .22); }
+    th, td { padding: 14px 20px; border-bottom: 1px solid rgba(134,174,219,.1); }
+    tr:last-child td { border-bottom: 0; }
+    td { color: #e1ebfa; }
+    .muted { color: #91a6bf; }
+    .status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; font-size: 12px; }
+    .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+    .on { color: #a7eed0; background: rgba(31,153,103,.16); }.on::before { background: #45db9a; }.off { color: #a1b1c2; background: rgba(144,165,187,.12); }.off::before { background: #8499ae; }
+    #updated { color: #86a1bd; font-size: 12px; }
+    @media (max-width: 720px) { main { width: min(100% - 24px, 1440px); padding-top: 24px; }.stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }.stat { min-height: 90px; padding: 14px; }.topline { align-items: flex-start; flex-direction: column; }.map-head, .table-head { padding: 15px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topline">
+      <div><h1>设备态势</h1><p class="sub">AutoBanRobot 私有运行概览 · 仅展示匿名设备状态</p></div>
+      <span class="live"><i></i>实时数据</span>
+    </div>
+    <section class="stats" aria-label="统计">
+      <div class="stat"><b id="online-count">—</b><span>在线设备</span></div>
+      <div class="stat"><b id="device-count">—</b><span>累计设备</span></div>
+      <div class="stat"><b id="contribution-count">—</b><span>累计贡献</span></div>
+      <div class="stat"><b id="online-time">—</b><span>累计在线时长</span></div>
+    </section>
+    <section class="panel">
+      <div class="map-head"><h2>在线设备分布</h2><span class="hint">按上报 IP 的城市坐标定位，不展示或保存原始 IP</span></div>
+      <div id="map" aria-label="世界地图">
+        <svg viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true">
+          <image href="/world-map.svg" width="1000" height="500" opacity=".75" style="filter: invert(28%) sepia(21%) saturate(1400%) hue-rotate(160deg) brightness(92%) contrast(87%)" />
+        </svg>
+        <div id="map-empty" class="map-empty">正在加载在线设备位置…</div>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:18px">
+      <div class="table-head"><h2>设备明细</h2><span id="updated">—</span></div>
+      <div class="table-wrap"><table><thead><tr><th>设备</th><th>类型</th><th>状态</th><th>最近在线</th><th>在线时长</th><th>贡献</th></tr></thead><tbody id="device-rows"></tbody></table></div>
+    </section>
+  </main>
+  <script>
+    const endpoint = location.pathname.replace(/\/$/, "") + "/api/overview";
+    const number = new Intl.NumberFormat("zh-CN");
+    const element = id => document.getElementById(id);
+    const duration = seconds => {
+      seconds = Math.max(0, Number(seconds) || 0);
+      const days = Math.floor(seconds / 86400), hours = Math.floor(seconds % 86400 / 3600), minutes = Math.floor(seconds % 3600 / 60);
+      if (days) return `${days}天 ${hours}小时`;
+      if (hours) return `${hours}小时 ${minutes}分`;
+      return `${minutes}分`;
+    };
+    const localTime = value => value ? new Intl.DateTimeFormat("zh-CN", { dateStyle: "short", timeStyle: "medium" }).format(new Date(value)) : "—";
+    const mapPoint = (lat, lng) => {
+      const x = (Number(lng) + 180) / 360 * 100;
+      const radians = Math.max(-85, Math.min(85, Number(lat))) * Math.PI / 180;
+      const y = (1 - Math.log(Math.tan(Math.PI / 4 + radians / 2)) / Math.PI) / 2 * 100;
+      return { x, y };
+    };
+    function writeCell(row, value, className = "") { const cell = document.createElement("td"); cell.textContent = value; if (className) cell.className = className; row.append(cell); }
+    function render(data) {
+      const summary = data.summary || {};
+      element("online-count").textContent = number.format(summary.onlineDevices || 0);
+      element("device-count").textContent = number.format(summary.totalDevices || 0);
+      element("contribution-count").textContent = number.format(summary.totalContribution || 0);
+      element("online-time").textContent = duration(summary.totalOnlineSeconds);
+      element("updated").textContent = `更新于 ${localTime(data.generatedAt)}`;
+      const map = element("map"), empty = element("map-empty");
+      map.querySelectorAll(".marker").forEach(item => item.remove());
+      const markers = Array.isArray(data.onlineMarkers) ? data.onlineMarkers : [];
+      empty.hidden = markers.length > 0;
+      empty.textContent = markers.length ? "" : "暂无已定位的在线设备";
+      markers.forEach(marker => {
+        const point = mapPoint(marker.latitude, marker.longitude);
+        if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+        const dot = document.createElement("span"); dot.className = "marker";
+        dot.style.left = `${point.x}%`; dot.style.top = `${point.y}%`;
+        dot.dataset.label = `${marker.label} · ${marker.location}`;
+        dot.setAttribute("aria-label", dot.dataset.label); map.append(dot);
+      });
+      const rows = element("device-rows"); rows.replaceChildren();
+      (data.devices || []).forEach(device => {
+        const row = document.createElement("tr");
+        writeCell(row, device.deviceName || "未命名设备");
+        writeCell(row, device.deviceType || "—", "muted");
+        const status = document.createElement("td"), badge = document.createElement("span");
+        badge.className = `status ${device.online ? "on" : "off"}`; badge.textContent = device.online ? "在线" : "离线"; status.append(badge); row.append(status);
+        writeCell(row, localTime(device.lastSeenAt), "muted"); writeCell(row, duration(device.onlineSeconds)); writeCell(row, number.format(device.contribution || 0)); rows.append(row);
+      });
+    }
+    async function refresh() {
+      try { const response = await fetch(endpoint, { cache: "no-store", credentials: "same-origin" }); if (!response.ok) throw new Error("overview unavailable"); render(await response.json()); } catch (_) { element("updated").textContent = "数据暂不可用"; }
+    }
+    refresh(); setInterval(refresh, 30000);
+  </script>
+</body>
+</html>

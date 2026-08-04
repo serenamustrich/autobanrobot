@@ -27,14 +27,19 @@ class PluginClientServiceTest {
         );
         when(repository.findByInstallationId("installation-1"))
             .thenReturn(Optional.of(client));
+        IpGeolocationService geolocation = mock(IpGeolocationService.class);
+        when(geolocation.locate("")).thenReturn(IpLocation.unresolved());
 
-        new PluginClientService(repository).heartbeat(new PluginHeartbeatRequest(
+        new PluginClientService(repository, geolocation).heartbeat(new PluginHeartbeatRequest(
             "installation-1",
             "chrome-edge",
-            "1.6.1"
+            "1.6.1",
+            "plugin",
+            "Chrome on macOS"
         ));
 
         assertEquals("1.6.1", client.getPluginVersion());
+        assertEquals("Chrome on macOS", client.getDeviceName());
         verify(repository).findByInstallationId("installation-1");
     }
 
@@ -45,9 +50,10 @@ class PluginClientServiceTest {
         when(repository.countByLastSeenAtGreaterThanEqualAndClientType(any(), eq("app"))).thenReturn(1L);
         when(repository.countByClientType("plugin")).thenReturn(8L);
         when(repository.countByClientType("app")).thenReturn(2L);
+        IpGeolocationService geolocation = mock(IpGeolocationService.class);
 
         ClientStatsResponse stats =
-            new PluginClientService(repository).stats();
+            new PluginClientService(repository, geolocation).stats();
 
         assertEquals(3, stats.plugin().onlineUsers());
         assertEquals(8, stats.plugin().cumulativeUsers());

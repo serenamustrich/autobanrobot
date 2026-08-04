@@ -2,6 +2,9 @@ package com.autobanrobot.server.ban;
 
 import com.autobanrobot.server.keyword.KeywordAnalyticsService;
 import com.autobanrobot.server.mention.MentionAnalyticsService;
+import com.autobanrobot.server.account.Account;
+import com.autobanrobot.server.account.AccountContributionRepository;
+import com.autobanrobot.server.account.AccountService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -24,21 +27,27 @@ public class BanEventService {
     private final BanEventStream stream;
     private final KeywordAnalyticsService keywordAnalytics;
     private final MentionAnalyticsService mentionAnalytics;
+    private final AccountService accounts;
+    private final AccountContributionRepository contributions;
 
     public BanEventService(
         BanEventRepository repository,
         BanEventStream stream,
         KeywordAnalyticsService keywordAnalytics,
-        MentionAnalyticsService mentionAnalytics
+        MentionAnalyticsService mentionAnalytics,
+        AccountService accounts,
+        AccountContributionRepository contributions
     ) {
         this.repository = repository;
         this.stream = stream;
         this.keywordAnalytics = keywordAnalytics;
         this.mentionAnalytics = mentionAnalytics;
+        this.accounts = accounts;
+        this.contributions = contributions;
     }
 
     @Transactional
-    public BanEventResponse receive(BanEventRequest request) {
+    public BanEventResponse receive(BanEventRequest request, String authorization) {
         var existing = repository.findByClientEventId(request.clientEventId());
         if (existing.isPresent()) {
             return BanEventResponse.from(existing.get());
@@ -48,6 +57,7 @@ public class BanEventService {
         String username = cleanUsername(request.username());
         String pageUrl = safe(request.pageUrl());
         String content = safe(request.content());
+        Account account = accountFor(authorization, request.installationId());
         var duplicate = repository
             .findTopByUsernameIgnoreCaseAndPageUrlAndContentAndBlockedAtGreaterThanEqualOrderByBlockedAtDesc(
                 username,
@@ -61,6 +71,8 @@ public class BanEventService {
 
         BanEvent event = new BanEvent(
             request.clientEventId(),
+            optionalIdentifier(request.installationId()),
+            account == null ? null : account.getId(),
             normalizeClientType(request.clientType()),
             username,
             safe(request.displayName()),
@@ -73,7 +85,9 @@ public class BanEventService {
             now
         );
 
-        BanEventResponse saved = BanEventResponse.from(repository.saveAndFlush(event));
+        BanEvent persisted = repository.saveAndFlush(event);
+        if (account != null) contributions.insertIgnore(account.getId(), username, persisted.getId(), now);
+        BanEventResponse saved = BanEventResponse.from(persisted);
         keywordAnalytics.record(
             saved.id(),
             saved.username(),
@@ -82,6 +96,19 @@ public class BanEventService {
         mentionAnalytics.record(saved.id(), request.content());
         stream.publish(saved);
         return saved;
+    }
+
+    @Transactional
+    public void claimHistoricalEvents(Account account, String installationId) {
+        for (BanEvent event : repository.findByInstallationIdAndAccountIdIsNull(installationId)) {
+            event.assignAccount(account.getId());
+            contributions.insertIgnore(account.getId(), event.getUsername(), event.getId(), Instant.now());
+        }
+    }
+
+    private Account accountFor(String authorization, String installationId) {
+        if (authorization != null && !authorization.isBlank()) return accounts.requireAccount(authorization);
+        return installationId == null || installationId.isBlank() ? null : accounts.findByInstallationId(installationId.trim());
     }
 
     @Transactional(readOnly = true)
@@ -118,6 +145,11 @@ public class BanEventService {
 
     private String cleanUsername(String username) {
         return username.trim().replaceFirst("^@", "");
+    }
+
+    private String optionalIdentifier(String value) {
+        if (value == null || value.isBlank()) return null;
+        return value.trim();
     }
 
     private String normalizeClientType(String value) {

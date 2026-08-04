@@ -7,9 +7,10 @@ public record PluginHeartbeatRequest(
     @NotBlank @Size(max = 64) String installationId,
     @NotBlank @Size(max = 32) String platform,
     @NotBlank @Size(max = 32) String version,
-    @Size(max = 16) String clientType
+    @Size(max = 16) String clientType,
+    @Size(max = 128) String deviceName
 ) {
     public PluginHeartbeatRequest(String installationId, String platform, String version) {
-        this(installationId, platform, version, "plugin");
+        this(installationId, platform, version, "plugin", "");
     }
 }

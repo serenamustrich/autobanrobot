@@ -40,7 +40,7 @@ class BanEventControllerTest {
     @Test
     void acceptsAConfirmedBanEvent() throws Exception {
         Instant blockedAt = Instant.parse("2026-07-30T01:02:03Z");
-        when(service.receive(any())).thenReturn(new BanEventResponse(
+        when(service.receive(any(), any())).thenReturn(new BanEventResponse(
             1L,
             "evt-test-001",
             "spam_account",

@@ -1,5 +1,6 @@
 package com.autobanrobot.server.client;
 
+import java.time.Duration;
 import java.time.Instant;
 
 import jakarta.persistence.Column;
@@ -33,6 +34,9 @@ public class PluginClient {
     @Column(nullable = false, length = 32)
     private String platform;
 
+    @Column(name = "device_name", nullable = false, length = 128, columnDefinition = "varchar(128) not null default ''")
+    private String deviceName;
+
     @Column(name = "plugin_version", nullable = false, length = 32)
     private String pluginVersion;
 
@@ -41,6 +45,21 @@ public class PluginClient {
 
     @Column(name = "last_seen_at", nullable = false)
     private Instant lastSeenAt;
+
+    @Column(name = "online_seconds", nullable = false, columnDefinition = "bigint not null default 0")
+    private long onlineSeconds;
+
+    @Column(name = "location_label", length = 160)
+    private String locationLabel;
+
+    @Column(name = "location_latitude")
+    private Double locationLatitude;
+
+    @Column(name = "location_longitude")
+    private Double locationLongitude;
+
+    @Column(name = "location_updated_at")
+    private Instant locationUpdatedAt;
 
     protected PluginClient() {
     }
@@ -52,7 +71,7 @@ public class PluginClient {
         Instant firstSeenAt,
         Instant lastSeenAt
     ) {
-        this(installationId, "plugin", platform, pluginVersion, firstSeenAt, lastSeenAt);
+        this(installationId, "plugin", platform, "", pluginVersion, firstSeenAt, lastSeenAt);
     }
 
     public PluginClient(
@@ -63,23 +82,55 @@ public class PluginClient {
         Instant firstSeenAt,
         Instant lastSeenAt
     ) {
+        this(installationId, clientType, platform, "", pluginVersion, firstSeenAt, lastSeenAt);
+    }
+
+    public PluginClient(
+        String installationId,
+        String clientType,
+        String platform,
+        String deviceName,
+        String pluginVersion,
+        Instant firstSeenAt,
+        Instant lastSeenAt
+    ) {
         this.installationId = installationId;
         this.clientType = clientType;
         this.platform = platform;
+        this.deviceName = deviceName;
         this.pluginVersion = pluginVersion;
         this.firstSeenAt = firstSeenAt;
         this.lastSeenAt = lastSeenAt;
+        this.onlineSeconds = 0;
     }
 
     public void markSeen(String platform, String pluginVersion, Instant seenAt) {
-        markSeen("plugin", platform, pluginVersion, seenAt);
+        markSeen("plugin", platform, "", pluginVersion, seenAt, IpLocation.unresolved());
     }
 
-    public void markSeen(String clientType, String platform, String pluginVersion, Instant seenAt) {
+    public void markSeen(
+        String clientType,
+        String platform,
+        String deviceName,
+        String pluginVersion,
+        Instant seenAt,
+        IpLocation location
+    ) {
+        long elapsed = Duration.between(this.lastSeenAt, seenAt).toSeconds();
+        if (elapsed > 0 && elapsed <= 120) {
+            onlineSeconds = Math.min(Long.MAX_VALUE - elapsed, onlineSeconds) + elapsed;
+        }
         this.clientType = clientType;
         this.platform = platform;
+        this.deviceName = deviceName;
         this.pluginVersion = pluginVersion;
         this.lastSeenAt = seenAt;
+        if (location.isResolved()) {
+            this.locationLabel = location.label();
+            this.locationLatitude = location.latitude();
+            this.locationLongitude = location.longitude();
+            this.locationUpdatedAt = seenAt;
+        }
     }
 
     public Long getId() {
@@ -98,6 +149,10 @@ public class PluginClient {
         return platform;
     }
 
+    public String getDeviceName() {
+        return deviceName;
+    }
+
     public String getPluginVersion() {
         return pluginVersion;
     }
@@ -109,4 +164,12 @@ public class PluginClient {
     public Instant getLastSeenAt() {
         return lastSeenAt;
     }
+
+    public long getOnlineSeconds() {
+        return onlineSeconds;
+    }
+
+    public String getLocationLabel() { return locationLabel; }
+    public Double getLocationLatitude() { return locationLatitude; }
+    public Double getLocationLongitude() { return locationLongitude; }
 }

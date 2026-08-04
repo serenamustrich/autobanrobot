@@ -1,5 +1,14 @@
 # AutoBanRobot
 
+### Server v1.2.12 / Android v1.0.60 / Extension v1.6.39 — 2026-08-04
+
+- Reworked matching into a server-delivered declarative rule package: rules, online keyword sets, keyword policies, and promotion-target account policies can now update without a future plugin update.
+- Promotion-target accounts now match only an exact account ID or a complete standalone `@mention` in post content. English keywords use complete-token matching, while Chinese keywords retain interference-tolerant matching.
+- Raised the serialized Ban interval to 5 seconds on Chrome/Edge, Android, and iOS/Safari to reduce request-rate pressure.
+- 规则匹配已改造成由服务端下发的声明式规则包：规则、在线关键词集、关键词策略和推广目标账号策略以后均可热更新。
+- 推广目标账号仅匹配完整账号 ID 或正文中的完整独立 `@提及`；英文关键词完整匹配，中文关键词继续支持干扰字符识别。
+- Chrome/Edge、Android 与 iOS/Safari 的串行 Ban 间隔已统一调整为 5 秒，降低请求频率压力。
+
 ### Android v1.0.42 — 2026-08-03
 
 - System edge-back now tries the visible X back control, then X SPA history, then WebView history; it reloads only when none exists. This prevents the Messages inbox from being refreshed by a back gesture.

@@ -37,8 +37,13 @@ class RuleConfigControllerTest {
         var rules = JsonMapper.builder().build().readTree("""
             [{"id":"sample","name":"Sample","pattern":"spam","flags":"iu"}]
             """);
+        var engine = JsonMapper.builder().build().readTree("{" + "\"schemaVersion\":1}");
+        var keywordSets = JsonMapper.builder().build().readTree("[]");
+        var keywordPolicies = JsonMapper.builder().build().readTree("[]");
+        var accountPolicies = JsonMapper.builder().build().readTree("[]");
         when(service.current()).thenReturn(new RuleConfigResponse(
-            3, Instant.parse("2026-08-01T01:02:03Z"), rules
+            3, Instant.parse("2026-08-01T01:02:03Z"), engine,
+            keywordSets, keywordPolicies, accountPolicies, rules
         ));
 
         mockMvc.perform(get("/api/rules"))
@@ -58,8 +63,13 @@ class RuleConfigControllerTest {
     @Test
     void acceptsAuthorizedRuleUpdates() throws Exception {
         var rules = JsonMapper.builder().build().readTree("[]");
+        var engine = JsonMapper.builder().build().readTree("{" + "\"schemaVersion\":1}");
+        var keywordSets = JsonMapper.builder().build().readTree("[]");
+        var keywordPolicies = JsonMapper.builder().build().readTree("[]");
+        var accountPolicies = JsonMapper.builder().build().readTree("[]");
         when(service.update(any())).thenReturn(new RuleConfigResponse(
-            4, Instant.parse("2026-08-01T01:02:03Z"), rules
+            4, Instant.parse("2026-08-01T01:02:03Z"), engine,
+            keywordSets, keywordPolicies, accountPolicies, rules
         ));
 
         mockMvc.perform(put("/api/rules")

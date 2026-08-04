@@ -15,22 +15,31 @@ public class PluginClientService {
     private static final String APP = "app";
 
     private final PluginClientRepository repository;
+    private final IpGeolocationService geolocation;
 
-    public PluginClientService(PluginClientRepository repository) {
+    public PluginClientService(PluginClientRepository repository, IpGeolocationService geolocation) {
         this.repository = repository;
+        this.geolocation = geolocation;
     }
 
     @Transactional
     public void heartbeat(PluginHeartbeatRequest request) {
+        heartbeat(request, "");
+    }
+
+    @Transactional
+    public void heartbeat(PluginHeartbeatRequest request, String clientIp) {
         Instant now = Instant.now();
         String installationId = request.installationId().trim();
         String platform = request.platform().trim();
         String version = request.version().trim();
         String clientType = normalizeClientType(request.clientType());
+        String deviceName = normalizeDeviceName(request.deviceName());
+        IpLocation location = geolocation.locate(clientIp);
 
         var existing = repository.findByInstallationId(installationId);
         if (existing.isPresent()) {
-            existing.get().markSeen(clientType, platform, version, now);
+            existing.get().markSeen(clientType, platform, deviceName, version, now, location);
             return;
         }
 
@@ -39,13 +48,14 @@ public class PluginClientService {
                 installationId,
                 clientType,
                 platform,
+                deviceName,
                 version,
                 now,
                 now
             ));
         } catch (DataIntegrityViolationException duplicate) {
             repository.findByInstallationId(installationId).ifPresent(client -> {
-                client.markSeen(clientType, platform, version, now);
+                client.markSeen(clientType, platform, deviceName, version, now, location);
                 repository.save(client);
             });
         }
@@ -70,5 +80,9 @@ public class PluginClientService {
 
     private String normalizeClientType(String value) {
         return APP.equalsIgnoreCase(value == null ? "" : value.trim()) ? APP : PLUGIN;
+    }
+
+    private String normalizeDeviceName(String value) {
+        return value == null ? "" : value.trim().substring(0, Math.min(value.trim().length(), 128));
     }
 }

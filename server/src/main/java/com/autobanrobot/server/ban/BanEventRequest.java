@@ -8,6 +8,7 @@ import java.util.List;
 
 public record BanEventRequest(
     @NotBlank @Size(max = 64) String clientEventId,
+    @Size(max = 64) String installationId,
     @NotBlank @Size(max = 64) String username,
     @Size(max = 160) String displayName,
     @Size(max = 500) String reason,

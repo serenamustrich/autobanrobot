@@ -19,7 +19,7 @@ public class ServerVersionController {
             .getPackage()
             .getImplementationVersion();
         String version = implementationVersion == null || implementationVersion.isBlank()
-            ? "1.2.5"
+            ? "1.2.12"
             : implementationVersion;
         return ResponseEntity.ok()
             .cacheControl(CacheControl.noStore().mustRevalidate().sMaxAge(0, TimeUnit.SECONDS))

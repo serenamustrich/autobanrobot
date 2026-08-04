@@ -42,7 +42,7 @@ public class RuleConfigController {
         @Valid @RequestBody RuleConfigUpdateRequest request
     ) {
         authorize(token);
-        return service.update(request.rules());
+        return service.update(request);
     }
 
     private void authorize(String token) {

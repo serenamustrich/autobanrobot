@@ -72,7 +72,7 @@ class BlockQueue(
     private val onResult: (BlockJob, ApiOutcome) -> Unit
 ) {
     private companion object {
-        const val BLOCK_INTERVAL_MS = 500L
+        const val BLOCK_INTERVAL_MS = 5_000L
         const val MAX_LOCAL_HISTORY_RECORDS = 1_000
         const val OWNER_USERNAME = "aagodofwealth"
         const val HISTORY_HIDE_MIGRATION_KEY = "history_hide_migration_v1"

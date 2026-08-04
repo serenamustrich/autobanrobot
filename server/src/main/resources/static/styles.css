@@ -91,7 +91,9 @@ button, input { font: inherit; }
   color: #fff;
   font-size: 13px;
   font-weight: 700;
+  border: 0;
   text-decoration: none;
+  cursor: pointer;
   box-shadow: 0 8px 24px rgba(23, 32, 51, .16);
   transition: transform .16s ease, background .16s ease;
 }
@@ -99,6 +101,11 @@ button, input { font: inherit; }
 .release-link:hover {
   background: var(--blue-deep);
   transform: translateY(-1px);
+}
+
+.release-link:focus-visible {
+  outline: 3px solid rgba(52, 137, 216, .42);
+  outline-offset: 3px;
 }
 
 .release-link svg {

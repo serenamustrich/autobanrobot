@@ -439,7 +439,7 @@ final class AppState: ObservableObject {
                 statusText = outcome.statusText
             }
             publishResult(for: job, outcome: outcome)
-            try? await Task.sleep(for: .milliseconds(500))
+            try? await Task.sleep(for: .seconds(5))
         }
     }
 

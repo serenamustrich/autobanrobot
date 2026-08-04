@@ -1,7 +1,12 @@
 package com.autobanrobot.server.rule;
 
 import tools.jackson.databind.JsonNode;
-import jakarta.validation.constraints.NotNull;
 
-public record RuleConfigUpdateRequest(@NotNull JsonNode rules) {
+public record RuleConfigUpdateRequest(
+    JsonNode rules,
+    JsonNode engine,
+    JsonNode keywordSets,
+    JsonNode keywordPolicies,
+    JsonNode accountPolicies
+) {
 }

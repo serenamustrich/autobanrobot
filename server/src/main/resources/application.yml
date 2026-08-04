@@ -1,16 +1,16 @@
 server:
-  address: ${AUTOBAN_SERVER_ADDRESS:127.0.0.1}
-  port: ${AUTOBAN_SERVER_PORT:59999}
+  address: ${SERVER_ADDRESS:0.0.0.0}
+  port: ${SERVER_PORT:59999}
   error:
-    include-message: never
+    include-message: always
 
 spring:
   application:
     name: autoban-server
   datasource:
-    url: ${AUTOBAN_DB_URL}
-    username: ${AUTOBAN_DB_USERNAME}
-    password: ${AUTOBAN_DB_PASSWORD}
+    url: ${AUTOBAN_DB_URL:jdbc:mysql://127.0.0.1:3306/autoban?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
+    username: ${AUTOBAN_DB_USERNAME:autoban}
+    password: ${AUTOBAN_DB_PASSWORD:}
   jpa:
     open-in-view: false
     hibernate:
@@ -18,7 +18,7 @@ spring:
     properties:
       hibernate:
         jdbc:
-          time_zone: Asia/Shanghai
+          time_zone: UTC
   jackson:
     deserialization:
       fail-on-unknown-properties: false
@@ -34,5 +34,14 @@ logging:
     org.hibernate.SQL: WARN
 
 autoban:
+  admin-portal:
+    first-token-sha256: ${AUTOBAN_ADMIN_FIRST_TOKEN_SHA256:}
+    second-token-sha256: ${AUTOBAN_ADMIN_SECOND_TOKEN_SHA256:}
+  geoip:
+    database: ${AUTOBAN_GEOIP_DATABASE:GeoLite2-City.mmdb}
+  client-ip:
+    trusted-proxies: ${AUTOBAN_TRUSTED_PROXIES:}
+  release:
+    admin-token: ${AUTOBAN_RELEASE_ADMIN_TOKEN:}
   rules:
-    admin-token: ${AUTOBAN_RULE_ADMIN_TOKEN:}
+    admin-token: ${AUTOBAN_RULES_ADMIN_TOKEN:}

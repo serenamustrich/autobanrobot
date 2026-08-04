@@ -17,7 +17,7 @@ public class WebConfig implements WebMvcConfigurer {
                 "http://localhost:*"
             )
             .allowedMethods("GET", "POST", "PUT", "OPTIONS")
-            .allowedHeaders("Content-Type", "X-AutoBan-Client", "X-AutoBan-Admin-Token")
+            .allowedHeaders("Content-Type", "Authorization", "X-AutoBan-Client", "X-AutoBan-Admin-Token")
             .maxAge(3600);
     }
 }

@@ -389,6 +389,7 @@ const elements = {
   pluginCumulativeUsers: document.getElementById('pluginCumulativeUsers'),
   appOnlineUsers: document.getElementById('appOnlineUsers'),
   appCumulativeUsers: document.getElementById('appCumulativeUsers'),
+  releaseLink: document.getElementById('releaseLink'),
   backToTop: document.getElementById('backToTop')
 };
 
@@ -414,6 +415,26 @@ async function fetchJson(url) {
   const response = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
+}
+
+async function openLatestRelease() {
+  const response = await fetch('/api/releases/latest', {
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/json',
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache'
+    }
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const payload = await response.json();
+  const url = new URL(String(payload?.url ?? ''));
+  const expectedPrefix = '/serenamustrich/autobanrobot/releases/';
+  if (url.protocol !== 'https:' || url.hostname !== 'github.com' ||
+      !url.pathname.startsWith(expectedPrefix)) {
+    throw new Error('Invalid release URL');
+  }
+  window.location.assign(url.toString());
 }
 
 async function loadPage() {
@@ -641,6 +662,9 @@ function updateBackToTopVisibility() {
 
 elements.backToTop.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+elements.releaseLink.addEventListener('click', () => {
+  openLatestRelease().catch(error => console.error('Release URL refresh failed', error));
 });
 window.addEventListener('scroll', updateBackToTopVisibility, { passive: true });
 updateBackToTopVisibility();

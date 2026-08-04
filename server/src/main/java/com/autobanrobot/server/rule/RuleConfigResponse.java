@@ -4,5 +4,13 @@ import tools.jackson.databind.JsonNode;
 
 import java.time.Instant;
 
-public record RuleConfigResponse(long version, Instant updatedAt, JsonNode rules) {
+public record RuleConfigResponse(
+    long version,
+    Instant updatedAt,
+    JsonNode engine,
+    JsonNode keywordSets,
+    JsonNode keywordPolicies,
+    JsonNode accountPolicies,
+    JsonNode rules
+) {
 }
