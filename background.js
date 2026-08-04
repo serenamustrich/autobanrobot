@@ -1306,7 +1306,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   if (message.type === 'ACCOUNT_SYNC') {
-    syncAccountSettings(false).then(result => sendResponse({ ok: true, ...result }))
+    syncAccountSettings(true).then(result => sendResponse({ ok: true, ...result }))
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }

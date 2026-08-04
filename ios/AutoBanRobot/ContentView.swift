@@ -14,7 +14,7 @@ struct ContentView: View {
                 .tabItem { Label("规则", systemImage: "slider.horizontal.3") }
             NavigationStack { HistoryView() }
                 .tabItem { Label("Ban记录", systemImage: "list.bullet.rectangle") }
-            NavigationStack { AccountView() }
+            NavigationStack { AccountView(account: state.accountClient) }
                 .tabItem { Label("account.title", systemImage: "person.crop.circle") }
         }
         .tint(.blue)
@@ -33,7 +33,7 @@ struct ContentView: View {
 private struct AccountView: View {
     private enum Route { case login, register, recovery }
     @EnvironmentObject private var state: AppState
-    @StateObject private var account = AccountClient()
+    @ObservedObject var account: AccountClient
     @State private var username = ""
     @State private var password = ""
     @State private var answer = ""
@@ -60,6 +60,13 @@ private struct AccountView: View {
                         .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 7, trailing: 16))
                 }
                 Section { Button("account.logout", role: .destructive) { account.logout() } }
+                if state.accountSyncError != nil {
+                    Section {
+                        Label("账号同步未完成，请检查网络后点立即同步", systemImage: "exclamationmark.triangle")
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                    }
+                }
             } else {
                 switch route {
                 case .login:
@@ -110,7 +117,7 @@ private struct AccountView: View {
         }
     }
     private func perform(_ action: () async throws -> Void) async {
-        do { try await action(); status = "已完成并同步本机数据" } catch { status = error.localizedDescription }
+        do { try await action(); state.clearAccountSyncError(); status = "已完成并同步本机数据" } catch { status = error.localizedDescription }
     }
     private func loadRecoveryQuestion() async {
         do { recoveryQuestion = try await account.recoveryQuestion(username: username); status = "" }
@@ -120,7 +127,8 @@ private struct AccountView: View {
         guard !isSyncing else { return }
         withAnimation(.snappy) { isSyncing = true; syncSucceeded = false }
         do {
-            try await account.bindAndMerge(state: state)
+            try await account.bindAndMerge(state: state, merge: true)
+            state.clearAccountSyncError()
             withAnimation(.spring(response: 0.35, dampingFraction: 0.62)) { isSyncing = false; syncSucceeded = true }
             try? await Task.sleep(for: .seconds(1.6))
             withAnimation(.easeOut(duration: 0.25)) { syncSucceeded = false }

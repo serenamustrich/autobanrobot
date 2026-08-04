@@ -1,4 +1,15 @@
-const t = (key, substitutions) => chrome.i18n.getMessage(key, substitutions) || key;
+let localeMessages = null;
+
+function formatMessage(message, substitutions) {
+  const values = Array.isArray(substitutions) ? substitutions : [substitutions];
+  return String(message).replace(/\$(\d+)/g, (_, index) => values[Number(index) - 1] ?? '');
+}
+
+function t(key, substitutions) {
+  const message = localeMessages?.[key]?.message;
+  if (message) return formatMessage(message, substitutions);
+  return chrome.i18n.getMessage(key, substitutions) || key;
+}
 
 function localizeAccountUi() {
   const labels = {
@@ -30,7 +41,13 @@ function localizeAccountUi() {
   }
 }
 
-localizeAccountUi();
+function localizeStaticPopupUi() {
+  document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(node => { node.placeholder = t(node.dataset.i18nPlaceholder); });
+  document.querySelectorAll('[data-i18n-aria-label]').forEach(node => { node.setAttribute('aria-label', t(node.dataset.i18nAriaLabel)); });
+  document.getElementById('currentVersion').textContent = t('currentVersion', chrome.runtime.getManifest().version);
+  localizeAccountUi();
+}
 
 chrome.storage.local.get([
   'blockCount',
@@ -76,9 +93,6 @@ function showTab(requestedTab, remember = true) {
   if (remember) chrome.storage.local.set({ popupActiveTab: tab });
 }
 
-document.getElementById('currentVersion').textContent =
-  `当前版本 v${chrome.runtime.getManifest().version}`;
-
 document.getElementById('save').addEventListener('click', () => {
   const kws = document.getElementById('keywords').value
     .split('\n').map(s => s.trim()).filter(Boolean);
@@ -96,7 +110,7 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
   const button = document.getElementById('loadPopular');
   const status = document.getElementById('popularStatus');
   button.disabled = true;
-  status.textContent = '正在从线上服务读取可同步热门关键词…';
+  status.textContent = t('popularLoading');
   try {
     const response = await fetch(
       'https://ban.richccy.com/api/popular-terms'
@@ -112,10 +126,9 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
     const merged = [...new Set([...current, ...popular])];
     textarea.value = merged.join('\n');
     updateKeywordSummary();
-    status.textContent =
-      `已加载 ${popular.length} 个热门词，新增 ${merged.length - current.length} 个；请确认后点击保存`;
+    status.textContent = t('popularLoaded', [popular.length, merged.length - current.length]);
   } catch {
-    status.textContent = '无法连接线上热门关键词服务，请稍后重试';
+    status.textContent = t('popularFailed');
   } finally {
     button.disabled = false;
   }
@@ -124,14 +137,14 @@ document.getElementById('loadPopular').addEventListener('click', async () => {
 function updateKeywordSummary() {
   const count = document.getElementById('keywords').value
     .split('\n').map(value => value.trim()).filter(Boolean).length;
-  document.getElementById('keywordCount').textContent = `${count} 个`;
+  document.getElementById('keywordCount').textContent = t('keywordCount', count);
   document.getElementById('keywordBadge').textContent = count;
 }
 
 function updateRuleSummary() {
   const inputs = [...document.querySelectorAll('#rulesPanel input[type="checkbox"]')];
   const enabled = inputs.filter(input => input.checked).length;
-  document.getElementById('ruleCount').textContent = `${enabled}/${inputs.length} 已启用`;
+  document.getElementById('ruleCount').textContent = t('ruleCount', [enabled, inputs.length]);
   document.getElementById('ruleBadge').textContent = enabled;
 }
 
@@ -158,16 +171,16 @@ function renderRemoteRules(config, states = {}) {
     slider.className = 'switch-ui';
     slider.setAttribute('aria-hidden', 'true');
     const copy = document.createElement('span');
-    copy.textContent = `启用“${rule.name}”规则`;
+    copy.textContent = t('ruleToggle', rule.name);
     const hint = document.createElement('div');
     hint.className = 'hint';
-    hint.textContent = rule.description || '由在线规则服务管理';
+    hint.textContent = rule.description || t('ruleManaged');
     copy.appendChild(hint);
     label.append(input, slider, copy);
     container.appendChild(label);
   }
-  const checkedAt = config?.checkedAt ? new Date(config.checkedAt).toLocaleString() : '本地预设';
-  status.textContent = `在线规则 v${config?.version ?? '—'} · ${checkedAt}`;
+  const checkedAt = config?.checkedAt ? new Date(config.checkedAt).toLocaleString() : t('ruleLocalPreset');
+  status.textContent = t('ruleStatus', [config?.version ?? '—', checkedAt]);
   updateRuleSummary();
 }
 
@@ -175,11 +188,11 @@ document.getElementById('refreshRules').addEventListener('click', () => {
   const button = document.getElementById('refreshRules');
   const status = document.getElementById('ruleStatus');
   button.disabled = true;
-  status.textContent = '正在从服务端更新规则…';
+  status.textContent = t('ruleUpdating');
   chrome.runtime.sendMessage({ type: 'REFRESH_RULES' }, response => {
     button.disabled = false;
     if (chrome.runtime.lastError || !response?.ok) {
-      status.textContent = '规则更新失败，已继续使用本地缓存';
+      status.textContent = t('ruleUpdateFailed');
       return;
     }
     chrome.storage.local.get(['remoteRuleStates'], result => {
@@ -204,7 +217,7 @@ function renderBlockHistory(value) {
   if (!history.length) {
     const empty = document.createElement('div');
     empty.className = 'history-empty';
-    empty.textContent = '暂无已确认屏蔽记录';
+    empty.textContent = t('historyEmpty');
     container.appendChild(empty);
     return;
   }
@@ -229,7 +242,7 @@ function renderBlockHistory(value) {
     meta.className = 'history-meta';
     const time = record.blockedAt
       ? new Date(record.blockedAt).toLocaleString()
-      : '时间未知';
+      : t('unknownTime');
     meta.textContent = time;
 
     item.append(user, meta);
@@ -242,12 +255,12 @@ function renderBlockHistory(value) {
       if (keywords.length) {
         const keyword = document.createElement('div');
         keyword.className = 'history-evidence-keyword';
-        keyword.textContent = `关键词：${keywords.join('、')}`;
+        keyword.textContent = t('matchedKeywords', keywords.join('、'));
         evidence.appendChild(keyword);
       }
       const rule = document.createElement('div');
       rule.className = 'history-evidence-rule';
-      rule.textContent = `规则依据：${record.reason || '规则命中（旧记录未保存详情）'}`;
+      rule.textContent = t('ruleReason', record.reason || t('defaultRuleReason'));
       evidence.appendChild(rule);
       item.appendChild(evidence);
     }
@@ -263,12 +276,12 @@ function renderBlockHistory(value) {
     const unblock = document.createElement('button');
     unblock.type = 'button';
     if (record.unblockedAt) {
-      unblock.textContent = '重新屏蔽和隐藏';
+      unblock.textContent = t('reblock');
       unblock.addEventListener('click', () => requestReblock(record, unblock));
       const unblockedTime = new Date(record.unblockedAt).toLocaleString();
-      unblock.title = `取消时间：${unblockedTime}`;
+      unblock.title = t('unblockedAt', unblockedTime);
     } else {
-      unblock.textContent = '取消屏蔽和隐藏';
+      unblock.textContent = t('unblock');
       unblock.addEventListener('click', () => requestUnblock(record, unblock));
     }
     actions.appendChild(unblock);
@@ -278,14 +291,14 @@ function renderBlockHistory(value) {
 }
 
 function requestUnblock(record, button) {
-  if (!confirm(`确定取消屏蔽和隐藏 @${record.username}？`)) return;
+  if (!confirm(t('confirmUnblock', record.username))) return;
   button.disabled = true;
-  button.textContent = '处理中…';
+  button.textContent = t('processing');
   chrome.runtime.sendMessage({ type: 'UNBLOCK_USER', record }, response => {
     if (chrome.runtime.lastError || !response?.ok) {
       button.disabled = false;
-      button.textContent = '重试取消屏蔽和隐藏';
-      button.title = response?.error || chrome.runtime.lastError?.message || '操作失败';
+      button.textContent = t('retryUnblock');
+      button.title = response?.error || chrome.runtime.lastError?.message || t('actionFailed');
       return;
     }
     chrome.storage.local.get(['blockHistory'], result => {
@@ -295,14 +308,14 @@ function requestUnblock(record, button) {
 }
 
 function requestReblock(record, button) {
-  if (!confirm(`确定重新屏蔽和隐藏 @${record.username}？`)) return;
+  if (!confirm(t('confirmReblock', record.username))) return;
   button.disabled = true;
-  button.textContent = '处理中…';
+  button.textContent = t('processing');
   chrome.runtime.sendMessage({ type: 'REBLOCK_USER', record }, response => {
     if (chrome.runtime.lastError || !response?.ok) {
       button.disabled = false;
-      button.textContent = '重试重新屏蔽和隐藏';
-      button.title = response?.error || chrome.runtime.lastError?.message || '操作失败';
+      button.textContent = t('retryReblock');
+      button.title = response?.error || chrome.runtime.lastError?.message || t('actionFailed');
       return;
     }
     chrome.storage.local.get(['blockHistory'], result => {
@@ -322,43 +335,54 @@ function renderUpdateInfo(info) {
   const release = document.getElementById('openRelease');
   release.hidden = true;
   if (!info) {
-    status.textContent = '更新文件直接来自 GitHub Releases';
+    status.textContent = t('updateGitHub');
     return;
   }
   if (info.error) {
-    status.textContent = '上次检查失败，可点击重新检查';
+    status.textContent = t('updateCheckFailed');
     return;
   }
   if (info.available) {
-    status.textContent = `发现新版本 v${info.latestVersion}，请前往 GitHub 下载并安装`;
+    status.textContent = t('updateAvailable', info.latestVersion);
     release.href = info.releaseUrl ||
       'https://github.com/serenamustrich/autobanrobot/releases/latest';
     release.hidden = false;
     return;
   }
-  status.textContent = `已是最新版本${info.latestVersion ? `（v${info.latestVersion}）` : ''}`;
+  status.textContent = t('updateCurrent', info.latestVersion ? t('updateCurrentVersion', info.latestVersion) : '');
 }
 
 document.getElementById('checkUpdate').addEventListener('click', () => {
   const button = document.getElementById('checkUpdate');
   const status = document.getElementById('updateStatus');
   button.disabled = true;
-  status.textContent = '正在检查 GitHub Releases…';
+  status.textContent = t('updateChecking');
   chrome.runtime.sendMessage({ type: 'CHECK_FOR_UPDATE' }, response => {
     button.disabled = false;
     if (chrome.runtime.lastError || !response?.ok) {
-      status.textContent = '检查失败，请确认网络可以访问 GitHub';
+      status.textContent = t('updateCheckFailed');
       return;
     }
     renderUpdateInfo(response.updateInfo);
   });
 });
 
-const securityQuestions = {
-  first_teacher: t('questionFirstTeacher'), childhood_nickname: t('questionChildhoodNickname'), first_pet: t('questionFirstPet'), favorite_book: t('questionFavoriteBook'), favorite_food: t('questionFavoriteFood'), dream_job: t('questionDreamJob'), first_concert: t('questionFirstConcert'), favorite_city: t('questionFavoriteCity'), childhood_friend: t('questionChildhoodFriend'), favorite_film: t('questionFavoriteFilm')
+const securityQuestionKeys = {
+  first_teacher: 'questionFirstTeacher', childhood_nickname: 'questionChildhoodNickname', first_pet: 'questionFirstPet', favorite_book: 'questionFavoriteBook', favorite_food: 'questionFavoriteFood', dream_job: 'questionDreamJob', first_concert: 'questionFirstConcert', favorite_city: 'questionFavoriteCity', childhood_friend: 'questionChildhoodFriend', favorite_film: 'questionFavoriteFilm'
 };
+function securityQuestions() {
+  return Object.fromEntries(Object.entries(securityQuestionKeys).map(([key, message]) => [key, t(message)]));
+}
 const questionSelect = document.getElementById('securityQuestion');
-Object.entries(securityQuestions).forEach(([key, label]) => { const option = document.createElement('option'); option.value = key; option.textContent = label; questionSelect.append(option); });
+function renderSecurityQuestions() {
+  const selected = questionSelect.value;
+  questionSelect.replaceChildren();
+  Object.entries(securityQuestions()).forEach(([key, label]) => {
+    const option = document.createElement('option'); option.value = key; option.textContent = label; questionSelect.append(option);
+  });
+  questionSelect.value = selected || questionSelect.options[0]?.value || '';
+}
+renderSecurityQuestions();
 
 const contributionAchievements = [
   [1, 'achievement1', 10], [2, 'achievement2', 30], [3, 'achievement3', 100], [4, 'achievement4', 300], [5, 'achievement5', 1000],
@@ -461,7 +485,7 @@ document.getElementById('accountRecover').addEventListener('click', async () => 
   const result = await accountMessage('ACCOUNT_RECOVERY_QUESTION', { username });
   if (!result?.ok) { document.getElementById('accountStatus').textContent = localizeAccountError(result?.error); return; }
   document.getElementById('accountRecovery').hidden = false;
-  document.getElementById('recoveryQuestionLabel').textContent = securityQuestions[result.securityQuestionKey] || '密保问题';
+  document.getElementById('recoveryQuestionLabel').textContent = securityQuestions()[result.securityQuestionKey] || t('securityQuestion');
   document.getElementById('accountRecovery').dataset.question = result.securityQuestionKey;
 });
 document.getElementById('recoveryReset').addEventListener('click', async () => {
@@ -515,4 +539,36 @@ chrome.storage.onChanged.addListener(changes => {
       renderRemoteRules(r.remoteRuleConfig, r.remoteRuleStates);
     });
   }
+});
+
+async function selectSystemLocale() {
+  const languages = await new Promise(resolve => chrome.i18n.getAcceptLanguages(resolve));
+  const candidates = [...(Array.isArray(languages) ? languages : []), ...navigator.languages, navigator.language, chrome.i18n.getUILanguage()]
+    .filter(Boolean)
+    .map(value => String(value).toLowerCase());
+  const folder = candidates.some(value => /^zh[-_](tw|hk|mo)/.test(value))
+    ? 'zh_TW'
+    : candidates.some(value => value === 'zh' || value.startsWith('zh-') || value.startsWith('zh_'))
+      ? 'zh_CN'
+      : 'en';
+  const response = await fetch(chrome.runtime.getURL(`_locales/${folder}/messages.json`));
+  if (!response.ok) {
+    localizeStaticPopupUi();
+    return;
+  }
+  localeMessages = await response.json();
+  localizeStaticPopupUi();
+  renderSecurityQuestions();
+  chrome.storage.local.get(['keywords', 'remoteRuleConfig', 'remoteRuleStates', 'blockHistory', 'updateInfo', 'accountSession', 'accountSyncAt'], state => {
+    document.getElementById('keywords').value = (Array.isArray(state.keywords) ? state.keywords : []).join('\n');
+    updateKeywordSummary();
+    renderRemoteRules(state.remoteRuleConfig, state.remoteRuleStates);
+    renderBlockHistory(state.blockHistory);
+    renderUpdateInfo(state.updateInfo);
+    renderAccount(state.accountSession, state.accountSyncAt);
+  });
+}
+
+selectSystemLocale().catch(() => {
+  localizeStaticPopupUi();
 });

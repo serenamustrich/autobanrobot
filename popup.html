@@ -170,60 +170,60 @@
 <body>
   <div class="topbar">
     <div class="brand"><img src="icon.png" alt=""><h3>AutoBanRobot</h3></div>
-    <div class="summary"><div class="count" id="count">—</div><div class="label">累计已屏蔽</div></div>
+    <div class="summary"><div class="count" id="count">—</div><div class="label" data-i18n="blockedTotal">累计已屏蔽</div></div>
   </div>
-  <nav class="tabs" role="tablist" aria-label="插件设置">
-    <button type="button" role="tab" data-tab="keywords" aria-selected="true">关键词 <span class="tab-badge" id="keywordBadge">0</span></button>
-    <button type="button" role="tab" data-tab="rules" aria-selected="false">规则 <span class="tab-badge" id="ruleBadge">0</span></button>
-    <button type="button" role="tab" data-tab="history" aria-selected="false">Ban <span class="tab-badge" id="queueCount">0</span></button>
-    <button type="button" role="tab" data-tab="update" aria-selected="false">更新</button>
-    <button type="button" role="tab" data-tab="account" aria-selected="false">账号</button>
+  <nav class="tabs" role="tablist" aria-label="插件设置" data-i18n-aria-label="tabsAria">
+    <button type="button" role="tab" data-tab="keywords" aria-selected="true"><span data-i18n="tabKeywords">关键词</span> <span class="tab-badge" id="keywordBadge">0</span></button>
+    <button type="button" role="tab" data-tab="rules" aria-selected="false"><span data-i18n="tabRules">规则</span> <span class="tab-badge" id="ruleBadge">0</span></button>
+    <button type="button" role="tab" data-tab="history" aria-selected="false"><span data-i18n="tabHistory">Ban</span> <span class="tab-badge" id="queueCount">0</span></button>
+    <button type="button" role="tab" data-tab="update" aria-selected="false"><span data-i18n="tabUpdate">更新</span></button>
+    <button type="button" role="tab" data-tab="account" aria-selected="false"><span data-i18n="tabAccount">账号</span></button>
   </nav>
 
   <section class="tab-panel" id="keywordsPanel" role="tabpanel">
-    <div class="panel-head"><div class="panel-title">屏蔽关键词</div><div class="panel-meta" id="keywordCount">0 个</div></div>
-    <textarea id="keywords" placeholder="每行一个关键词&#10;例如：同城&#10;上门"></textarea>
-    <button class="secondary" id="loadPopular" type="button">加载热门关键词</button>
-    <div class="popular-status" id="popularStatus">仅在点击时读取，不会强制同步</div>
-    <button id="save">保存关键词</button>
+    <div class="panel-head"><div class="panel-title" data-i18n="keywordTitle">屏蔽关键词</div><div class="panel-meta" id="keywordCount">0 个</div></div>
+    <textarea id="keywords" data-i18n-placeholder="keywordsPlaceholder" placeholder="每行一个关键词&#10;例如：同城&#10;上门"></textarea>
+    <button class="secondary" id="loadPopular" type="button" data-i18n="loadPopular">加载热门关键词</button>
+    <div class="popular-status" id="popularStatus" data-i18n="popularHint">仅在点击时读取，不会强制同步</div>
+    <button id="save" data-i18n="saveKeywords">保存关键词</button>
   </section>
 
   <section class="tab-panel" id="rulesPanel" role="tabpanel" hidden>
-    <div class="panel-head"><div class="panel-title">屏蔽规则</div><div class="panel-meta" id="ruleCount">0/0 已启用</div></div>
+    <div class="panel-head"><div class="panel-title" data-i18n="ruleTitle">屏蔽规则</div><div class="panel-meta" id="ruleCount">0/0 已启用</div></div>
     <div id="remoteRules"></div>
     <div class="rule-sync">
-    <span class="rule-status" id="ruleStatus">正在读取在线规则…</span>
-    <button class="secondary" id="refreshRules" type="button">立即更新规则</button>
+    <span class="rule-status" id="ruleStatus" data-i18n="readingRules">正在读取在线规则…</span>
+    <button class="secondary" id="refreshRules" type="button" data-i18n="refreshRules">立即更新规则</button>
     </div>
   </section>
 
   <section class="tab-panel" id="historyPanel" role="tabpanel" hidden>
   <div class="history-head">
-    <div class="panel-title">已确认屏蔽清单</div>
-    <button id="clearHistory" type="button">清空记录</button>
+    <div class="panel-title" data-i18n="historyTitle">已确认屏蔽清单</div>
+    <button id="clearHistory" type="button" data-i18n="clearHistory">清空记录</button>
   </div>
   <div class="history" id="blockHistory"></div>
   </section>
 
   <section class="tab-panel" id="updatePanel" role="tabpanel" hidden>
-  <div class="panel-head"><div class="panel-title">插件更新</div></div>
+  <div class="panel-head"><div class="panel-title" data-i18n="updateTitle">插件更新</div></div>
   <div class="update-card">
     <div class="update-row">
       <span class="update-version" id="currentVersion">当前版本 —</span>
     </div>
-    <div class="update-status" id="updateStatus">更新文件直接来自 GitHub Releases</div>
+    <div class="update-status" id="updateStatus" data-i18n="updateGitHub">更新文件直接来自 GitHub Releases</div>
     <div class="update-actions">
-      <button id="checkUpdate" type="button">检查更新</button>
+      <button id="checkUpdate" type="button" data-i18n="checkUpdate">检查更新</button>
       <a id="openRelease" href="https://github.com/serenamustrich/autobanrobot/releases/latest"
-         target="_blank" rel="noreferrer" hidden>下载新版本</a>
+         target="_blank" rel="noreferrer" hidden data-i18n="downloadUpdate">下载新版本</a>
     </div>
   </div>
-  <div class="subsection"><div class="subsection-title">说明</div><div class="hint">所有规则统一显示并支持在线更新；只有插件执行能力变更时才需安装新版本。</div></div>
+  <div class="subsection"><div class="subsection-title" data-i18n="notesTitle">说明</div><div class="hint" data-i18n="updateNote">所有规则统一显示并支持在线更新；只有插件执行能力变更时才需安装新版本。</div></div>
   </section>
   <section class="tab-panel" id="accountPanel" role="tabpanel" hidden>
     <div id="accountSignedOut">
       <div class="account-card">
-        <div class="account-mode-tabs" role="tablist" aria-label="账号操作">
+        <div class="account-mode-tabs" role="tablist" aria-label="账号操作" data-i18n-aria-label="accountActionsAria">
           <button id="accountModeLogin" type="button" aria-selected="true">登录</button>
           <button id="accountModeRegister" type="button" aria-selected="false">注册</button>
           <button id="accountModeRecovery" type="button" aria-selected="false">找回密码</button>
@@ -266,13 +266,13 @@
           <img id="accountAchievementArtwork" alt="">
           <div class="achievement-copy"><div class="achievement-kicker" id="accountAchievementKicker">当前成就</div><div class="achievement-name" id="accountAchievementName"></div><div class="achievement-next" id="accountAchievementNext"></div></div>
         </div>
-        <div class="achievement-wall" id="accountAchievementWall" aria-label="成就徽章"></div>
+        <div class="achievement-wall" id="accountAchievementWall" aria-label="成就徽章" data-i18n-aria-label="achievementWall"></div>
       </div>
       <button id="accountLogout" class="account-secondary-action" type="button">退出登录</button>
     </div>
     <div class="popular-status" id="accountStatus"></div>
   </section>
-  <div class="saved" id="saved">✓ 已保存，立即生效</div>
+  <div class="saved" id="saved" data-i18n="savedApplied">✓ 已保存，立即生效</div>
   <script src="popup.js"></script>
 </body>
 </html>

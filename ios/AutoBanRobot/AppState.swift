@@ -15,6 +15,7 @@ final class AppState: ObservableObject {
     @Published private(set) var whitelist: Set<String>
     @Published private(set) var autoBanEnabled: Bool
     @Published private(set) var ruleStates: [String: Bool]
+    @Published private(set) var accountSyncError: String?
 
     var configurationChanged: (() -> Void)?
     var cookieProvider: ((String) async -> String?)?
@@ -27,7 +28,7 @@ final class AppState: ObservableObject {
     private var heartbeatTask: Task<Void, Never>?
     private var banUploadInFlight = false
     private let api = XAPIClient()
-    private let accountClient = AccountClient()
+    let accountClient: AccountClient
     private let defaults = UserDefaults.standard
     private let owner = "aagodofwealth"
     private let installationId: String
@@ -39,6 +40,7 @@ final class AppState: ObservableObject {
     private var accountPolicies: [AccountPolicy]
 
     init() {
+        accountClient = AccountClient()
         let defaultOwner = "aagodofwealth"
         installationId = defaults.string(forKey: "ios_installation_id") ?? UUID().uuidString
         defaults.set(installationId, forKey: "ios_installation_id")
@@ -73,6 +75,7 @@ final class AppState: ObservableObject {
         whitelist = Set(Self.load([String].self, key: "ios_whitelist") ?? [defaultOwner])
         autoBanEnabled = defaults.object(forKey: "ios_auto_ban_enabled") as? Bool ?? true
         ruleStates = Self.load([String: Bool].self, key: "ios_rule_states") ?? [:]
+        accountSyncError = nil
         pendingCount = queue.count
         whitelist.insert(defaultOwner)
         if shouldPersistBundledRules { persist(config, key: "ios_rules") }
@@ -158,10 +161,11 @@ final class AppState: ObservableObject {
         persist(Array(whitelist).sorted(), key: "ios_whitelist")
         configurationChanged?()
         syncLocalAccountSettings()
-        syncLocalAccountSettings()
     }
 
     func accountInstallationId() -> String { installationId }
+
+    func clearAccountSyncError() { accountSyncError = nil }
 
     func achievementEarnedAt(threshold: Int) -> Date? { defaults.object(forKey: "ios_achievement_\(threshold)_earned_at") as? Date }
 
@@ -212,10 +216,15 @@ final class AppState: ObservableObject {
     }
 
     private func syncLocalAccountSettings() {
-        guard AccountClient.currentToken() != nil else { return }
+        guard accountClient.session != nil else { return }
         Task { [weak self] in
             guard let self else { return }
-            try? await self.accountClient.push(state: self)
+            do {
+                try await self.accountClient.push(state: self)
+                self.accountSyncError = nil
+            } catch {
+                self.accountSyncError = error.localizedDescription
+            }
         }
     }
 
@@ -578,11 +587,11 @@ final class AccountClient: ObservableObject {
     private let base = URL(string: "https://ban.richccy.com/api")!
     private var settingsStreamTask: Task<Void, Never>?
     init() { session = Self.load() }
-    func logout() { if let session { Task { try? await request("auth/logout", method: "POST", token: session.accessToken) } }; Self.clear(); session = nil }
+    func logout() { stopSettingsStream(); if let session { Task { try? await request("auth/logout", method: "POST", token: session.accessToken) } }; Self.clear(); session = nil }
     func authenticate(mode: String, payload: [String: Any], state: AppState) async throws {
         let response = try await request("auth/\(mode)", method: "POST", body: payload)
         let next = try JSONDecoder().decode(AutoBanAccountSession.self, from: response)
-        Self.save(next); session = next; try await bindAndMerge(state: state, merge: true)
+        Self.save(next); session = next; try await bindAndMerge(state: state, merge: true); startSettingsStream(state: state)
     }
     func recoveryQuestion(username: String) async throws -> String {
         let data = try await request("auth/recovery/question", method: "POST", body: ["username": username])
