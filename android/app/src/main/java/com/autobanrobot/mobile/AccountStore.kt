@@ -63,8 +63,7 @@ class AccountStore(private val context: Context, private val rules: RuleStore) {
         return runCatching {
             val result = request("/account/settings", "GET", null, current.token)
             check(result.first in 200..299) { result.second.optString("code", "ACCOUNT_SYNC_FAILED") }
-            rules.setKeywords(result.second.optJSONArray("keywords")?.toStringList() ?: emptyList())
-            rules.replaceAccountWhitelist(result.second.optJSONArray("whitelist")?.toStringList() ?: emptyList())
+            applySettings(result.second)
         }
     }
 
@@ -86,8 +85,7 @@ class AccountStore(private val context: Context, private val rules: RuleStore) {
                             if (!streamActive.get()) return@forEach
                             if (!line.startsWith("data:")) return@forEach
                             val body = runCatching { JSONObject(line.removePrefix("data:").trim()) }.getOrNull() ?: return@forEach
-                            rules.setKeywords(body.optJSONArray("keywords")?.toStringList() ?: emptyList())
-                            rules.replaceAccountWhitelist(body.optJSONArray("whitelist")?.toStringList() ?: emptyList())
+                            applySettings(body)
                             onSettings()
                         }
                     }
@@ -110,12 +108,18 @@ class AccountStore(private val context: Context, private val rules: RuleStore) {
         val payload = JSONObject().put("keywords", JSONArray(rules.keywords())).put("whitelist", JSONArray(rules.accountWhitelist().toList()))
         val result = request("/account/settings${if (merge) "/merge" else ""}", if (merge) "POST" else "PUT", payload, current.token)
         check(result.first in 200..299) { result.second.optString("code", "ACCOUNT_SYNC_FAILED") }
-        rules.setKeywords(result.second.optJSONArray("keywords")?.toStringList() ?: emptyList())
-        rules.replaceAccountWhitelist(result.second.optJSONArray("whitelist")?.toStringList() ?: emptyList())
+        applySettings(result.second)
     }
     private fun contextInstallationId(): String {
         val client = context.getSharedPreferences("autoban_app_client", Context.MODE_PRIVATE)
         return client.getString("installation_id", null) ?: java.util.UUID.randomUUID().toString().also { client.edit().putString("installation_id", it).apply() }
+    }
+
+    private fun applySettings(body: JSONObject) {
+        val existing = rules.keywords().toSet()
+        val remote = body.optJSONArray("keywords")?.toStringList() ?: emptyList()
+        rules.setKeywords(remote.filter { it !in existing } + remote.filter { it in existing })
+        rules.replaceAccountWhitelist(body.optJSONArray("whitelist")?.toStringList() ?: emptyList())
     }
     private fun request(path: String, method: String, body: JSONObject?, token: String?): Pair<Int, JSONObject> {
         val connection = URL(base + path).openConnection() as HttpURLConnection

@@ -204,9 +204,11 @@ final class AppState: ObservableObject {
     }
 
     func applyCloudSettings(keywords: [String], whitelist: [String]) {
+        let existing = Set(self.keywords)
         var seen = Set<String>()
-        self.keywords = keywords.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        let normalized = keywords.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty && seen.insert($0).inserted }
+        self.keywords = (normalized.filter { !existing.contains($0) } + normalized.filter { existing.contains($0) })
             .prefix(1_000).map { $0 }
         self.whitelist = Set(whitelist.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
         self.whitelist.insert(owner)

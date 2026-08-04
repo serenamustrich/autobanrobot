@@ -94,13 +94,19 @@ function showTab(requestedTab, remember = true) {
 }
 
 document.getElementById('save').addEventListener('click', () => {
-  const kws = document.getElementById('keywords').value
+  const entered = document.getElementById('keywords').value
     .split('\n').map(s => s.trim()).filter(Boolean);
-
-  chrome.storage.local.set({
-    keywords: kws
-  }, () => {
-    showSaved();
+  chrome.storage.local.get(['keywords'], stored => {
+    const existing = Array.isArray(stored.keywords) ? stored.keywords : [];
+    const existingSet = new Set(existing.map(keyword => String(keyword).trim()).filter(Boolean));
+    const additions = entered.filter(keyword => !existingSet.has(keyword));
+    const retained = entered.filter(keyword => existingSet.has(keyword));
+    const keywords = [...new Set([...additions, ...retained])];
+    chrome.storage.local.set({ keywords }, () => {
+      document.getElementById('keywords').value = keywords.join('\n');
+      updateKeywordSummary();
+      showSaved();
+    });
   });
 });
 

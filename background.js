@@ -385,10 +385,19 @@ async function accountHeaders() {
 }
 
 async function applyAccountSettings(body) {
+  const stored = await chrome.storage.local.get(['keywords']);
+  const existing = new Set((Array.isArray(stored.keywords) ? stored.keywords : [])
+    .map(keyword => String(keyword).trim()).filter(Boolean));
+  const remoteKeywords = [...new Set((Array.isArray(body.keywords) ? body.keywords : [])
+    .map(keyword => String(keyword).trim()).filter(Boolean))];
+  const keywords = [
+    ...remoteKeywords.filter(keyword => !existing.has(keyword)),
+    ...remoteKeywords.filter(keyword => existing.has(keyword))
+  ];
   accountSyncInFlight = true;
   try {
     await chrome.storage.local.set({
-      keywords: Array.isArray(body.keywords) ? body.keywords : [],
+      keywords,
       accountWhitelist: Array.isArray(body.whitelist) ? body.whitelist : [],
       accountSyncAt: body.updatedAt || new Date().toISOString(),
       accountSettingsRevision: body.revision ?? 0
