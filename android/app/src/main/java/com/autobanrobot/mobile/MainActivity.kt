@@ -1,14 +1,12 @@
 package com.autobanrobot.mobile
 
 import android.app.Activity
+import android.app.Dialog
 import android.content.ClipData
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
@@ -37,9 +35,11 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
@@ -129,10 +129,10 @@ class MainActivity : Activity() {
     private lateinit var toolbarTitle: TextView
     private lateinit var toolbarAction: TextView
     private lateinit var bottomNav: LinearLayout
-    private lateinit var screenshotButton: Button
     private var currentPage = PAGE_HOME
     private var topInsetPx = 0
     private lateinit var ruleStore: RuleStore
+    private lateinit var accountStore: AccountStore
     private lateinit var pluginManager: PluginManager
     private lateinit var queue: BlockQueue
     private lateinit var auth: AuthState
@@ -140,6 +140,9 @@ class MainActivity : Activity() {
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var pendingCameraUri: Uri? = null
     private var whitelistInput: EditText? = null
+    private val pendingPopularKeywords = mutableListOf<String>()
+    private val newlyAddedKeywords = mutableSetOf<String>()
+    private var keywordStatus = ""
     private val heartbeatHandler = Handler(Looper.getMainLooper())
     private var heartbeatActive = false
     private val appInstallationId by lazy {
@@ -148,9 +151,19 @@ class MainActivity : Activity() {
             preferences.edit().putString("installation_id", it).apply()
         }
     }
+    private val appDeviceName by lazy {
+        listOf(Build.MANUFACTURER, Build.MODEL)
+            .filter { it.isNotBlank() }
+            .joinToString(" ")
+            .take(128)
+    }
     private val heartbeatRunnable = object : Runnable {
         override fun run() {
-            Thread { api.sendHeartbeat(appInstallationId, APP_VERSION) }.start()
+            Thread {
+                val token = accountStore.session()?.token
+                api.sendHeartbeat(appInstallationId, APP_VERSION, appDeviceName, token)
+                if (token != null) accountStore.pull()
+            }.start()
             if (heartbeatActive) heartbeatHandler.postDelayed(this, APP_HEARTBEAT_INTERVAL_MS)
         }
     }
@@ -158,6 +171,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ruleStore = RuleStore(this)
+        accountStore = AccountStore(this, ruleStore)
         pluginManager = PluginManager(this)
         auth = AuthState()
         api = XApiClient(auth)
@@ -209,7 +223,7 @@ class MainActivity : Activity() {
         toolbar = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(16), dp(8), dp(16), dp(8))
-            setBackgroundColor(INK)
+            setBackgroundColor(Color.WHITE)
             visibility = View.GONE
         }
         toolbarBack = ImageButton(this).apply {
@@ -223,9 +237,9 @@ class MainActivity : Activity() {
         }
         toolbarTitle = TextView(this).apply {
             text = "AutoBanRobot"
-            textSize = 18f
+            textSize = 20f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(Color.WHITE)
+            setTextColor(INK)
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f)
         }
@@ -330,26 +344,13 @@ class MainActivity : Activity() {
             setTextColor(MUTED)
             setPadding(0, dp(8), dp(8), dp(8))
             setSingleLine(true)
-        }
-        screenshotButton = styledButton("截图", BLUE, Color.WHITE, null) {
-            saveWatermarkedScreenshot()
-        }.apply {
-            textSize = 12f
-            layoutParams = LinearLayout.LayoutParams(dp(68), dp(32))
-        }
-        val statusRow = LinearLayout(this).apply {
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(14), dp(2), dp(6), dp(2))
-            background = rounded(SURFACE_MUTED, 14f)
-            addView(status, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-            addView(screenshotButton)
+            visibility = View.GONE
         }
         homeContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.WHITE)
             addView(webView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
-            setPadding(dp(10), dp(8), dp(10), dp(8))
-            addView(statusRow, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            setPadding(dp(10), dp(8), dp(10), 0)
         }
         screenFrame = FrameLayout(this).apply {
             setBackgroundColor(SURFACE)
@@ -362,9 +363,11 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
             setPadding(dp(8), dp(2), dp(8), dp(2))
         }
-        bottomNav.addView(navButton("关键词") { showKeywordsPage() })
-        bottomNav.addView(navButton("规则") { showRulesPage() })
-        bottomNav.addView(navButton("Ban记录") { showHistoryPage() })
+        bottomNav.addView(navButton("浏览", R.drawable.ic_tab_home) { showHome() })
+        bottomNav.addView(navButton("关键词", R.drawable.ic_tab_keywords) { showKeywordsPage() })
+        bottomNav.addView(navButton("规则", R.drawable.ic_tab_rules) { showRulesPage() })
+        bottomNav.addView(navButton("Ban记录", R.drawable.ic_tab_history) { showHistoryPage() })
+        bottomNav.addView(navButton("账号", R.drawable.ic_tab_account) { showAccountPage() })
         root.addView(bottomNav)
         root.setOnApplyWindowInsetsListener { _, insets ->
             val topInset: Int
@@ -383,9 +386,11 @@ class MainActivity : Activity() {
             }
             topInsetPx = topInset
             toolbar.setPadding(dp(16), topInset + dp(8), dp(16), dp(8))
-            bottomNav.setPadding(dp(8), dp(2), dp(8), bottomInset + dp(2))
+            // The navigation is edge-to-edge. Keep only the physical gesture inset;
+            // any extra padding here wastes browser height.
+            bottomNav.setPadding(dp(6), 0, dp(6), bottomInset)
             if (toolbar.visibility == View.GONE) {
-                homeContainer.setPadding(dp(10), topInset + dp(8), dp(10), dp(8))
+                homeContainer.setPadding(dp(10), topInset + dp(8), dp(10), 0)
             }
             insets
         }
@@ -468,30 +473,37 @@ class MainActivity : Activity() {
 
     private fun showPage(title: String, page: View) {
         currentPage = title
-        applySystemBars(light = false)
+        applySystemBars(light = true)
         toolbar.visibility = View.VISIBLE
-        toolbarBack.visibility = View.VISIBLE
+        toolbarBack.visibility = if (title == "白名单") View.VISIBLE else View.GONE
         toolbarTitle.text = title
         toolbarAction.isClickable = false
-        if (title == "规则") {
+        if (title == "关键词") {
+            toolbarAction.visibility = View.VISIBLE
+            toolbarAction.text = "加载热门"
+            toolbarAction.setTextColor(BLUE)
+            toolbarAction.background = null
+            toolbarAction.isClickable = true
+            toolbarAction.setOnClickListener { loadPopularKeywordsForEditor() }
+        } else if (title == "规则") {
             toolbarAction.visibility = View.VISIBLE
             toolbarAction.text = "更新"
-            toolbarAction.setTextColor(Color.WHITE)
-            toolbarAction.background = rounded(Color.rgb(38, 45, 51), 12f)
+            toolbarAction.setTextColor(BLUE)
+            toolbarAction.background = null
             toolbarAction.isClickable = true
             toolbarAction.setOnClickListener { refreshRulesFromToolbar() }
         } else if (title == "Ban记录") {
             toolbarAction.visibility = View.VISIBLE
             toolbarAction.text = "白名单"
-            toolbarAction.setTextColor(Color.WHITE)
-            toolbarAction.background = rounded(Color.rgb(38, 45, 51), 12f)
+            toolbarAction.setTextColor(BLUE)
+            toolbarAction.background = null
             toolbarAction.isClickable = true
             toolbarAction.setOnClickListener { showWhitelistPage() }
         } else if (title == "白名单") {
             toolbarAction.visibility = View.VISIBLE
             toolbarAction.text = "添加"
-            toolbarAction.setTextColor(Color.WHITE)
-            toolbarAction.background = rounded(Color.rgb(38, 45, 51), 12f)
+            toolbarAction.setTextColor(BLUE)
+            toolbarAction.background = null
             toolbarAction.isClickable = true
             toolbarAction.setOnClickListener {
                 whitelistInput?.requestFocus()
@@ -501,78 +513,258 @@ class MainActivity : Activity() {
         }
         screenFrame.removeAllViews()
         screenFrame.addView(page, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        bottomNav.visibility = View.GONE
+        bottomNav.visibility = View.VISIBLE
     }
 
     private fun showKeywordsPage() {
         val content = pageContent()
-        content.addView(pageIntro("屏蔽关键词", "命中后会在当前 X 页面实时标记，并交给自动 Ban 队列处理。", "${ruleStore.keywords().size} 个关键词"))
-        val card = card().apply {
-            addView(sectionLabel("关键词列表"))
+        val input = EditText(this).apply {
+            hint = "输入关键词"
+            textSize = 16f
+            isSingleLine = true
+            setPadding(dp(14), 0, dp(14), 0)
+            background = rounded(SURFACE_MUTED, 13f, BORDER)
+        }
+        val editor = card().apply {
+            addView(sectionLabel("新增关键词"))
+            addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)).apply { topMargin = dp(10) })
             addView(TextView(context).apply {
-                text = "每行填写一个关键词"
+                text = "保存后会立即重新扫描当前 X 页面"
                 textSize = 12f
                 setTextColor(MUTED)
-            })
-            val input = EditText(context).apply {
-                hint = "例如：同城\n上门\n兼职"
-                setText(ruleStore.keywords().joinToString("\n"))
-                textSize = 14f
-                gravity = Gravity.TOP
-                minLines = 12
-                setPadding(dp(14), dp(12), dp(14), dp(12))
-                background = rounded(SURFACE_MUTED, 14f, BORDER)
-            }
-            addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(250)).apply {
-                topMargin = dp(10)
-            })
-            val popularStatus = TextView(context).apply {
-                text = "仅在点击时读取，不会强制同步"
-                textSize = 11f
-                setTextColor(MUTED)
                 setPadding(0, dp(8), 0, 0)
-            }
-            addView(outlineButton("加载热门关键词") { button ->
-                button.isEnabled = false
-                button.alpha = 0.55f
-                popularStatus.text = "正在从线上服务读取热门关键词…"
-                ruleStore.loadPopularKeywords { popular, _ ->
-                    runOnUiThread {
-                        button.isEnabled = true
-                        button.alpha = 1f
-                        if (popular == null) {
-                            popularStatus.text = "无法连接热门关键词服务，请稍后重试"
-                        } else {
-                            val current = input.text.toString().split("\n")
-                                .map { it.trim() }
-                                .filter { it.isNotEmpty() }
-                            val merged = LinkedHashSet<String>()
-                            merged.addAll(current)
-                            merged.addAll(popular)
-                            val added = merged.size - current.size
-                            input.setText(merged.joinToString("\n"))
-                            popularStatus.text = "已加载 ${popular.size} 个热门词，新增 $added 个；请确认后点击保存"
-                        }
-                    }
+            })
+            addView(primaryButton("保存并立即生效") {
+                val typed = input.text.toString().trim()
+                val additions = (pendingPopularKeywords + listOfNotNull(typed.takeIf { it.isNotBlank() }))
+                    .distinct()
+                if (additions.isNotEmpty()) {
+                    ruleStore.setKeywords(additions + ruleStore.keywords())
+                    newlyAddedKeywords.clear()
+                    newlyAddedKeywords.addAll(additions)
+                    pendingPopularKeywords.clear()
+                    keywordStatus = "已保存，立即生效"
+                    if (accountStore.session() != null) Thread { accountStore.sync() }.start()
+                    injectContent()
+                    showKeywordsPage()
                 }
-            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)).apply {
-                topMargin = dp(12)
-            })
-            addView(popularStatus)
-            addView(primaryButton("保存关键词") {
-                ruleStore.setKeywords(input.text.toString().split("\n"))
-                injectContent()
-                status.text = "关键词已保存，立即生效"
-                showHome()
-                Toast.makeText(this@MainActivity, "关键词已保存", Toast.LENGTH_SHORT).show()
-            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply {
-                topMargin = dp(14)
-            })
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply { topMargin = dp(12) })
         }
-        content.addView(card, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            topMargin = dp(14)
-        })
+        content.addView(editor)
+
+        val displayed = (pendingPopularKeywords + ruleStore.keywords()).distinct()
+        val header = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            addView(TextView(context).apply { text = "当前关键词（${displayed.size}）"; textSize = 14f; setTypeface(typeface, Typeface.BOLD); setTextColor(INK) }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            if (keywordStatus.isNotBlank()) addView(TextView(context).apply { text = keywordStatus; textSize = 12f; setTextColor(if (keywordStatus.startsWith("无法")) RED else Color.rgb(52, 143, 88)); maxLines = 1 })
+        }
+        content.addView(header, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(20) })
+        displayed.forEach { keyword ->
+            val isPending = pendingPopularKeywords.contains(keyword)
+            val row = card().apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(16), dp(9), dp(10), dp(9))
+                addView(TextView(context).apply { text = keyword; textSize = 16f; setTextColor(INK) }, LinearLayout.LayoutParams(0, dp(34), 1f))
+                if (newlyAddedKeywords.contains(keyword)) addView(TextView(context).apply {
+                    text = "NEW"; textSize = 10f; setTypeface(typeface, Typeface.BOLD); setTextColor(BLUE); gravity = Gravity.CENTER
+                    background = rounded(Color.rgb(232, 244, 255), 10f); setPadding(dp(6), dp(3), dp(6), dp(3))
+                })
+                addView(TextView(context).apply {
+                    text = "删除"; textSize = 13f; setTextColor(RED); gravity = Gravity.CENTER; setPadding(dp(12), 0, 0, 0)
+                    setOnClickListener {
+                        if (isPending) pendingPopularKeywords.remove(keyword) else ruleStore.setKeywords(ruleStore.keywords().filter { it != keyword })
+                        newlyAddedKeywords.remove(keyword)
+                        keywordStatus = "已删除“$keyword”，立即生效"
+                        if (!isPending && accountStore.session() != null) Thread { accountStore.sync() }.start()
+                        injectContent()
+                        showKeywordsPage()
+                    }
+                }, LinearLayout.LayoutParams(dp(58), dp(34)))
+            }
+            content.addView(row, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(7) })
+        }
         showPage("关键词", scrollPage(content))
+    }
+
+    private fun loadPopularKeywordsForEditor() {
+        toolbarAction.isEnabled = false
+        toolbarAction.alpha = 0.55f
+        toolbarAction.text = "加载中"
+        keywordStatus = ""
+        ruleStore.loadPopularKeywords { popular, _ ->
+            runOnUiThread {
+                toolbarAction.isEnabled = true
+                toolbarAction.alpha = 1f
+                if (popular == null) {
+                    keywordStatus = "无法连接热门关键词服务，请稍后重试"
+                } else {
+                    val known = (ruleStore.keywords() + pendingPopularKeywords).toSet()
+                    val additions = popular.map { it.trim() }.filter { it.isNotBlank() && it !in known }.distinct()
+                    pendingPopularKeywords.clear()
+                    pendingPopularKeywords.addAll(additions)
+                    newlyAddedKeywords.clear()
+                    newlyAddedKeywords.addAll(additions)
+                    keywordStatus = "新增 ${additions.size} 个，点击保存立即生效"
+                }
+                showKeywordsPage()
+            }
+        }
+    }
+
+    /** Account is a root tab, matching the iPhone TabView rather than opening a separate screen. */
+    private fun showAccountPage() {
+        val session = accountStore.session()
+        if (session == null) {
+            startActivity(Intent(this, AccountActivity::class.java))
+            return
+        }
+        val content = pageContent()
+        val profile = card()
+        profile.setPadding(dp(18), dp(18), dp(18), dp(18))
+        profile.background = rounded(Color.rgb(244, 248, 255), 20f, Color.rgb(208, 223, 242))
+        profile.addView(TextView(this).apply {
+            text = session.username
+            textSize = 21f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(INK)
+        })
+        profile.addView(TextView(this).apply {
+            text = "关键词和白名单会在此设备自动同步"
+            textSize = 13f
+            setTextColor(MUTED)
+            setPadding(0, dp(5), 0, dp(15))
+        })
+        profile.addView(primaryButton("立即同步") { button ->
+            button.isEnabled = false
+            button.text = "正在同步…"
+            Thread {
+                val result = accountStore.bindAndMerge()
+                runOnUiThread {
+                    button.isEnabled = true
+                    button.text = if (result.isSuccess) "同步完成" else "立即同步"
+                    if (result.isSuccess) injectContent()
+                }
+            }.start()
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)))
+        content.addView(profile)
+
+        val contribution = queue.confirmedBanTotal()
+        val contributionCard = card()
+        contributionCard.setPadding(dp(14), dp(14), dp(14), dp(14))
+        val metrics = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        var globalTotalValue: TextView? = null
+        metrics.addView(metric("全网累计 Ban", accountStore.cachedGlobalBanTotal()?.toString() ?: "--", BLUE) { globalTotalValue = it }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        metrics.addView(View(this).apply { setBackgroundColor(Color.rgb(222, 228, 235)) }, LinearLayout.LayoutParams(dp(1), dp(42)).apply { marginStart = dp(16); marginEnd = dp(16) })
+        metrics.addView(metric("本机贡献", contribution.toString(), RED), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        contributionCard.addView(metrics)
+        val currentLevel = achievementLevel(contribution)
+        val currentAchievement = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, dp(16), 0, dp(14)) }
+        currentAchievement.addView(ImageView(this).apply {
+            setImageResource(achievementDrawable(contribution)); adjustViewBounds = true; scaleType = ImageView.ScaleType.CENTER_INSIDE
+            setOnClickListener { showAchievementOverlay(currentLevel, contribution) }
+        }, LinearLayout.LayoutParams(dp(92), dp(92)))
+        currentAchievement.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), 0, 0, 0)
+            addView(TextView(this@MainActivity).apply { text = "当前成就"; textSize = 12f; setTextColor(MUTED) })
+            addView(TextView(this@MainActivity).apply {
+                text = if (contribution >= 10) achievementTitle(contribution) else "首枚徽章待解锁"
+                textSize = 19f; setTypeface(typeface, Typeface.BOLD); setTextColor(INK); setPadding(0, dp(4), 0, 0)
+            })
+            val nextLevel = if (contribution >= achievementThreshold(10)) null else (1..10).first { contribution < achievementThreshold(it) }
+            addView(TextView(this@MainActivity).apply {
+                text = nextLevel?.let { "再处理 ${achievementThreshold(it) - contribution} 条，解锁 Lv.$it ${achievementTitle(achievementThreshold(it)).removePrefix("Lv.$it ")}" } ?: "已解锁全部 10 枚成就徽章"
+                textSize = 12f; setTextColor(MUTED); setPadding(0, dp(5), 0, 0)
+            })
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        contributionCard.addView(currentAchievement)
+        val badgeRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        for (level in 1..10) {
+            val unlocked = contribution >= achievementThreshold(level)
+            badgeRow.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+                background = rounded(if (unlocked) Color.rgb(232, 241, 255) else Color.rgb(241, 243, 245), 13f)
+                addView(ImageView(this@MainActivity).apply {
+                    setImageResource(achievementDrawableForLevel(level)); adjustViewBounds = true; scaleType = ImageView.ScaleType.CENTER_INSIDE
+                    alpha = if (unlocked) 1f else 0.32f
+                    setOnClickListener { showAchievementOverlay(level, contribution) }
+                }, LinearLayout.LayoutParams(dp(62), dp(62)))
+                addView(TextView(this@MainActivity).apply {
+                    text = "Lv.$level"; textSize = 10f; setTypeface(typeface, Typeface.BOLD); gravity = Gravity.CENTER
+                    setTextColor(if (unlocked) BLUE else MUTED)
+                }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(20)))
+                setOnClickListener { showAchievementOverlay(level, contribution) }
+            }, LinearLayout.LayoutParams(dp(74), dp(92)).apply { marginEnd = dp(10) })
+        }
+        contributionCard.addView(HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(badgeRow) }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(92)))
+        content.addView(sectionLabel("贡献与成就"), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(20); bottomMargin = dp(2) })
+        content.addView(contributionCard, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+        Thread {
+            accountStore.refreshGlobalBanTotal().onSuccess { total ->
+                runOnUiThread { globalTotalValue?.takeIf { it.isAttachedToWindow }?.text = total.toString() }
+            }
+        }.start()
+        content.addView(dangerOutlineButton("退出账号") {
+            Thread { accountStore.logout(); runOnUiThread { showAccountPage() } }.start()
+        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(46)).apply { topMargin = dp(18) })
+        showPage("账号", scrollPage(content))
+    }
+
+    private fun metric(label: String, value: String, color: Int, onValueReady: ((TextView) -> Unit)? = null): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        addView(TextView(this@MainActivity).apply { text = label; textSize = 12f; setTextColor(MUTED) })
+        addView(TextView(this@MainActivity).apply {
+            text = value; textSize = 20f; setTypeface(typeface, Typeface.BOLD); setTextColor(color); setPadding(0, dp(3), 0, 0)
+            onValueReady?.invoke(this)
+        })
+    }
+
+    private fun achievementTitle(contribution: Long): String = when {
+        contribution >= 300_000 -> "Lv.10 终局守护"
+        contribution >= 100_000 -> "Lv.9 裁决官"
+        contribution >= 30_000 -> "Lv.8 破障者"
+        contribution >= 10_000 -> "Lv.7 万级猎人"
+        contribution >= 3_000 -> "Lv.6 净域使"
+        contribution >= 1_000 -> "Lv.5 守望者"
+        contribution >= 300 -> "Lv.4 先锋"
+        contribution >= 100 -> "Lv.3 猎手"
+        contribution >= 30 -> "Lv.2 清道夫"
+        contribution >= 10 -> "Lv.1 侦察员"
+        else -> "待解锁"
+    }
+
+    private fun achievementLevel(contribution: Long): Int = when {
+        contribution >= 300_000 -> 10; contribution >= 100_000 -> 9; contribution >= 30_000 -> 8; contribution >= 10_000 -> 7; contribution >= 3_000 -> 6; contribution >= 1_000 -> 5; contribution >= 300 -> 4; contribution >= 100 -> 3; contribution >= 30 -> 2; contribution >= 10 -> 1; else -> 1
+    }
+    private fun achievementThreshold(level: Int): Long = listOf(10L, 30L, 100L, 300L, 1_000L, 3_000L, 10_000L, 30_000L, 100_000L, 300_000L)[level - 1]
+    private fun achievementDrawable(contribution: Long) = achievementDrawableForLevel(achievementLevel(contribution))
+    private fun achievementDrawableForLevel(level: Int): Int = resources.getIdentifier("contribution_badge_%02d".format(level), "drawable", packageName)
+    private fun showAchievementOverlay(level: Int, contribution: Long) {
+        val dialog = Dialog(this)
+        val threshold = achievementThreshold(level)
+        val unlocked = contribution >= threshold
+        dialog.setContentView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(32), dp(32), dp(32), dp(32)); background = rounded(Color.TRANSPARENT, 24f)
+            isClickable = true
+            setOnClickListener { dialog.dismiss() }
+            addView(ImageView(context).apply { setImageResource(achievementDrawableForLevel(level)); adjustViewBounds = true; alpha = if (unlocked) 1f else .32f }, LinearLayout.LayoutParams(dp(236), dp(236)))
+            addView(TextView(context).apply { text = "Lv.$level ${achievementTitle(threshold)}"; textSize = 22f; setTypeface(typeface, Typeface.BOLD); setTextColor(Color.WHITE); gravity = Gravity.CENTER }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42)))
+            addView(TextView(context).apply { text = "达成条件：累计贡献 $threshold 条"; textSize = 14f; setTextColor(Color.LTGRAY); gravity = Gravity.CENTER }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, dp(13), 0, dp(6))
+                addView(TextView(context).apply { text = "贡献进度"; textSize = 12f; setTextColor(Color.LTGRAY) }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                addView(TextView(context).apply { text = "$contribution / $threshold"; textSize = 12f; setTypeface(typeface, Typeface.BOLD); setTextColor(Color.WHITE) })
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            addView(ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal).apply {
+                max = 1000
+                progress = ((contribution.coerceAtMost(threshold).toDouble() / threshold) * 1000).toInt()
+                progressDrawable.setTint(if (unlocked) Color.rgb(236, 184, 43) else BLUE)
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(10)))
+        })
+        dialog.setCanceledOnTouchOutside(true)
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); dialog.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND); dialog.window?.attributes = dialog.window?.attributes?.apply { dimAmount = .72f }; dialog.show()
+        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
     }
 
     private fun showRulesPage() {
@@ -592,9 +784,10 @@ class MainActivity : Activity() {
         val remoteRules = config.optJSONArray("rules") ?: JSONArray()
         val enabledCount = (0 until remoteRules.length()).count { index ->
             val rule = remoteRules.optJSONObject(index) ?: return@count false
-            rule.optBoolean("enabled", true) && states.optBoolean(rule.optString("id"), true)
+            if (states.has(rule.optString("id"))) states.optBoolean(rule.optString("id"))
+            else rule.optBoolean("enabled", true)
         }
-        content.addView(pageIntro("屏蔽规则", "把复杂的屏蔽逻辑拆成清晰开关，规则修改后会立即重新扫描当前页面。", "$enabledCount/${remoteRules.length()} 条已启用"))
+        content.addView(sectionLabel("自动处理"))
 
         val autoCard = card()
         val autoRow = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
@@ -613,7 +806,8 @@ class MainActivity : Activity() {
             }
         })
         autoCard.addView(autoRow)
-        content.addView(autoCard, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14) })
+        content.addView(autoCard, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) })
+        content.addView(sectionLabel("匹配规则（$enabledCount/${remoteRules.length()} 已启用）"), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(20) })
 
         for (index in 0 until remoteRules.length()) {
             val rule = remoteRules.optJSONObject(index) ?: continue
@@ -629,7 +823,7 @@ class MainActivity : Activity() {
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             })
             row.addView(Switch(this).apply {
-                isChecked = rule.optBoolean("enabled", true) && states.optBoolean(id, true)
+                isChecked = if (states.has(id)) states.optBoolean(id) else rule.optBoolean("enabled", true)
                 setOnCheckedChangeListener { _, enabled ->
                     ruleStore.setRuleEnabled(id, enabled)
                     injectContent()
@@ -642,7 +836,7 @@ class MainActivity : Activity() {
                 setTextColor(MUTED)
                 setPadding(0, dp(6), 0, 0)
             })
-            content.addView(ruleCard, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+            content.addView(ruleCard, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(7) })
         }
 
         showPage("规则", scrollPage(content))
@@ -662,207 +856,134 @@ class MainActivity : Activity() {
 
     private fun showHistoryPage() {
         val history = queue.history()
-        val confirmedBanTotal = queue.confirmedBanTotal()
         val pending = queue.queueSnapshot()
         val content = pageContent()
         var loadNextHistoryPage: (() -> Unit)? = null
-        content.addView(pageIntro(
-            "Ban记录",
-            "累计数字永久递增；本机仅保留最近 1000 条已被 X 接口确认成功的记录。",
-            "累计 $confirmedBanTotal 条已确认"
-        ))
+
         if (pending.length() > 0) {
-            content.addView(sectionLabel("处理队列（${pending.length()}）"), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                topMargin = dp(18)
-            })
+            content.addView(sectionLabel("处理队列（${pending.length()}）"))
             for (index in 0 until pending.length()) {
                 val item = pending.optJSONObject(index) ?: continue
                 val username = item.optString("username")
-                val queueCard = card()
-                val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-                row.addView(TextView(this).apply {
-                    text = "@${ruleStore.displayAccount(username)}"
-                    textSize = 15f
-                    setTypeface(typeface, Typeface.BOLD)
-                    setTextColor(INK)
-                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-                })
-                row.addView(TextView(this).apply {
-                    text = item.optString("operationState", "等待处理")
-                    textSize = 12f
-                    setTextColor(BLUE)
-                })
-                queueCard.addView(row)
-                queueCard.addView(TextView(this).apply {
-                    text = "尝试次数：${item.optInt("attempts", 0)}"
-                    textSize = 12f
-                    setTextColor(MUTED)
-                    setPadding(0, dp(6), 0, 0)
-                })
-                val queueActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-                queueActions.addView(outlineButton("立即重试") {
-                    queue.retryQueued(username) { runOnUiThread { showHistoryPage() } }
-                }, LinearLayout.LayoutParams(0, dp(42), 1f).apply { topMargin = dp(10) })
-                queueActions.addView(dangerOutlineButton("移出队列") {
-                    queue.removeQueued(username) { runOnUiThread { showHistoryPage() } }
-                }, LinearLayout.LayoutParams(0, dp(42), 1f).apply {
-                    topMargin = dp(10)
-                    marginStart = dp(8)
-                })
-                queueCard.addView(queueActions)
-                content.addView(queueCard, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+                val row = card().apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(dp(14), dp(10), dp(10), dp(10))
+                    addView(TextView(context).apply {
+                        text = "@${ruleStore.displayAccount(username)}\n${item.optString("operationState", "等待处理")}"
+                        textSize = 14f; setTextColor(INK); setTypeface(typeface, Typeface.BOLD)
+                    }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                    addView(TextView(context).apply {
+                        text = "⋯"; textSize = 24f; setTextColor(MUTED); gravity = Gravity.CENTER
+                        setOnClickListener { anchor ->
+                            android.widget.PopupMenu(this@MainActivity, anchor).apply {
+                                menu.add(Menu.NONE, 1, 1, "立即重试")
+                                menu.add(Menu.NONE, 2, 2, "移出队列")
+                                setOnMenuItemClickListener { selected ->
+                                    if (selected.itemId == 1) queue.retryQueued(username) { runOnUiThread { showHistoryPage() } }
+                                    else queue.removeQueued(username) { runOnUiThread { showHistoryPage() } }
+                                    true
+                                }
+                                show()
+                            }
+                        }
+                    }, LinearLayout.LayoutParams(dp(38), dp(38)))
+                }
+                content.addView(row, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(7) })
             }
         }
+
+        content.addView(sectionLabel("记录"), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = if (pending.length() > 0) dp(18) else 0 })
         if (history.length() == 0) {
-            val empty = card().apply {
+            content.addView(card().apply {
                 gravity = Gravity.CENTER
                 addView(TextView(context).apply {
                     text = "还没有已确认的 Ban记录\n命中规则后，记录会显示在这里"
-                    textSize = 14f
-                    setTextColor(MUTED)
-                    gravity = Gravity.CENTER
-                    setPadding(dp(8), dp(28), dp(8), dp(28))
+                    textSize = 14f; setTextColor(MUTED); gravity = Gravity.CENTER; setPadding(dp(8), dp(26), dp(8), dp(26))
                 })
-            }
-            content.addView(empty, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(14) })
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) })
         } else {
             val records = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-            content.addView(records, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            val historyLoadStatus = TextView(this).apply {
-                textSize = 12f
-                setTextColor(MUTED)
-                gravity = Gravity.CENTER
-                setPadding(0, dp(14), 0, dp(4))
-            }
-            content.addView(historyLoadStatus, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            content.addView(records)
             var nextHistoryIndex = 0
             var loadingHistoryPage = false
 
             fun appendHistoryRecord(item: JSONObject) {
-                val record = card()
-                record.addView(TextView(this).apply {
-                    val displayName = item.optString("displayName").trim()
-                    text = if (displayName.isBlank()) "@${item.optString("username")}" else "$displayName  (@${item.optString("username")})"
-                    textSize = 16f
-                    setTypeface(typeface, android.graphics.Typeface.BOLD)
-                    setTextColor(INK)
-                })
-                record.addView(TextView(this).apply {
-                    text = "${formatLocalTime(item.optString("blockedAt"))} · ${item.optString("reason").ifBlank { "规则命中" }}"
-                    textSize = 12f
-                    setTextColor(MUTED)
-                    setPadding(0, dp(6), 0, 0)
-                })
-                if (item.optString("content").isNotBlank()) record.addView(TextView(this).apply {
-                    text = item.optString("content")
-                    textSize = 12f
-                    setTextColor(INK)
-                    maxLines = 3
-                    ellipsize = android.text.TextUtils.TruncateAt.END
-                    background = rounded(SURFACE_MUTED, 12f)
-                    setPadding(dp(10), dp(9), dp(10), dp(9))
-                    setPaddingRelative(dp(10), dp(9), dp(10), dp(9))
-                    layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                        topMargin = dp(9)
-                    }
-                })
                 val username = item.optString("username").trim()
-                val whitelistAction = if (ruleStore.isWhitelisted(username)) {
-                    outlineButton("移出白名单") {
-                        ruleStore.removeAccount(username)
-                        injectContent()
-                        showHistoryPage()
-                    }
-                } else {
-                    outlineButton("加入白名单") { button ->
-                        ruleStore.rememberAccount(username)
-                        injectContent()
-                        button.text = "移出白名单"
-                        button.isEnabled = true
-                        button.setOnClickListener {
-                            ruleStore.removeAccount(username)
-                            injectContent()
-                            showHistoryPage()
-                        }
-                        queue.unblock(item) { outcome ->
-                            runOnUiThread {
-                                if (outcome.state == "success" || outcome.state == "already-unblocked") {
-                                    showHistoryPage()
+                val isWhitelisted = ruleStore.isWhitelisted(username)
+                val isBlocked = item.optString("unblockedAt").isBlank()
+                val record = card().apply { setPadding(dp(12), dp(10), dp(12), dp(10)) }
+                val header = LinearLayout(this).apply { gravity = Gravity.TOP or Gravity.CENTER_VERTICAL }
+                header.addView(LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    val displayName = item.optString("displayName").trim()
+                    addView(TextView(this@MainActivity).apply { text = if (displayName.isBlank()) "@$username" else displayName; textSize = 16f; setTypeface(typeface, Typeface.BOLD); setTextColor(INK); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                    if (displayName.isNotBlank()) addView(TextView(this@MainActivity).apply { text = "@$username"; textSize = 12f; setTextColor(MUTED) })
+                }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                header.addView(TextView(this@MainActivity).apply {
+                    text = "⋯"; textSize = 24f; setTextColor(INK); gravity = Gravity.CENTER
+                    setOnClickListener { anchor ->
+                        android.widget.PopupMenu(this@MainActivity, anchor).apply {
+                            menu.add(Menu.NONE, 1, 1, if (isWhitelisted) "移出白名单" else "加入白名单")
+                            menu.add(Menu.NONE, 2, 2, if (isBlocked) "取消屏蔽和隐藏" else "重新屏蔽和隐藏")
+                            setOnMenuItemClickListener { selected ->
+                                when (selected.itemId) {
+                                    1 -> {
+                                        if (isWhitelisted) {
+                                            ruleStore.removeAccount(username)
+                                            if (accountStore.session() != null) Thread { accountStore.sync() }.start()
+                                            injectContent(); showHistoryPage()
+                                        } else {
+                                            ruleStore.rememberAccount(username)
+                                            if (accountStore.session() != null) Thread { accountStore.sync() }.start()
+                                            injectContent()
+                                            queue.unblock(item) { runOnUiThread { showHistoryPage() } }
+                                        }
+                                    }
+                                    2 -> {
+                                        if (isBlocked) queue.unblock(item) { runOnUiThread { showHistoryPage() } }
+                                        else queue.reblock(item) { runOnUiThread { showHistoryPage() } }
+                                    }
                                 }
+                                true
                             }
+                            show()
                         }
                     }
-                }
-                record.addView(whitelistAction, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42)).apply {
-                    topMargin = dp(10)
+                }, LinearLayout.LayoutParams(dp(32), dp(32)))
+                record.addView(header)
+                if (item.optString("content").isNotBlank()) record.addView(TextView(this).apply {
+                    text = item.optString("content"); textSize = 12f; setTextColor(INK); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END
+                    setPadding(0, dp(8), 0, 0)
                 })
-                val unblockedAt = item.optString("unblockedAt")
-                val action = if (unblockedAt.isBlank()) {
-                    dangerOutlineButton("取消屏蔽和隐藏") { button ->
-                        button.isEnabled = false
-                        button.text = "处理中…"
-                        queue.unblock(item) { outcome ->
-                            runOnUiThread {
-                                if (outcome.state == "success" || outcome.state == "already-unblocked") {
-                                    showHistoryPage()
-                                } else {
-                                    button.isEnabled = true
-                                    button.text = "重试取消屏蔽和隐藏"
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    outlineButton("重新屏蔽和隐藏") { button ->
-                        button.isEnabled = false
-                        button.text = "处理中…"
-                        queue.reblock(item) { outcome ->
-                            runOnUiThread {
-                                if (outcome.state == "success" || outcome.state == "already-blocked") {
-                                    showHistoryPage()
-                                } else {
-                                    button.isEnabled = true
-                                    button.text = "重试重新屏蔽和隐藏"
-                                }
-                            }
-                        }
-                    }
-                }
-                record.addView(action, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(42)).apply {
-                    topMargin = dp(10)
+                val matchedKeywords = item.optJSONArray("matchedKeywords")?.let { values -> List(values.length()) { values.optString(it).trim() }.filter { it.isNotBlank() }.distinct() }.orEmpty()
+                val evidence = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = rounded(SURFACE_MUTED, 9f); setPadding(dp(8), dp(6), dp(8), dp(6)) }
+                if (matchedKeywords.isNotEmpty()) evidence.addView(TextView(this).apply { text = "关键词：${matchedKeywords.joinToString("、")}"; textSize = 11f; setTextColor(BLUE); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                evidence.addView(TextView(this).apply { text = "规则依据：${item.optString("reason").ifBlank { "规则命中（旧记录未保存详情）" }}"; textSize = 11f; setTextColor(MUTED); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                record.addView(evidence, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) })
+                val footer = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(0, dp(8), 0, 0) }
+                footer.addView(TextView(this).apply {
+                    text = if (isBlocked) "已屏蔽 + 隐藏" else "已取消"; textSize = 10f; setTextColor(if (isBlocked) RED else MUTED)
+                    background = rounded(if (isBlocked) Color.rgb(254, 236, 238) else SURFACE_MUTED, 12f); setPadding(dp(7), dp(4), dp(7), dp(4))
                 })
-                records.addView(record, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
+                if (isWhitelisted) footer.addView(TextView(this).apply { text = "白名单"; textSize = 10f; setTextColor(Color.rgb(52, 143, 88)); background = rounded(Color.rgb(232, 247, 237), 12f); setPadding(dp(7), dp(4), dp(7), dp(4)) }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginStart = dp(6) })
+                footer.addView(TextView(this).apply { text = formatLocalTime(item.optString("blockedAt")); textSize = 10f; setTextColor(MUTED); gravity = Gravity.END }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                record.addView(footer)
+                records.addView(record, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(6) })
             }
-
             fun appendHistoryPage() {
                 if (loadingHistoryPage || nextHistoryIndex >= history.length()) return
                 loadingHistoryPage = true
                 val endExclusive = minOf(nextHistoryIndex + HISTORY_PAGE_SIZE, history.length())
-                for (index in nextHistoryIndex until endExclusive) {
-                    history.optJSONObject(index)?.let(::appendHistoryRecord)
-                }
+                for (index in nextHistoryIndex until endExclusive) history.optJSONObject(index)?.let(::appendHistoryRecord)
                 nextHistoryIndex = endExclusive
-                historyLoadStatus.text = if (nextHistoryIndex < history.length()) {
-                    "继续下滑加载更多（$nextHistoryIndex/${history.length()}）"
-                } else {
-                    "已加载全部 ${history.length()} 条本机记录"
-                }
                 loadingHistoryPage = false
             }
             loadNextHistoryPage = ::appendHistoryPage
             appendHistoryPage()
         }
-        content.addView(outlineButton("清空本地记录") {
-            queue.clearHistory()
-            Toast.makeText(this, "已清空本地记录，不会解除 X 上的 Ban", Toast.LENGTH_SHORT).show()
-            showHistoryPage()
-        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply { topMargin = dp(16) })
         val page = scrollPage(content)
-        page.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-            if (scrollY + page.height >= content.height - dp(320)) {
-                loadNextHistoryPage?.invoke()
-            }
-        }
+        page.setOnScrollChangeListener { _, _, scrollY, _, _ -> if (scrollY + page.height >= content.height - dp(320)) loadNextHistoryPage?.invoke() }
         showPage("Ban记录", page)
     }
 
@@ -884,6 +1005,7 @@ class MainActivity : Activity() {
             val username = whitelistInput?.text?.toString().orEmpty().trim()
             if (BlockJob.isValidUsername(username)) {
                 ruleStore.rememberAccount(username)
+                if (accountStore.session() != null) Thread { accountStore.sync() }.start()
                 injectContent()
                 showWhitelistPage()
             } else {
@@ -911,6 +1033,7 @@ class MainActivity : Activity() {
             } else {
                 line.addView(outlineButton("移除") {
                     ruleStore.removeAccount(username)
+                    if (accountStore.session() != null) Thread { accountStore.sync() }.start()
                     injectContent()
                     showWhitelistPage()
                 }, LinearLayout.LayoutParams(dp(72), dp(38)))
@@ -929,79 +1052,6 @@ class MainActivity : Activity() {
         } catch (_: Exception) {
             "时间未知"
         }
-    }
-
-    private fun saveWatermarkedScreenshot() {
-        val view = window.decorView.rootView
-        if (view.width <= 0 || view.height <= 0) {
-            Toast.makeText(this, "当前页面还未准备好", Toast.LENGTH_SHORT).show()
-            return
-        }
-        screenshotButton.isEnabled = false
-        Thread {
-            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            view.draw(canvas)
-
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.WHITE
-                textSize = dp(14).toFloat()
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                textAlign = Paint.Align.CENTER
-            }
-            val label = "AutoBanRobot"
-            val centerX = bitmap.width / 2f
-            val baseline = dp(28).toFloat()
-            val halfWidth = paint.measureText(label) / 2f + dp(14)
-            val top = dp(6).toFloat()
-            val bottom = dp(38).toFloat()
-            val pill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(190, 15, 20, 25) }
-            canvas.drawRoundRect(centerX - halfWidth, top, centerX + halfWidth, bottom, dp(16).toFloat(), dp(16).toFloat(), pill)
-            canvas.drawText(label, centerX, baseline, paint)
-
-            val fileName = "AutoBanRobot-${System.currentTimeMillis()}.png"
-            val saved = try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val values = ContentValues().apply {
-                        put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
-                        put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                        put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/AutoBanRobot")
-                        put(MediaStore.Images.Media.IS_PENDING, 1)
-                    }
-                    val collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-                    val uri = contentResolver.insert(collection, values) ?: error("无法创建图片文件")
-                    try {
-                        contentResolver.openOutputStream(uri).use { output ->
-                            requireNotNull(output) { "无法写入图片文件" }
-                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
-                        }
-                        values.clear()
-                        values.put(MediaStore.Images.Media.IS_PENDING, 0)
-                        contentResolver.update(uri, values, null, null)
-                    } catch (error: Exception) {
-                        contentResolver.delete(uri, null, null)
-                        throw error
-                    }
-                    true
-                } else {
-                    val directory = getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: filesDir
-                    directory.mkdirs()
-                    java.io.FileOutputStream(java.io.File(directory, fileName)).use { output ->
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
-                    }
-                    true
-                }
-            } catch (error: Exception) {
-                Log.e("AutoBanMainActivity", "截图保存失败", error)
-                false
-            } finally {
-                bitmap.recycle()
-            }
-            runOnUiThread {
-                screenshotButton.isEnabled = true
-                Toast.makeText(this, if (saved) "截图已保存到图片/AutoBanRobot" else "截图保存失败", Toast.LENGTH_SHORT).show()
-            }
-        }.start()
     }
 
     private fun showPluginsPage() {
@@ -1119,6 +1169,7 @@ class MainActivity : Activity() {
 
     override fun onPause() {
         stopAppHeartbeat()
+        accountStore.stopSettingsStream()
         CookieManager.getInstance().flush()
         webView.onPause()
         super.onPause()
@@ -1128,6 +1179,7 @@ class MainActivity : Activity() {
         super.onResume()
         webView.onResume()
         startAppHeartbeat()
+        accountStore.startSettingsStream { runOnUiThread { injectContent() } }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -1138,6 +1190,7 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         stopAppHeartbeat()
+        accountStore.stopSettingsStream()
         fileChooserCallback?.onReceiveValue(null)
         fileChooserCallback = null
         pendingCameraUri?.let(::deletePendingCameraUri)
@@ -1337,18 +1390,13 @@ class MainActivity : Activity() {
         setOnClickListener { action(this) }
     }
 
-    private fun navButton(label: String, action: () -> Unit): View = TextView(this).apply {
+    private fun navButton(label: String, icon: Int, action: () -> Unit): View = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER
-        background = rounded(Color.WHITE, 14f)
-        setPadding(dp(6), 0, dp(6), 0)
-        text = label
-        textSize = 13f
-        setTypeface(typeface, android.graphics.Typeface.BOLD)
-        setTextColor(INK)
-        layoutParams = LinearLayout.LayoutParams(0, dp(44), 1f).apply {
-            marginStart = dp(4)
-            marginEnd = dp(4)
-        }
+        setPadding(0, dp(1), 0, dp(1))
+        addView(ImageView(context).apply { setImageResource(icon); imageTintList = android.content.res.ColorStateList.valueOf(INK) }, LinearLayout.LayoutParams(dp(20), dp(20)))
+        addView(TextView(context).apply { text = label; textSize = 10f; setTextColor(INK); gravity = Gravity.CENTER }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(15)))
+        layoutParams = LinearLayout.LayoutParams(0, dp(44), 1f)
         setOnClickListener { action() }
     }
 
@@ -1366,7 +1414,7 @@ class MainActivity : Activity() {
         private const val REQUEST_PLUGIN = 9001
         private const val REQUEST_FILE_CHOOSER = 9003
         private const val MAX_POST_MEDIA = 4
-        private const val APP_HEARTBEAT_INTERVAL_MS = 60_000L
+        private const val APP_HEARTBEAT_INTERVAL_MS = 30_000L
         private const val APP_VERSION = "1.0.42"
         private const val HISTORY_PAGE_SIZE = 10
         private const val PAGE_HOME = "home"

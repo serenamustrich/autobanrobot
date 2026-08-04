@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Twitter Bot Blocker",
-  "version": "1.6.30",
-  "description": "自动屏蔽推特垃圾骚扰账号",
+  "name": "__MSG_extensionName__",
+  "version": "1.6.33",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "icons": {
     "16": "icon.png",
     "32": "icon.png",
@@ -40,6 +41,6 @@
       "128": "icon.png"
     },
     "default_popup": "popup.html",
-    "default_title": "Twitter Bot Blocker"
+    "default_title": "__MSG_extensionName__"
   }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 import WebKit
+import PhotosUI
 
 struct BrowserView: UIViewRepresentable {
     @ObservedObject var state: AppState
@@ -214,7 +215,7 @@ struct BrowserView: UIViewRepresentable {
     })();
     """
 
-    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UIGestureRecognizerDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler, PHPickerViewControllerDelegate, UIGestureRecognizerDelegate {
         var state: AppState
         private weak var webView: WKWebView?
         private var filePickerCompletion: (([URL]?) -> Void)?
@@ -323,19 +324,12 @@ struct BrowserView: UIViewRepresentable {
             completionHandler: @escaping @MainActor @Sendable ([URL]?) -> Void
         ) {
             filePickerCompletion = completionHandler
-            let sheet = UIAlertController(title: "添加图片", message: nil, preferredStyle: .actionSheet)
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                sheet.addAction(UIAlertAction(title: "拍照", style: .default) { [weak self] _ in
-                    self?.presentImagePicker(source: .camera)
-                })
-            }
-            sheet.addAction(UIAlertAction(title: "从照片中选择", style: .default) { [weak self] _ in
-                self?.presentImagePicker(source: .photoLibrary)
-            })
-            sheet.addAction(UIAlertAction(title: "取消", style: .cancel) { [weak self] _ in
-                self?.finishFileSelection(nil)
-            })
-            topViewController()?.present(sheet, animated: true)
+            var configuration = PHPickerConfiguration(photoLibrary: .shared())
+            configuration.filter = .any(of: [.images, .videos])
+            configuration.selectionLimit = parameters.allowsMultipleSelection ? 0 : 1
+            let picker = PHPickerViewController(configuration: configuration)
+            picker.delegate = self
+            topViewController()?.present(picker, animated: true)
         }
 
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -361,36 +355,54 @@ struct BrowserView: UIViewRepresentable {
             webView?.evaluateJavaScript(state.injectedConfigurationScript())
         }
 
-        private func presentImagePicker(source: UIImagePickerController.SourceType) {
-            let picker = UIImagePickerController()
-            picker.sourceType = source
-            picker.mediaTypes = [UTType.image.identifier]
-            picker.delegate = self
-            topViewController()?.present(picker, animated: true)
-        }
-
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true) { [weak self] in self?.finishFileSelection(nil) }
-        }
-
-        func imagePickerController(
-            _ picker: UIImagePickerController,
-            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
-        ) {
-            let selectedImage = info[.originalImage] as? UIImage
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             picker.dismiss(animated: true) { [weak self] in
-                guard let self, let selectedImage,
-                      let imageData = selectedImage.jpegData(compressionQuality: 0.92) else {
+                guard let self, !results.isEmpty else {
                     self?.finishFileSelection(nil)
                     return
                 }
-                let url = FileManager.default.temporaryDirectory
-                    .appendingPathComponent("x-upload-\(UUID().uuidString).jpg")
-                do {
-                    try imageData.write(to: url, options: .atomic)
-                    self.finishFileSelection([url])
-                } catch {
-                    self.finishFileSelection(nil)
+                Task {
+                    let urls = await self.copyPickerFiles(results)
+                    await MainActor.run { self.finishFileSelection(urls.isEmpty ? nil : urls) }
+                }
+            }
+        }
+
+        private func copyPickerFiles(_ results: [PHPickerResult]) async -> [URL] {
+            // NSItemProvider is main-actor bound in Swift 6. Process in the
+            // user's selection order rather than moving providers across tasks.
+            var urls: [URL] = []
+            for result in results {
+                if let url = await copyPickerFile(result.itemProvider) {
+                    urls.append(url)
+                }
+            }
+            return urls
+        }
+
+        private func copyPickerFile(_ provider: NSItemProvider) async -> URL? {
+            let type = provider.registeredTypeIdentifiers
+                .compactMap(UTType.init)
+                .first { $0.conforms(to: .movie) }
+                ?? provider.registeredTypeIdentifiers
+                    .compactMap(UTType.init)
+                    .first { $0.conforms(to: .image) }
+            guard let type else { return nil }
+            return await withCheckedContinuation { continuation in
+                provider.loadFileRepresentation(forTypeIdentifier: type.identifier) { sourceURL, _ in
+                    guard let sourceURL else {
+                        continuation.resume(returning: nil)
+                        return
+                    }
+                    let ext = type.preferredFilenameExtension ?? "bin"
+                    let destination = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("x-upload-\(UUID().uuidString).\(ext)")
+                    do {
+                        try FileManager.default.copyItem(at: sourceURL, to: destination)
+                        continuation.resume(returning: destination)
+                    } catch {
+                        continuation.resume(returning: nil)
+                    }
                 }
             }
         }

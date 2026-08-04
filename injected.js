@@ -3,8 +3,24 @@
   window.__AUTOBANROBOT_INJECTED__ = true;
   let SPAM = [];
   let remoteRules = [];
+  let onlineKeywords = [];
+  let keywordPolicies = [];
+  // Account targets are deliberately kept separate from normal keywords.
+  // A target such as @example can only match the explicitly declared scopes
+  // and boundaries from the server rule pack; it can never degrade to a
+  // substring match of ordinary text such as "everyone".
+  let accountPolicies = [];
+  let ui = {
+    stamp: '扑街', processing: '处理中：屏蔽和隐藏', done: '已屏蔽和隐藏',
+    skipped: '已跳过', waiting: '等待重试：屏蔽和隐藏',
+    stats: '当前页面：已匹配 $1 · 已屏蔽 $2'
+  };
   const DEFAULT_ACCOUNT_WHITELIST = new Set(['AAAGodofWealth']);
   let accountWhitelist = new Set(DEFAULT_ACCOUNT_WHITELIST);
+
+  window.addEventListener('__twblocker_locale__', e => {
+    ui = { ...ui, ...(e.detail || {}) };
+  });
 
   window.addEventListener('__twblocker_keywords__', e => {
     SPAM = e.detail?.kws ?? SPAM;
@@ -16,7 +32,9 @@
     const states = e.detail?.states ?? {};
     remoteRules = Array.isArray(config?.rules)
       ? config.rules.flatMap(rule => {
-          if (rule?.enabled === false || states[rule.id] === false) return [];
+          const enabled = states[rule.id] ?? rule?.enabled ?? true;
+          if (!enabled) return [];
+          if (rule?.condition && typeof rule.condition === 'object') return [{ ...rule }];
           if (typeof rule.matcher === 'string') return [{ ...rule }];
           try {
             const flags = String(rule.flags ?? '').replace(/g/g, '');
@@ -25,6 +43,65 @@
             console.warn(`Ignored invalid remote rule ${rule?.id ?? ''}:`, error);
             return [];
           }
+        })
+      : [];
+    accountPolicies = Array.isArray(config?.accountPolicies)
+      ? config.accountPolicies.flatMap(policy => {
+          try {
+            const keywordFlags = String(policy?.keywordFlags ?? '').replace(/g/gu, '');
+            if (
+              typeof policy?.keywordPattern !== 'string' ||
+              !Array.isArray(policy?.targets)
+            ) return [];
+            const targets = policy.targets.flatMap(target => {
+              if (
+                !['content', 'username'].includes(target?.scope) ||
+                typeof target?.pattern !== 'string' ||
+                !/\{\{[1-9]\}\}/u.test(target.pattern)
+              ) return [];
+              return [{
+                ...target,
+                flags: String(target.flags ?? '').replace(/g/gu, '')
+              }];
+            });
+            return targets.length
+              ? [{ ...policy, keywordRegex: new RegExp(policy.keywordPattern, keywordFlags), targets }]
+              : [];
+          } catch (error) {
+            console.warn(`Ignored invalid account policy ${policy?.id ?? ''}:`, error);
+            return [];
+          }
+        })
+      : [];
+    keywordPolicies = Array.isArray(config?.keywordPolicies)
+      ? config.keywordPolicies.flatMap(policy => {
+          if (
+            !['includes', 'token'].includes(policy?.operator) ||
+            !Array.isArray(policy?.scopes) ||
+            !policy.scopes.every(scope => ['content', 'username', 'displayName'].includes(scope)) ||
+            !['raw', 'compact', 'noSymbols', 'hanNoise'].includes(policy?.normalization) ||
+            !Number.isSafeInteger(policy?.minLength) || policy.minLength < 1 || policy.minLength > 100
+          ) return [];
+          try {
+            return [{
+              ...policy,
+              keywordRegex: policy.keywordPattern
+                ? new RegExp(policy.keywordPattern, String(policy.keywordFlags ?? '').replace(/g/gu, ''))
+                : null,
+              flags: String(policy.flags ?? '').replace(/g/gu, '')
+            }];
+          } catch (error) {
+            console.warn(`Ignored invalid keyword policy ${policy?.id ?? ''}:`, error);
+            return [];
+          }
+        })
+      : [];
+    onlineKeywords = Array.isArray(config?.keywordSets)
+      ? config.keywordSets.flatMap(set => {
+          if (set?.enabled === false || !Array.isArray(set?.keywords)) return [];
+          return set.keywords
+            .map(keyword => String(keyword ?? '').trim())
+            .filter(keyword => keyword.length > 0 && keyword.length <= 100);
         })
       : [];
     processedSignatures = new WeakMap();
@@ -81,10 +158,10 @@
   window.addEventListener('scroll', repositionStamps, true);
   window.addEventListener('resize', repositionStamps);
 
-  // On iOS X occasionally loses the sticky containing block for the home
-  // timeline tabs and renders them halfway through the feed. Pin only that
-  // recognisable "For you / Following" tab list when it has drifted; other
-  // X pages and every non-tab element are left alone.
+  // X on iOS can occasionally lose the sticky containing block for the home
+  // timeline tabs and render them halfway through the feed. WKWebView is
+  // already laid out below the physical status-bar safe area, so this must
+  // never add another artificial top inset.
   let timelineTabPinScheduled = false;
   function isHomeTimelineTabList(tabList) {
     const text = String(tabList?.textContent || '').replace(/\s+/gu, ' ').trim();
@@ -92,17 +169,19 @@
   }
   function pinDriftedTimelineTabs() {
     timelineTabPinScheduled = false;
+    if (!window.__AUTOBANROBOT_IOS_BRIDGE__) return;
     if (!/^\/home\/?$/u.test(location.pathname)) return;
     const tabList = Array.from(document.querySelectorAll('[role="tablist"]'))
       .find(isHomeTimelineTabList);
     if (!tabList) return;
     const rect = tabList.getBoundingClientRect();
-    // A normal header is already at the visible top. Only promote it after
-    // it has visibly fallen into the feed, avoiding needless X layout edits.
-    if (rect.top <= Math.max(120, window.innerHeight * 0.24)) return;
+    // A normal header is already at the visible top. Wait until the compact
+    // tab bar has moved far into the feed; initial X layout settles around
+    // the upper quarter and must not be mistaken for a drift.
+    if (rect.height > 96 || rect.top <= Math.max(300, window.innerHeight * 0.40)) return;
     tabList.dataset.autobanTimelinePinned = 'true';
     tabList.style.setProperty('position', 'fixed', 'important');
-    tabList.style.setProperty('top', 'max(env(safe-area-inset-top), 44px)', 'important');
+    tabList.style.setProperty('top', '0', 'important');
     tabList.style.setProperty('left', '0', 'important');
     tabList.style.setProperty('right', '0', 'important');
     tabList.style.setProperty('width', '100vw', 'important');
@@ -156,8 +235,7 @@
         statsEl.style.cssText = `
           margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.28);
           font-size:11px;opacity:.92;`;
-        statsEl.textContent =
-          `当前页面：已匹配 ${pageStats.matchedAccounts.size} · 已屏蔽 ${pageStats.successfulBlockCount}`;
+        statsEl.textContent = ui.stats.replace('$1', pageStats.matchedAccounts.size).replace('$2', pageStats.successfulBlockCount);
         el.appendChild(statsEl);
       }
       document.body.appendChild(el);
@@ -248,7 +326,7 @@
     label.setAttribute('font-weight', '800');
     label.setAttribute('letter-spacing', '1');
     label.setAttribute('filter', `url(#${filterId})`);
-    label.textContent = '扑街';
+    label.textContent = ui.stamp;
     svg.appendChild(label);
     stamp.appendChild(svg);
     document.body.appendChild(stamp);
@@ -279,7 +357,7 @@
     if (!matchedElements.has(username)) matchedElements.set(username, new Set());
     matchedElements.get(username).add(el);
     el.style.opacity = '0.35';
-    el.title = `[处理中：屏蔽和隐藏] @${username}`;
+    el.title = `[${ui.processing}] @${username}`;
     applyStamp(el);
     if (
       accountWhitelist.has(username.toLowerCase()) ||
@@ -318,10 +396,10 @@
       updateMatchedElements(
         result.username,
         '0.12',
-        `[已屏蔽和隐藏] @${result.username}`,
+        `[${ui.done}] @${result.username}`,
         true
       );
-      toast(`✅ 已屏蔽和隐藏 @${result.username}`, true, stats);
+      toast(`✅ ${ui.done} @${result.username}`, true, stats);
       return;
     }
 
@@ -331,7 +409,7 @@
       updateMatchedElements(
         result.username,
         '1',
-        `[已跳过：${result.message}] @${result.username}`
+        `[${ui.skipped}：${result.message}] @${result.username}`
       );
       toast(`⏭️ 已跳过 @${result.username}：${result.message}`);
       return;
@@ -354,7 +432,7 @@
     updateMatchedElements(
       result.username,
       '0.35',
-      `[等待重试：屏蔽和隐藏] @${result.username}`,
+      `[${ui.waiting}] @${result.username}`,
       true
     );
   });
@@ -431,22 +509,153 @@
     return normalizeForMatch(text).replace(/[^\p{Script=Han}]/gu, '');
   }
 
-  function matchExactMentionKeyword(text, keyword) {
-    const match = /^@([A-Za-z0-9_]{1,15})$/u.exec(keyword);
-    if (!match) return false;
+  function normalizedLines(text) {
+    return String(text ?? '')
+      .split(/\r?\n/u)
+      .map(line => line.trim())
+      .filter(Boolean);
+  }
 
-    // @account keywords represent real mentions. Do not remove the @ here:
-    // doing so makes @yo match the "yo" inside ordinary words such as
-    // "everyone".
-    const mention = match[1].replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-    const mentionPattern = new RegExp(
-      `(^|[^\\p{L}\\p{N}_])@${mention}(?=$|[^\\p{L}\\p{N}_])`,
-      'iu'
-    );
-    const mentionText = String(text ?? '')
-      .normalize('NFKC')
-      .replace(/[\u200B-\u200D\u2060\uFEFF]/gu, '');
-    return mentionPattern.test(mentionText);
+  function matchesNumberConstraint(value, condition) {
+    if (Number.isInteger(condition.equals) && value !== condition.equals) return false;
+    if (Number.isInteger(condition.min) && value < condition.min) return false;
+    if (Number.isInteger(condition.max) && value > condition.max) return false;
+    return Number.isInteger(condition.equals) ||
+      Number.isInteger(condition.min) ||
+      Number.isInteger(condition.max);
+  }
+
+  function conditionTarget(value, normalization) {
+    if (normalization === 'compact') return normalizeForMatch(value);
+    if (normalization === 'noSymbols') return normalizeWithoutSymbolNoise(value);
+    if (normalization === 'hanNoise') return normalizeHanKeywordNoise(value);
+    return String(value ?? '');
+  }
+
+  // The engine evaluates a JSON rule tree. New rules change this tree on the
+  // server; no remote JavaScript is evaluated in the extension.
+  function matchesRuleCondition(condition, context, depth = 0) {
+    if (!condition || typeof condition !== 'object' || depth > 12) return false;
+    if (Array.isArray(condition.all)) {
+      return condition.all.length > 0 &&
+        condition.all.every(item => matchesRuleCondition(item, context, depth + 1));
+    }
+    if (Array.isArray(condition.any)) {
+      return condition.any.length > 0 &&
+        condition.any.some(item => matchesRuleCondition(item, context, depth + 1));
+    }
+    if (condition.not && typeof condition.not === 'object') {
+      return !matchesRuleCondition(condition.not, context, depth + 1);
+    }
+
+    const type = condition.type;
+    if (type === 'singleEmoji') return isSingleEmoji(context.value);
+    if (type === 'graphemeCount') {
+      return matchesNumberConstraint(
+        [...emojiSegmenter.segment(String(context.value ?? ''))].length,
+        condition
+      );
+    }
+    if (type === 'lineCount') return matchesNumberConstraint(context.lines.length, condition);
+    if (type === 'lineAt') {
+      if (!Number.isInteger(condition.index) || condition.index < 0) return false;
+      const line = context.lines[condition.index];
+      return line !== undefined && matchesRuleCondition(
+        condition.condition,
+        { ...context, value: line },
+        depth + 1
+      );
+    }
+    if (type === 'anyLine' || type === 'countLines' || type === 'allLines') {
+      const selected = context.lines.filter(line =>
+        !condition.where || matchesRuleCondition(
+          condition.where,
+          { ...context, value: line },
+          depth + 1
+        )
+      );
+      if (type === 'anyLine') {
+        return selected.some(line => matchesRuleCondition(
+          condition.condition,
+          { ...context, value: line },
+          depth + 1
+        ));
+      }
+      if (type === 'countLines') {
+        const count = selected.filter(line => matchesRuleCondition(
+          condition.condition,
+          { ...context, value: line },
+          depth + 1
+        )).length;
+        return matchesNumberConstraint(count, condition);
+      }
+      return selected.length > 0 && selected.every(line => matchesRuleCondition(
+        condition.condition,
+        { ...context, value: line },
+        depth + 1
+      ));
+    }
+    if (type === 'regex') {
+      try {
+        const flags = String(condition.flags ?? '').replace(/g/gu, '');
+        const regex = new RegExp(String(condition.pattern ?? ''), flags);
+        return regex.test(conditionTarget(context.value, condition.normalization));
+      } catch (_) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  function matchingAccountPolicies(text, keyword, scope) {
+    return accountPolicies.find(policy => {
+      policy.keywordRegex.lastIndex = 0;
+      const match = policy.keywordRegex.exec(keyword);
+      if (!match) return false;
+      return policy.targets.some(target => {
+        if (target.scope !== scope) return false;
+        try {
+          let missingCapture = false;
+          const pattern = target.pattern.replace(/\{\{([1-9])\}\}/gu, (_, group) => {
+            const value = match[Number(group)];
+            if (!value) {
+              missingCapture = true;
+              return '(?!)';
+            }
+            return String(value).replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+          });
+          if (missingCapture) return false;
+          return new RegExp(pattern, target.flags).test(
+            conditionTarget(text, target.normalization)
+          );
+        } catch (_) {
+          return false;
+        }
+      });
+    });
+  }
+
+  function matchingKeywordPolicies(text, keyword, scope) {
+    return keywordPolicies.some(policy => {
+      if (!policy.scopes.includes(scope)) return false;
+      if (policy.keywordRegex) {
+        policy.keywordRegex.lastIndex = 0;
+        if (!policy.keywordRegex.test(keyword)) return false;
+      }
+      const target = conditionTarget(keyword, policy.normalization);
+      if (target.length < policy.minLength) return false;
+      const value = conditionTarget(text, policy.normalization);
+      if (policy.operator === 'includes') return value.includes(target);
+      try {
+        const escaped = String(keyword).replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+        return new RegExp(
+          `(^|[^\\p{L}\\p{N}_])${escaped}(?=$|[^\\p{L}\\p{N}_])`,
+          policy.flags
+        ).test(value);
+      } catch (_) {
+        return false;
+      }
+    });
   }
 
   function matchingRemoteRules(text, scope = 'content', context = {}) {
@@ -455,6 +664,14 @@
       if (rule.requiresDefaultAvatar === true && !context.defaultAvatar) {
         return false;
       }
+      if (rule.condition) {
+        return matchesRuleCondition(rule.condition, {
+          value: text,
+          lines: normalizedLines(text)
+        });
+      }
+      // Backward compatibility only: servers on an older rule package can
+      // still serve historical matcher names while the new DSL rolls out.
       if (rule.matcher) {
         const matcher = {
           singleEmoji: isSingleEmoji,
@@ -475,33 +692,33 @@
     });
   }
 
-  function matchingKeywords(text) {
-    const normalizedText = normalizeForMatch(text);
-    const noiseStrippedText = normalizeWithoutSymbolNoise(text);
-    return SPAM.filter(keyword => {
+  function matchingKeywords(text, scope = 'content') {
+    return [...new Set([...SPAM, ...onlineKeywords])].filter(keyword => {
       const normalizedKeyword = normalizeForMatch(keyword);
       if (!normalizedKeyword) return false;
       if (/^@[A-Za-z0-9_]{1,15}$/u.test(normalizedKeyword)) {
-        return matchExactMentionKeyword(text, normalizedKeyword);
+        return Boolean(matchingAccountPolicies(text, keyword, scope));
       }
-      if (normalizedText.includes(normalizedKeyword)) return true;
-
-      const noiseStrippedKeyword = normalizeWithoutSymbolNoise(keyword);
-      if (
-        noiseStrippedKeyword.length >= 2 &&
-        noiseStrippedText.includes(noiseStrippedKeyword)
-      ) return true;
-
-      if (/^\p{Script=Han}{2,}$/u.test(noiseStrippedKeyword)) {
-        return normalizeHanKeywordNoise(text).includes(noiseStrippedKeyword);
-      }
-
-      return false;
+      return matchingKeywordPolicies(text, keyword, scope);
     });
   }
 
   function hasKeyword(text) {
     return matchingKeywords(text).length > 0;
+  }
+
+  function matchingAccountFields(displayName, username) {
+    return matchingIdentityKeywords(displayName, username).matches;
+  }
+
+  function matchingIdentityKeywords(displayName, username) {
+    const displayNameMatches = matchingKeywords(displayName, 'displayName');
+    const accountMatches = matchingKeywords(username, 'username');
+    return {
+      displayNameMatches,
+      accountMatches,
+      matches: [...new Set([...displayNameMatches, ...accountMatches])]
+    };
   }
 
   function extractTweetText(root) {
@@ -632,7 +849,8 @@
         return;
       }
 
-      const nameMatches = matchingKeywords(`${displayName}\n${username}`);
+      const identityMatches = matchingIdentityKeywords(displayName, username);
+      const nameMatches = identityMatches.matches;
       const ruleContext = {
         defaultAvatar: Boolean(
           [...el.querySelectorAll(`a[href="/${username}"] img, a[href$="/${username}"] img`)]
@@ -647,7 +865,8 @@
 
       const matchedKeywords = [...new Set(nameMatches)];
       const reasons = ['点赞或转发通知账号命中规则'];
-      if (nameMatches.length) reasons.push('用户名或显示名称命中关键词');
+      if (identityMatches.accountMatches.length) reasons.push('账号 ID 命中关键词');
+      if (identityMatches.displayNameMatches.length) reasons.push('用户名命中关键词');
       reasons.push(...remoteMatches.map(rule => rule.name));
       blockUser(username, el, {
         displayName,
@@ -697,7 +916,8 @@
       return;
     }
 
-    const nameMatches = matchingKeywords(`${displayName}\n${username}`);
+    const identityMatches = matchingIdentityKeywords(displayName, username);
+    const nameMatches = identityMatches.matches;
     const ruleContext = {
       defaultAvatar: Boolean(userCell.querySelector(
         'img[src*="default_profile_images"], img[src*="default_profile"]'
@@ -714,7 +934,8 @@
     }
 
     const reasons = ['帖子活动账号命中规则'];
-    if (nameMatches.length) reasons.push('用户名或显示名称命中关键词');
+    if (identityMatches.accountMatches.length) reasons.push('账号 ID 命中关键词');
+    if (identityMatches.displayNameMatches.length) reasons.push('用户名命中关键词');
     reasons.push(...remoteMatches.map(rule => rule.name));
     blockUser(username, el, {
       displayName,
@@ -759,7 +980,7 @@
       .map(row => extractEngagementIdentity(row.querySelector('[data-testid="User-Name"]') || row))
       .filter(Boolean);
     const matched = identities.filter(identity =>
-      hasKeyword(`${identity.displayName}\n${identity.username}`)
+      matchingAccountFields(identity.displayName, identity.username).length > 0
     );
     const message = [
       `rows=${rows.size}`,
@@ -806,8 +1027,9 @@
       return;
     }
 
-    const nameMatches = matchingKeywords(`${nameText}\n${username}`);
-    const contentMatches = matchingKeywords(text);
+    const identityMatches = matchingIdentityKeywords(nameText, username);
+    const nameMatches = identityMatches.matches;
+    const contentMatches = matchingKeywords(text, 'content');
     const matchedKeywords = [...new Set([...nameMatches, ...contentMatches])];
     const nameSpam = nameMatches.length > 0;
     const contentSpam = contentMatches.length > 0;
@@ -835,7 +1057,8 @@
     el.title = `[处理中：屏蔽和隐藏] @${username}`;
     applyStamp(el);
     const reasons = [];
-    if (nameSpam) reasons.push('用户名或显示名称命中关键词');
+    if (identityMatches.accountMatches.length) reasons.push('账号 ID 命中关键词');
+    if (identityMatches.displayNameMatches.length) reasons.push('用户名命中关键词');
     if (contentSpam) reasons.push('内容命中关键词');
     reasons.push(...remoteMatches.map(rule => rule.name));
     blockUser(username, el, {

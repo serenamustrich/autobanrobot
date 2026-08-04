@@ -63,6 +63,11 @@ class RuleStore(private val context: Context) {
         return true
     }
 
+    fun replaceAccountWhitelist(values: List<String>) {
+        val normalized = (DEFAULT_ACCOUNT_WHITELIST + values.mapNotNull { value -> value.trim().takeIf(BlockJob::isValidUsername)?.lowercase() }).toSortedSet()
+        prefs.edit().putString(ACCOUNT_WHITELIST_KEY, JSONArray(normalized.toList()).toString()).apply()
+    }
+
     fun isWhitelisted(username: String): Boolean = accountWhitelist().contains(username.trim().lowercase())
 
     fun displayAccount(username: String): String {
@@ -123,7 +128,8 @@ class RuleStore(private val context: Context) {
                 connection.setRequestProperty("accept", "application/json")
                 val body = connection.inputStream.bufferedReader().use { it.readText() }
                 if (connection.responseCode in 200..299 && body.trim().startsWith("{")) {
-                    prefs.edit().putString("rules_json", body).apply()
+                    val merged = mergeMissingBundledRules(body, readAsset("content/default-rules.json"))
+                    prefs.edit().putString("rules_json", merged).apply()
                     true
                 } else false
             } catch (error: Exception) {
@@ -165,9 +171,9 @@ class RuleStore(private val context: Context) {
 
     /**
      * A user can already have a server-cached rule configuration when an APK
-     * ships a new zero-config matcher. Keep the cached rules and their states,
-     * but append only newly bundled rule IDs so a client update is effective
-     * before the server JAR is redeployed.
+     * ships a new declarative matcher. Keep the cached rules and their states,
+     * but append only newly bundled rule IDs and engine metadata so a client
+     * update is effective before the server JAR is redeployed.
      */
     private fun mergeMissingBundledRules(cached: String, bundled: String): String {
         return try {
@@ -188,6 +194,24 @@ class RuleStore(private val context: Context) {
                     cachedRules.put(rule)
                     changed = true
                 }
+            }
+            if (!cachedConfig.has("engine") && bundledConfig.has("engine")) {
+                cachedConfig.put("engine", bundledConfig.getJSONObject("engine"))
+                changed = true
+            }
+            if (!cachedConfig.has("keywordSets") && bundledConfig.has("keywordSets")) {
+                cachedConfig.put("keywordSets", bundledConfig.getJSONArray("keywordSets"))
+                changed = true
+            }
+            if (!cachedConfig.has("keywordPolicies") && bundledConfig.has("keywordPolicies")) {
+                cachedConfig.put("keywordPolicies", bundledConfig.getJSONArray("keywordPolicies"))
+                changed = true
+            }
+            if ((!cachedConfig.has("accountPolicies") ||
+                    cachedConfig.optJSONArray("accountPolicies")?.length() == 0) &&
+                bundledConfig.has("accountPolicies")) {
+                cachedConfig.put("accountPolicies", bundledConfig.getJSONArray("accountPolicies"))
+                changed = true
             }
             if (!changed) return cached
             cachedConfig.put("version", maxOf(cachedConfig.optLong("version", 0), bundledConfig.optLong("version", 0)))

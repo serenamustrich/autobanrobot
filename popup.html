@@ -38,7 +38,7 @@
     .rule-sync button { width:auto;margin:0;padding:5px 8px;font-size:10px; }
     .rule-status { color:#71767b;font-size:10px;line-height:1.4; }
     .tabs {
-      display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:12px 0;
+      display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:12px 0;
       padding:3px;background:#eff3f4;border-radius:10px;
     }
     .tabs button {
@@ -115,6 +115,9 @@
     .history-user { color:#0f1419;font-size:12px;font-weight:600;text-decoration:none; }
     .history-user:hover { text-decoration:underline; }
     .history-meta { color:#71767b;font-size:10px;margin-top:2px; }
+    .history-evidence { margin-top:5px;padding:5px 6px;border-radius:7px;background:#f7f9f9;font-size:10px;line-height:1.35; }
+    .history-evidence-keyword { color:#1d9bf0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .history-evidence-rule { color:#536471;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
     .history-actions { display:flex;justify-content:flex-end;margin-top:6px; }
     .history-actions button {
       width:auto;margin:0;padding:4px 8px;background:#fff;color:#f4212e;
@@ -145,6 +148,7 @@
     <button type="button" role="tab" data-tab="rules" aria-selected="false">规则 <span class="tab-badge" id="ruleBadge">0</span></button>
     <button type="button" role="tab" data-tab="history" aria-selected="false">Ban <span class="tab-badge" id="queueCount">0</span></button>
     <button type="button" role="tab" data-tab="update" aria-selected="false">更新</button>
+    <button type="button" role="tab" data-tab="account" aria-selected="false">账号</button>
   </nav>
 
   <section class="tab-panel" id="keywordsPanel" role="tabpanel">
@@ -186,6 +190,28 @@
     </div>
   </div>
   <div class="subsection"><div class="subsection-title">说明</div><div class="hint">所有规则统一显示并支持在线更新；只有插件执行能力变更时才需安装新版本。</div></div>
+  </section>
+  <section class="tab-panel" id="accountPanel" role="tabpanel" hidden>
+    <div class="panel-head"><div class="panel-title" id="accountPanelTitle">AutoBan 账号</div><div class="panel-meta" id="accountState">未登录</div></div>
+    <div id="accountSignedOut">
+      <input id="accountUsername" autocomplete="username" placeholder="账号名" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px;margin-bottom:7px">
+      <input id="accountPassword" type="password" autocomplete="current-password" placeholder="密码（至少 8 位）" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px;margin-bottom:7px">
+      <select id="securityQuestion" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px;margin-bottom:7px"></select>
+      <input id="securityAnswer" type="password" placeholder="密保答案（注册时填写）" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px">
+      <button id="accountLogin" type="button">登录</button><button id="accountRegister" class="secondary" type="button">注册</button>
+      <button id="accountRecover" class="secondary" type="button">找回密码</button>
+      <div id="accountRecovery" hidden style="margin-top:8px;padding-top:8px;border-top:1px solid #eff3f4">
+        <div class="hint" id="recoveryQuestionLabel"></div>
+        <input id="recoveryAnswer" type="password" placeholder="密保答案" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px;margin-top:7px">
+        <input id="recoveryPassword" type="password" placeholder="新密码（至少 8 位）" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd9de;border-radius:8px;margin-top:7px">
+        <button id="recoveryReset" type="button">重置密码并登录</button>
+      </div>
+    </div>
+    <div id="accountSignedIn" hidden>
+      <div class="update-card"><div class="update-version" id="accountUsernameLabel"></div><div class="update-status" id="accountSyncStatus">已登录</div></div>
+      <button id="accountSync" class="secondary" type="button">立即同步</button><button id="accountLogout" class="secondary" type="button">退出登录</button>
+    </div>
+    <div class="popular-status" id="accountStatus"></div>
   </section>
   <div class="saved" id="saved">✓ 已保存，立即生效</div>
   <script src="popup.js"></script>

@@ -2,6 +2,7 @@ package com.autobanrobot.mobile
 
 import android.webkit.CookieManager
 import android.util.Log
+import android.os.Build
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -126,7 +127,7 @@ class XApiClient(private val auth: AuthState) {
         }
     }
 
-    fun upload(record: JSONObject): Boolean {
+    fun upload(record: JSONObject, accountToken: String? = null): Boolean {
         return try {
             val connection = URL("https://ban.richccy.com/api/bans").openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
@@ -135,6 +136,9 @@ class XApiClient(private val auth: AuthState) {
             connection.doOutput = true
             connection.setRequestProperty("content-type", "application/json")
             connection.setRequestProperty("x-autoban-client", "android-webview")
+            accountToken?.takeIf { it.isNotBlank() }?.let {
+                connection.setRequestProperty("authorization", "Bearer $it")
+            }
             val payload = JSONObject(record.toString()).put("clientType", "app")
             connection.outputStream.use { it.write(payload.toString().toByteArray()) }
             connection.responseCode in 200..299
@@ -177,7 +181,7 @@ class XApiClient(private val auth: AuthState) {
         return null
     }
 
-    fun sendHeartbeat(installationId: String, version: String): Boolean {
+    fun sendHeartbeat(installationId: String, version: String, deviceName: String, accountToken: String? = null): Boolean {
         return try {
             val connection = URL("https://ban.richccy.com/api/clients/heartbeat")
                 .openConnection() as HttpURLConnection
@@ -187,11 +191,15 @@ class XApiClient(private val auth: AuthState) {
             connection.doOutput = true
             connection.setRequestProperty("content-type", "application/json")
             connection.setRequestProperty("x-autoban-client", "android-webview")
+            accountToken?.takeIf { it.isNotBlank() }?.let {
+                connection.setRequestProperty("authorization", "Bearer $it")
+            }
             val payload = JSONObject()
                 .put("installationId", installationId)
                 .put("platform", "android-webview")
                 .put("version", version)
                 .put("clientType", "app")
+                .put("deviceName", deviceName.take(128))
             connection.outputStream.use { it.write(payload.toString().toByteArray()) }
             connection.responseCode in 200..299
         } catch (error: Exception) {

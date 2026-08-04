@@ -3,6 +3,17 @@ chrome.storage.local.get(['keywords'], r => {
   dispatchKeywords(Array.isArray(r.keywords) ? r.keywords : []);
 });
 
+window.dispatchEvent(new CustomEvent('__twblocker_locale__', {
+  detail: {
+    stamp: chrome.i18n.getMessage('stampLabel') || '扑街',
+    processing: chrome.i18n.getMessage('pageProcessing') || '处理中：屏蔽和隐藏',
+    done: chrome.i18n.getMessage('pageDone') || '已屏蔽和隐藏',
+    skipped: chrome.i18n.getMessage('pageSkipped') || '已跳过',
+    waiting: chrome.i18n.getMessage('pageWaiting') || '等待重试：屏蔽和隐藏',
+    stats: chrome.i18n.getMessage('pageStats') || 'Current page: matched $1 · blocked $2'
+  }
+}));
+
 chrome.storage.local.get(['accountWhitelist'], r => {
   dispatchAccountWhitelist(Array.isArray(r.accountWhitelist) ? r.accountWhitelist : []);
 });

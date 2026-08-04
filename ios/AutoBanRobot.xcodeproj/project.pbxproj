@@ -22,6 +22,7 @@
 		A76BCC4FFBB4A347EC3FA24D /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49064D1AAB7936C6F999C05 /* Models.swift */; };
 		D92406EA07D34F0B67B3C992 /* AutoBanRobotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA23268C33949A7C931E2D5E /* AutoBanRobotApp.swift */; };
 		E7E1F6E3E5846A2F12BEA38C /* default-keywords.json in Resources */ = {isa = PBXBuildFile; fileRef = 88769A9FBC6D6FA9D5E1F9C6 /* default-keywords.json */; };
+		111111111111111111111111 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222222 /* Localizable.xcstrings */; };
 		F0425438460C08427472A243 /* AutoBanLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C73BA0AA8AD2FA1C7ABBD346 /* AutoBanLiveActivityAttributes.swift */; };
 /* End PBXBuildFile section */
 
@@ -76,6 +77,7 @@
 		DA23268C33949A7C931E2D5E /* AutoBanRobotApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoBanRobotApp.swift; sourceTree = "<group>"; };
 		EDB991B1F262340DBBF021EA /* default-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "default-rules.json"; sourceTree = "<group>"; };
 		EF6494B8F3E18502D042D576 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
+		222222222222222222222222 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -141,6 +143,7 @@
 				EF6494B8F3E18502D042D576 /* LiveActivityManager.swift */,
 				B49064D1AAB7936C6F999C05 /* Models.swift */,
 				481AD55A71DC908648733874 /* XAPIClient.swift */,
+				222222222222222222222222 /* Localizable.xcstrings */,
 			);
 			path = AutoBanRobot;
 			sourceTree = "<group>";
@@ -263,6 +266,7 @@
 				E7E1F6E3E5846A2F12BEA38C /* default-keywords.json in Resources */,
 				9A576ECEE55DD362ED65D0C5 /* default-rules.json in Resources */,
 				7888F6DB46678281EEB6A176 /* injected.js in Resources */,
+				111111111111111111111111 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

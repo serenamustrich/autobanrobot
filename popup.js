@@ -1,3 +1,28 @@
+const t = (key, substitutions) => chrome.i18n.getMessage(key, substitutions) || key;
+
+function localizeAccountUi() {
+  const labels = {
+    accountTitle: 'accountTitle', accountLogin: 'login', accountRegister: 'register',
+    accountRecover: 'recoverPassword', recoveryReset: 'resetPassword',
+    accountSync: 'syncNow', accountLogout: 'logout'
+  };
+  for (const [id, key] of Object.entries(labels)) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = t(key);
+  }
+  const placeholders = {
+    accountUsername: 'accountUsername', accountPassword: 'accountPassword',
+    securityAnswer: 'securityAnswer', recoveryAnswer: 'securityAnswer', recoveryPassword: 'newPassword'
+  };
+  for (const [id, key] of Object.entries(placeholders)) {
+    const node = document.getElementById(id);
+    if (node) node.placeholder = t(key);
+  }
+  document.getElementById('accountPanelTitle').textContent = t('accountTitle');
+}
+
+localizeAccountUi();
+
 chrome.storage.local.get([
   'blockCount',
   'keywords',
@@ -6,6 +31,8 @@ chrome.storage.local.get([
   'blockHistory',
   'pendingBlockQueue',
   'updateInfo',
+  'accountSession',
+  'accountSyncAt',
   'popupActiveTab'
 ], r => {
   document.getElementById('count').textContent = r.blockCount ?? 0;
@@ -16,12 +43,13 @@ chrome.storage.local.get([
     Array.isArray(r.pendingBlockQueue) ? r.pendingBlockQueue.length : 0;
   renderBlockHistory(r.blockHistory);
   renderUpdateInfo(r.updateInfo);
+  renderAccount(r.accountSession, r.accountSyncAt);
   updateKeywordSummary();
   updateRuleSummary();
   showTab(r.popupActiveTab || 'keywords', false);
 });
 
-const validTabs = new Set(['keywords', 'rules', 'history', 'update']);
+const validTabs = new Set(['keywords', 'rules', 'history', 'update', 'account']);
 document.querySelectorAll('[data-tab]').forEach(button => {
   button.addEventListener('click', () => showTab(button.dataset.tab));
 });
@@ -107,7 +135,7 @@ function renderRemoteRules(config, states = {}) {
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.dataset.ruleToggle = 'remote';
-    input.checked = rule.enabled !== false && states[rule.id] !== false;
+    input.checked = states[rule.id] ?? rule.enabled ?? true;
     input.addEventListener('change', () => {
       chrome.storage.local.get(['remoteRuleStates'], result => {
         const next = { ...(result.remoteRuleStates ?? {}), [rule.id]: input.checked };
@@ -191,9 +219,27 @@ function renderBlockHistory(value) {
     const time = record.blockedAt
       ? new Date(record.blockedAt).toLocaleString()
       : '时间未知';
-    meta.textContent = `${time} · ${record.reason || '规则命中'}`;
+    meta.textContent = time;
 
     item.append(user, meta);
+    const keywords = [...new Set((Array.isArray(record.matchedKeywords)
+      ? record.matchedKeywords
+      : []).map(value => String(value ?? '').trim()).filter(Boolean))];
+    if (keywords.length || record.reason) {
+      const evidence = document.createElement('div');
+      evidence.className = 'history-evidence';
+      if (keywords.length) {
+        const keyword = document.createElement('div');
+        keyword.className = 'history-evidence-keyword';
+        keyword.textContent = `关键词：${keywords.join('、')}`;
+        evidence.appendChild(keyword);
+      }
+      const rule = document.createElement('div');
+      rule.className = 'history-evidence-rule';
+      rule.textContent = `规则依据：${record.reason || '规则命中（旧记录未保存详情）'}`;
+      evidence.appendChild(rule);
+      item.appendChild(evidence);
+    }
     if (record.content) {
       const content = document.createElement('div');
       content.className = 'history-content';
@@ -297,6 +343,68 @@ document.getElementById('checkUpdate').addEventListener('click', () => {
   });
 });
 
+const securityQuestions = {
+  first_teacher: t('questionFirstTeacher'), childhood_nickname: t('questionChildhoodNickname'), first_pet: t('questionFirstPet'), favorite_book: t('questionFavoriteBook'), favorite_food: t('questionFavoriteFood'), dream_job: t('questionDreamJob'), first_concert: t('questionFirstConcert'), favorite_city: t('questionFavoriteCity'), childhood_friend: t('questionChildhoodFriend'), favorite_film: t('questionFavoriteFilm')
+};
+const questionSelect = document.getElementById('securityQuestion');
+Object.entries(securityQuestions).forEach(([key, label]) => { const option = document.createElement('option'); option.value = key; option.textContent = label; questionSelect.append(option); });
+
+function renderAccount(session, syncedAt) {
+  const signedIn = Boolean(session?.accessToken);
+  document.getElementById('accountSignedOut').hidden = signedIn;
+  document.getElementById('accountSignedIn').hidden = !signedIn;
+  document.getElementById('accountState').textContent = signedIn ? `@${session.username}` : t('accountSignedOut');
+  if (signedIn) {
+    document.getElementById('accountUsernameLabel').textContent = `@${session.username}`;
+    document.getElementById('accountSyncStatus').textContent = syncedAt ? new Date(syncedAt).toLocaleString() : t('accountWaitingSync');
+  }
+}
+
+function accountMessage(action, payload = {}) {
+  return new Promise(resolve => chrome.runtime.sendMessage({ type: action, ...payload }, resolve));
+}
+async function submitAccount(mode) {
+  const username = document.getElementById('accountUsername').value.trim();
+  const password = document.getElementById('accountPassword').value;
+  const status = document.getElementById('accountStatus');
+  status.textContent = t('accountWorking');
+  const payload = mode === 'register'
+    ? { username, password, securityQuestionKey: questionSelect.value, securityAnswer: document.getElementById('securityAnswer').value }
+    : { username, password };
+  const result = await accountMessage('ACCOUNT_AUTH', { mode, payload });
+  if (!result?.ok) { status.textContent = localizeAccountError(result?.error); return; }
+  status.textContent = t('accountMerged');
+  chrome.storage.local.get(['accountSession', 'accountSyncAt'], value => renderAccount(value.accountSession, value.accountSyncAt));
+}
+document.getElementById('accountLogin').addEventListener('click', () => submitAccount('login'));
+document.getElementById('accountRegister').addEventListener('click', () => submitAccount('register'));
+document.getElementById('accountLogout').addEventListener('click', async () => { await accountMessage('ACCOUNT_LOGOUT'); renderAccount(null, null); });
+document.getElementById('accountSync').addEventListener('click', async () => { const result = await accountMessage('ACCOUNT_SYNC'); document.getElementById('accountStatus').textContent = result?.ok ? t('accountSynced') : localizeAccountError(result?.error); });
+document.getElementById('accountRecover').addEventListener('click', async () => {
+  const username = document.getElementById('accountUsername').value.trim();
+  const result = await accountMessage('ACCOUNT_RECOVERY_QUESTION', { username });
+  if (!result?.ok) { document.getElementById('accountStatus').textContent = localizeAccountError(result?.error); return; }
+  document.getElementById('accountRecovery').hidden = false;
+  document.getElementById('recoveryQuestionLabel').textContent = securityQuestions[result.securityQuestionKey] || '密保问题';
+  document.getElementById('accountRecovery').dataset.question = result.securityQuestionKey;
+});
+document.getElementById('recoveryReset').addEventListener('click', async () => {
+  const status = document.getElementById('accountStatus');
+  const recovery = document.getElementById('accountRecovery');
+  const result = await accountMessage('ACCOUNT_RECOVERY_RESET', { payload: {
+    username: document.getElementById('accountUsername').value.trim(), securityQuestionKey: recovery.dataset.question,
+    securityAnswer: document.getElementById('recoveryAnswer').value, newPassword: document.getElementById('recoveryPassword').value
+  }});
+  status.textContent = result?.ok ? t('accountResetDone') : localizeAccountError(result?.error);
+  if (result?.ok) chrome.storage.local.get(['accountSession', 'accountSyncAt'], value => renderAccount(value.accountSession, value.accountSyncAt));
+});
+
+function localizeAccountError(code) {
+  if (!code) return t('errorAuthFailed');
+  if (code === 'AUTH_NETWORK_ERROR' || code === 'Failed to fetch') return t('errorNetwork');
+  return code;
+}
+
 chrome.storage.onChanged.addListener(changes => {
   if (changes.blockHistory) renderBlockHistory(changes.blockHistory.newValue);
   if (changes.blockCount) {
@@ -309,6 +417,7 @@ chrome.storage.onChanged.addListener(changes => {
         : 0;
   }
   if (changes.updateInfo) renderUpdateInfo(changes.updateInfo.newValue);
+  if (changes.accountSession || changes.accountSyncAt) chrome.storage.local.get(['accountSession', 'accountSyncAt'], value => renderAccount(value.accountSession, value.accountSyncAt));
   if (changes.remoteRuleConfig || changes.remoteRuleStates) {
     chrome.storage.local.get(['remoteRuleConfig', 'remoteRuleStates'], r => {
       renderRemoteRules(r.remoteRuleConfig, r.remoteRuleStates);

@@ -1,0 +1,18 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "account.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Account" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "账号" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "帳號" } } } },
+    "account.username" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Username" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "账号名" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "帳號名稱" } } } },
+    "account.password" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Password (at least 8 characters)" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "密码（至少 8 位）" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "密碼（至少 8 碼）" } } } },
+    "account.login" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign in" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "登录" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "登入" } } } },
+    "account.register" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Create account" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "注册" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "註冊" } } } },
+    "account.logout" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sign out" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出登录" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "登出" } } } },
+    "account.sync" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sync now" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "立即同步" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "立即同步" } } } },
+    "account.recover" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Recover password" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "找回密码" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "找回密碼" } } } },
+    "account.security.answer" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Security answer" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "密保答案" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "安全性答案" } } } },
+    "account.security.question" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Security question" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "密保问题" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "安全性問題" } } } },
+    "account.reset" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Reset password and sign in" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重置密码并登录" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "重設密碼並登入" } } } },
+    "account.new.password" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "New password (at least 8 characters)" } }, "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新密码（至少 8 位）" } }, "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "新密碼（至少 8 碼）" } } } }
+  },
+  "version" : "1.0"
+}

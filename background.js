@@ -11,11 +11,14 @@ const UPLOAD_RETRY_BASE_MS = 15_000;
 const UPLOAD_RETRY_MAX_MS = 5 * 60_000;
 const UPDATE_ALARM = 'autobanrobot-check-github-release';
 const HEARTBEAT_ALARM = 'autobanrobot-plugin-heartbeat';
+const ACCOUNT_SYNC_ALARM = 'autobanrobot-account-settings-pull';
 const HEARTBEAT_ENDPOINT = 'https://ban.richccy.com/api/clients/heartbeat';
+const ACCOUNT_API_BASE = 'https://ban.richccy.com/api';
 const RULES_ENDPOINT = 'https://ban.richccy.com/api/rules';
 const RULES_ALARM = 'autobanrobot-refresh-rules';
-const MIN_ONLINE_RULE_VERSION = 9;
+const MIN_ONLINE_RULE_VERSION = 12;
 const INSTALLATION_ID_KEY = 'anonymousInstallationId';
+const ACCOUNT_SESSION_KEY = 'accountSession';
 const LATEST_RELEASE_API =
   'https://api.github.com/repos/serenamustrich/autobanrobot/releases/latest';
 const DEFAULT_ACCOUNT_WHITELIST = ['AAAGodofWealth'];
@@ -28,6 +31,9 @@ let queueScheduleId = 0;
 let uploadProcessing = false;
 let uploadScheduleId = 0;
 let historyHideMigrationRunning = false;
+let accountSyncTimer = null;
+let accountSyncInFlight = false;
+let accountStreamAbort = null;
 
 function isExtensionShutdownError(error) {
   return /(?:No SW|Extension context invalidated|message port closed)/i.test(
@@ -109,33 +115,157 @@ async function initializeRules() {
     await chrome.storage.local.set({ remoteRuleConfig: bundled });
     return;
   }
-
-  const knownIds = new Set(current.rules.map(rule => rule?.id).filter(Boolean));
-  const missingRules = bundled.rules.filter(rule => rule?.id && !knownIds.has(rule.id));
-  if (!missingRules.length) return;
   await chrome.storage.local.set({
-    remoteRuleConfig: {
-      ...current,
-      version: Math.max(current.version ?? 0, bundled.version ?? 0),
-      rules: [...current.rules, ...missingRules]
-    }
+    remoteRuleConfig: mergeRuleConfigWithBundledEngine(current, bundled)
   });
+}
+
+function mergeRuleConfigWithBundledEngine(config, bundled) {
+  const currentRules = Array.isArray(config?.rules) ? config.rules : [];
+  const knownIds = new Set(currentRules.map(rule => rule?.id).filter(Boolean));
+  const missingRules = (Array.isArray(bundled?.rules) ? bundled.rules : [])
+    .filter(rule => rule?.id && !knownIds.has(rule.id));
+  const keywordSets = Array.isArray(config?.keywordSets)
+    ? config.keywordSets
+    : bundled?.keywordSets ?? [];
+  const keywordPolicies = Array.isArray(config?.keywordPolicies)
+    ? config.keywordPolicies
+    : bundled?.keywordPolicies ?? [];
+  const accountPolicies = Array.isArray(config?.accountPolicies)
+    ? config.accountPolicies
+    : bundled?.accountPolicies ?? [];
+  return {
+    ...config,
+    version: Math.max(config?.version ?? 0, bundled?.version ?? 0),
+    engine: config?.engine ?? bundled?.engine,
+    keywordSets,
+    keywordPolicies,
+    accountPolicies,
+    rules: [...currentRules, ...missingRules]
+  };
+}
+
+function isValidCountConstraint(condition) {
+  const fields = ['equals', 'min', 'max'];
+  const values = fields
+    .filter(field => condition[field] !== undefined)
+    .map(field => condition[field]);
+  if (!values.length || !values.every(value => Number.isSafeInteger(value) && value >= 0)) {
+    return false;
+  }
+  return !(Number.isSafeInteger(condition.min) && Number.isSafeInteger(condition.max) &&
+    condition.min > condition.max);
+}
+
+function isValidRuleCondition(condition, depth = 0) {
+  if (!condition || typeof condition !== 'object' || Array.isArray(condition) || depth > 12) {
+    return false;
+  }
+  if (Array.isArray(condition.all) || Array.isArray(condition.any)) {
+    const group = condition.all ?? condition.any;
+    return group.length > 0 && group.length <= 32 &&
+      group.every(item => isValidRuleCondition(item, depth + 1));
+  }
+  if (condition.not !== undefined) return isValidRuleCondition(condition.not, depth + 1);
+  if (condition.type === 'singleEmoji') return true;
+  if (condition.type === 'graphemeCount' || condition.type === 'lineCount') {
+    return isValidCountConstraint(condition);
+  }
+  if (condition.type === 'lineAt') {
+    return Number.isSafeInteger(condition.index) && condition.index >= 0 &&
+      isValidRuleCondition(condition.condition, depth + 1);
+  }
+  if (condition.type === 'anyLine') {
+    return isValidRuleCondition(condition.condition, depth + 1) &&
+      (condition.where === undefined || isValidRuleCondition(condition.where, depth + 1));
+  }
+  if (condition.type === 'countLines') {
+    return isValidCountConstraint(condition) &&
+      isValidRuleCondition(condition.condition, depth + 1) &&
+      (condition.where === undefined || isValidRuleCondition(condition.where, depth + 1));
+  }
+  if (condition.type === 'allLines') {
+    return isValidRuleCondition(condition.condition, depth + 1) &&
+      (condition.where === undefined || isValidRuleCondition(condition.where, depth + 1));
+  }
+  return condition.type === 'regex' &&
+    typeof condition.pattern === 'string' && condition.pattern.length > 0 &&
+    condition.pattern.length <= 2000 &&
+    typeof condition.flags === 'string' && /^[imsuy]*$/.test(condition.flags) &&
+    ['raw', 'compact', 'noSymbols'].includes(condition.normalization ?? 'raw');
+}
+
+function isValidAccountPolicyTarget(target) {
+  return target && typeof target === 'object' &&
+    ['content', 'username'].includes(target.scope) &&
+    typeof target.pattern === 'string' && target.pattern.length > 0 &&
+    target.pattern.length <= 2_000 && /\{\{[1-9]\}\}/u.test(target.pattern) &&
+    typeof target.flags === 'string' && /^[imsuy]*$/.test(target.flags) &&
+    ['raw', 'compact', 'noSymbols'].includes(target.normalization ?? 'raw');
+}
+
+function isValidKeywordSet(set) {
+  return set && typeof set === 'object' &&
+    typeof set.id === 'string' && set.id.length > 0 && set.id.length <= 64 &&
+    (set.enabled === undefined || typeof set.enabled === 'boolean') &&
+    Array.isArray(set.keywords) && set.keywords.length <= 1_000 &&
+    set.keywords.every(keyword => typeof keyword === 'string' &&
+      keyword.trim().length > 0 && keyword.trim().length <= 100);
+}
+
+function isValidKeywordPolicy(policy) {
+  return policy && typeof policy === 'object' &&
+    typeof policy.id === 'string' && policy.id.length > 0 && policy.id.length <= 64 &&
+    Array.isArray(policy.scopes) && policy.scopes.length > 0 && policy.scopes.length <= 3 &&
+    policy.scopes.every(scope => ['content', 'username', 'displayName'].includes(scope)) &&
+    ['includes', 'token'].includes(policy.operator) &&
+    ['raw', 'compact', 'noSymbols', 'hanNoise'].includes(policy.normalization) &&
+    Number.isSafeInteger(policy.minLength) && policy.minLength >= 1 && policy.minLength <= 100 &&
+    (policy.keywordPattern === undefined ||
+      (typeof policy.keywordPattern === 'string' && policy.keywordPattern.length > 0 &&
+       policy.keywordPattern.length <= 500)) &&
+    (policy.keywordFlags === undefined ||
+      (typeof policy.keywordFlags === 'string' && /^[imsuy]*$/.test(policy.keywordFlags))) &&
+    (policy.flags === undefined ||
+      (typeof policy.flags === 'string' && /^[imsuy]*$/.test(policy.flags)));
+}
+
+function isValidAccountPolicy(policy) {
+  return policy && typeof policy === 'object' &&
+    typeof policy.id === 'string' && policy.id.length > 0 && policy.id.length <= 64 &&
+    typeof policy.keywordPattern === 'string' && policy.keywordPattern.length > 0 &&
+    policy.keywordPattern.length <= 500 &&
+    typeof policy.keywordFlags === 'string' && /^[imsuy]*$/.test(policy.keywordFlags) &&
+    Array.isArray(policy.targets) && policy.targets.length > 0 && policy.targets.length <= 3 &&
+    policy.targets.every(isValidAccountPolicyTarget);
 }
 
 function isValidRuleConfig(config) {
   return Number.isSafeInteger(config?.version) &&
-    config.version >= MIN_ONLINE_RULE_VERSION &&
+    config.version >= 9 &&
     Array.isArray(config.rules) &&
     config.rules.length <= 100 &&
+    (config.engine === undefined ||
+      (Number.isSafeInteger(config.engine?.schemaVersion) && config.engine.schemaVersion === 1)) &&
+    (config.keywordSets === undefined ||
+      (Array.isArray(config.keywordSets) && config.keywordSets.length <= 50 &&
+        config.keywordSets.every(isValidKeywordSet))) &&
+    (config.keywordPolicies === undefined ||
+      (Array.isArray(config.keywordPolicies) && config.keywordPolicies.length <= 50 &&
+        config.keywordPolicies.every(isValidKeywordPolicy))) &&
+    (config.accountPolicies === undefined ||
+      (Array.isArray(config.accountPolicies) && config.accountPolicies.length <= 50 &&
+        config.accountPolicies.every(isValidAccountPolicy))) &&
     config.rules.every(rule =>
       typeof rule?.id === 'string' && rule.id.length <= 64 &&
       typeof rule?.name === 'string' && rule.name.length <= 120 &&
-      ((rule.matcher === undefined &&
+      ((rule.condition !== undefined && isValidRuleCondition(rule.condition)) ||
+        (rule.matcher === undefined &&
         typeof rule?.pattern === 'string' && rule.pattern.length <= 2000 &&
         typeof rule?.flags === 'string' && /^[gimsuy]*$/.test(rule.flags)) ||
         (rule.pattern === undefined &&
         ['singleEmoji', 'structuredEmojiTime',
-            'structuredThreeSegment'].includes(rule?.matcher))) &&
+            'structuredThreeSegment', 'structuredFourSegmentCodeEmoji'].includes(rule?.matcher))) &&
       ['content', 'username', 'displayName'].includes(rule.scope ?? 'content') &&
       (rule.requiresDefaultAvatar === undefined ||
         typeof rule.requiresDefaultAvatar === 'boolean') &&
@@ -151,9 +281,12 @@ async function refreshRules() {
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const config = await response.json();
   if (!isValidRuleConfig(config)) throw new Error('Invalid rule configuration');
-  config.checkedAt = new Date().toISOString();
-  await chrome.storage.local.set({ remoteRuleConfig: config });
-  return config;
+  const bundledResponse = await fetch(chrome.runtime.getURL('default-rules.json'));
+  const bundled = await bundledResponse.json();
+  const merged = mergeRuleConfigWithBundledEngine(config, bundled);
+  merged.checkedAt = new Date().toISOString();
+  await chrome.storage.local.set({ remoteRuleConfig: merged });
+  return merged;
 }
 
 function scheduleQueue(delayMs = 0) {
@@ -212,6 +345,13 @@ function scheduleHeartbeat() {
   );
 }
 
+function scheduleAccountSettingsPull() {
+  settleExtensionCall(
+    chrome.alarms.create(ACCOUNT_SYNC_ALARM, { delayInMinutes: 0.5, periodInMinutes: 0.5 }),
+    'Failed to schedule account settings pull'
+  );
+}
+
 function scheduleRuleRefresh() {
   settleExtensionCall(
     chrome.alarms.create(RULES_ALARM, {
@@ -233,23 +373,142 @@ async function getInstallationId() {
   return installationId;
 }
 
+async function getAccountSession() {
+  const stored = await chrome.storage.local.get([ACCOUNT_SESSION_KEY]);
+  const session = stored[ACCOUNT_SESSION_KEY];
+  return session?.accessToken ? session : null;
+}
+
+async function accountHeaders() {
+  const session = await getAccountSession();
+  return session ? { authorization: `Bearer ${session.accessToken}` } : {};
+}
+
+async function applyAccountSettings(body) {
+  accountSyncInFlight = true;
+  try {
+    await chrome.storage.local.set({
+      keywords: Array.isArray(body.keywords) ? body.keywords : [],
+      accountWhitelist: Array.isArray(body.whitelist) ? body.whitelist : [],
+      accountSyncAt: body.updatedAt || new Date().toISOString(),
+      accountSettingsRevision: body.revision ?? 0
+    });
+  } finally { accountSyncInFlight = false; }
+}
+
+async function pullAccountSettings() {
+  const session = await getAccountSession();
+  if (!session) return { signedIn: false };
+  const response = await fetch(`${ACCOUNT_API_BASE}/account/settings`, {
+    headers: { authorization: `Bearer ${session.accessToken}` }
+  });
+  const body = await response.json().catch(() => ({}));
+  if (response.status === 401) await chrome.storage.local.remove(ACCOUNT_SESSION_KEY);
+  if (!response.ok) throw new Error(body.code || 'ACCOUNT_SYNC_FAILED');
+  await applyAccountSettings(body);
+  return { signedIn: true, username: session.username, settings: body };
+}
+
+async function syncAccountSettings(merge = false) {
+  const session = await getAccountSession();
+  if (!session) return { signedIn: false };
+  const stored = await chrome.storage.local.get(['keywords', 'accountWhitelist']);
+  const response = await fetch(`${ACCOUNT_API_BASE}/account/settings${merge ? '/merge' : ''}`, {
+    method: merge ? 'POST' : 'PUT',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${session.accessToken}` },
+    body: JSON.stringify({ keywords: stored.keywords ?? [], whitelist: stored.accountWhitelist ?? [] })
+  });
+  const body = await response.json().catch(() => ({}));
+  if (response.status === 401) await chrome.storage.local.remove(ACCOUNT_SESSION_KEY);
+  if (!response.ok) throw new Error(body.code || 'ACCOUNT_SYNC_FAILED');
+  await applyAccountSettings(body);
+  return { signedIn: true, username: session.username, settings: body };
+}
+
+async function startAccountSettingsStream() {
+  accountStreamAbort?.abort();
+  const session = await getAccountSession();
+  if (!session) return;
+  const controller = new AbortController();
+  accountStreamAbort = controller;
+  try {
+    const response = await fetch(`${ACCOUNT_API_BASE}/account/settings/stream`, {
+      headers: { authorization: `Bearer ${session.accessToken}` }, signal: controller.signal
+    });
+    if (!response.ok || !response.body) throw new Error(`SSE_${response.status}`);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let pending = '';
+    while (!controller.signal.aborted) {
+      const next = await reader.read();
+      if (next.done) break;
+      pending += decoder.decode(next.value, { stream: true });
+      const frames = pending.split('\n\n');
+      pending = frames.pop() || '';
+      for (const frame of frames) {
+        const data = frame.split('\n').find(line => line.startsWith('data:'))?.slice(5).trim();
+        if (!data) continue;
+        try { await applyAccountSettings(JSON.parse(data)); } catch (_) { /* wait for the next valid event */ }
+      }
+    }
+  } catch (_) {
+    // The alarm and foreground lifecycle provide a bounded recovery path.
+  } finally {
+    if (accountStreamAbort === controller) accountStreamAbort = null;
+  }
+}
+
+async function authenticateAccount(mode, payload) {
+  const response = await fetch(`${ACCOUNT_API_BASE}/auth/${mode}`, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload)
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.code || 'AUTH_FAILED');
+  await chrome.storage.local.set({ [ACCOUNT_SESSION_KEY]: body });
+  const installationId = await getInstallationId();
+  await fetch(`${ACCOUNT_API_BASE}/auth/devices/bind`, {
+    method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${body.accessToken}` }, body: JSON.stringify({ installationId })
+  });
+  const synced = await syncAccountSettings(true);
+  startAccountSettingsStream().catch(() => {});
+  sendHeartbeat().catch(() => {});
+  return { ...synced, expiresAt: body.expiresAt };
+}
+
+function scheduleAccountSettingsSync() {
+  if (accountSyncInFlight) return;
+  clearTimeout(accountSyncTimer);
+  accountSyncTimer = setTimeout(() => syncAccountSettings(false).catch(() => {}), 500);
+}
+
 async function sendHeartbeat() {
   const installationId = await getInstallationId();
+  const authHeaders = await accountHeaders();
   const response = await fetch(HEARTBEAT_ENDPOINT, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'x-autoban-client': 'browser-extension'
+      'x-autoban-client': 'browser-extension',
+      ...authHeaders
     },
     body: JSON.stringify({
       installationId,
       platform: 'chrome-edge',
       version: chrome.runtime.getManifest().version,
-      clientType: 'plugin'
+      clientType: 'plugin',
+      deviceName: getPluginDeviceName()
     })
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   processUploadQueue().catch(() => {});
+}
+
+function getPluginDeviceName() {
+  const browser = /Edg\//.test(navigator.userAgent) ? 'Edge'
+    : /Chrome\//.test(navigator.userAgent) ? 'Chrome'
+      : 'Browser';
+  const platform = navigator.userAgentData?.platform || navigator.platform || 'Desktop';
+  return `${browser} on ${platform}`.slice(0, 128);
 }
 
 function compareVersions(left, right) {
@@ -304,6 +563,8 @@ chrome.runtime.onInstalled.addListener(() => {
   scheduleUpdateChecks();
   checkForUpdate();
   scheduleHeartbeat();
+  scheduleAccountSettingsPull();
+  pullAccountSettings().then(() => startAccountSettingsStream()).catch(() => {});
   sendHeartbeat().catch(() => {});
   scheduleRuleRefresh();
   refreshRules().catch(() => {});
@@ -317,6 +578,8 @@ chrome.runtime.onStartup.addListener(() => {
   scheduleUpdateChecks();
   checkForUpdate();
   scheduleHeartbeat();
+  scheduleAccountSettingsPull();
+  pullAccountSettings().then(() => startAccountSettingsStream()).catch(() => {});
   sendHeartbeat().catch(() => {});
   scheduleRuleRefresh();
   refreshRules().catch(() => {});
@@ -778,18 +1041,28 @@ async function recordSuccess(job) {
   const stored = await chrome.storage.local.get([
     'blockCount',
     'blockHistory',
-    'keywords'
+    'keywords',
+    'remoteRuleConfig'
   ]);
+  const onlineKeywords = Array.isArray(stored.remoteRuleConfig?.keywordSets)
+    ? stored.remoteRuleConfig.keywordSets.flatMap(set =>
+      set?.enabled === false || !Array.isArray(set?.keywords) ? [] : set.keywords
+    )
+    : [];
   const history = Array.isArray(stored.blockHistory) ? stored.blockHistory : [];
   const record = {
     clientEventId: crypto.randomUUID(),
+    installationId: await getInstallationId(),
     username: job.username,
     displayName: job.displayName,
     reason: job.reason,
     matchedKeywords: Array.isArray(job.matchedKeywords)
       ? job.matchedKeywords
       : [],
-    configuredKeywords: Array.isArray(stored.keywords) ? stored.keywords : [],
+    configuredKeywords: [...new Set([
+      ...(Array.isArray(stored.keywords) ? stored.keywords : []),
+      ...onlineKeywords
+    ])],
     content: job.content,
     pageUrl: job.pageUrl,
     hostname: job.hostname === 'twitter.com' ? 'twitter.com' : 'x.com',
@@ -832,14 +1105,17 @@ async function processUploadQueue() {
 
     const record = queue[0];
     try {
+      const installationId = record.installationId || await getInstallationId();
       const response = await fetch(UPLOAD_ENDPOINT, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-autoban-client': 'browser-extension'
+          'x-autoban-client': 'browser-extension',
+          ...(await accountHeaders())
         },
         body: JSON.stringify({
           clientEventId: record.clientEventId,
+          installationId,
           username: record.username,
           displayName: record.displayName,
           reason: record.reason,
@@ -956,8 +1232,17 @@ chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === HEARTBEAT_ALARM) {
     sendHeartbeat().catch(() => {});
   }
+  if (alarm.name === ACCOUNT_SYNC_ALARM) {
+    pullAccountSettings().then(() => startAccountSettingsStream()).catch(() => {});
+  }
   if (alarm.name === RULES_ALARM) {
     refreshRules().catch(() => {});
+  }
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && !accountSyncInFlight && (changes.keywords || changes.accountWhitelist)) {
+    scheduleAccountSettingsSync();
   }
 });
 
@@ -1001,6 +1286,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'REFRESH_RULES') {
     refreshRules()
       .then(config => sendResponse({ ok: true, config }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+  if (message.type === 'ACCOUNT_AUTH') {
+    authenticateAccount(message.mode, message.payload || {})
+      .then(result => sendResponse({ ok: true, ...result }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+  if (message.type === 'ACCOUNT_LOGOUT') {
+    getAccountSession().then(session => session
+      ? fetch(`${ACCOUNT_API_BASE}/auth/logout`, { method: 'POST', headers: { authorization: `Bearer ${session.accessToken}` } })
+      : null
+    ).catch(() => {}).finally(() => {
+      accountStreamAbort?.abort();
+      return chrome.storage.local.remove(ACCOUNT_SESSION_KEY);
+    }).then(() => sendResponse({ ok: true }));
+    return true;
+  }
+  if (message.type === 'ACCOUNT_SYNC') {
+    syncAccountSettings(false).then(result => sendResponse({ ok: true, ...result }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+  if (message.type === 'ACCOUNT_RECOVERY_QUESTION') {
+    fetch(`${ACCOUNT_API_BASE}/auth/recovery/question`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: message.username }) })
+      .then(async response => ({ response, body: await response.json().catch(() => ({})) }))
+      .then(({ response, body }) => response.ok ? sendResponse({ ok: true, ...body }) : sendResponse({ ok: false, error: body.code || 'AUTH_RECOVERY_INVALID' }))
+      .catch(() => sendResponse({ ok: false, error: 'AUTH_NETWORK_ERROR' }));
+    return true;
+  }
+  if (message.type === 'ACCOUNT_RECOVERY_RESET') {
+    authenticateAccount('recovery/reset', message.payload || {})
+      .then(result => sendResponse({ ok: true, ...result }))
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }

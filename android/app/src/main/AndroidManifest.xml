@@ -9,6 +9,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
+        <activity android:name=".AccountActivity" android:screenOrientation="portrait" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

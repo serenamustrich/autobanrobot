@@ -35,8 +35,8 @@ android {
         applicationId = "com.autobanrobot.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 43
-        versionName = "1.0.42"
+        versionCode = 59
+        versionName = "1.0.58"
     }
 
     buildTypes {
@@ -80,5 +80,6 @@ tasks.named("preBuild").configure {
 }
 
 dependencies {
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
     testImplementation("junit:junit:4.13.2")
 }

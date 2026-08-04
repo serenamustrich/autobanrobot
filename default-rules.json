@@ -1,14 +1,80 @@
 {
-  "version": 11,
-  "updatedAt": "2026-08-03T00:00:00Z",
+  "version": 12,
+  "updatedAt": "2026-08-04T00:00:00Z",
+  "engine": {
+    "schemaVersion": 1
+  },
+  "keywordSets": [],
+  "keywordPolicies": [
+    {
+      "id": "english-complete-token",
+      "scopes": ["content", "username", "displayName"],
+      "operator": "token",
+      "normalization": "raw",
+      "minLength": 1,
+      "keywordPattern": "^[A-Za-z][A-Za-z0-9_ -]*$",
+      "keywordFlags": "u",
+      "flags": "iu"
+    },
+    {
+      "id": "non-english-literal",
+      "scopes": ["content", "username", "displayName"],
+      "operator": "includes",
+      "normalization": "compact",
+      "minLength": 1,
+      "keywordPattern": "^(?![A-Za-z][A-Za-z0-9_ -]*$).+$",
+      "keywordFlags": "u"
+    },
+    {
+      "id": "non-english-symbol-noise",
+      "scopes": ["content", "username", "displayName"],
+      "operator": "includes",
+      "normalization": "noSymbols",
+      "minLength": 2,
+      "keywordPattern": "^(?![A-Za-z][A-Za-z0-9_ -]*$).+$",
+      "keywordFlags": "u"
+    },
+    {
+      "id": "han-interference-noise",
+      "scopes": ["content", "username", "displayName"],
+      "operator": "includes",
+      "normalization": "hanNoise",
+      "minLength": 2,
+      "keywordPattern": "^\\p{Script=Han}{2,}$",
+      "keywordFlags": "u"
+    }
+  ],
+  "accountPolicies": [
+    {
+      "id": "complete-account-target",
+      "keywordPattern": "^@([A-Za-z0-9_]{1,15})$",
+      "keywordFlags": "u",
+      "targets": [
+        {
+          "scope": "content",
+          "pattern": "(^|[^\\p{L}\\p{N}_])@{{1}}(?=$|[^\\p{L}\\p{N}_])",
+          "flags": "iu",
+          "normalization": "raw"
+        },
+        {
+          "scope": "username",
+          "pattern": "^{{1}}$",
+          "flags": "iu",
+          "normalization": "raw"
+        }
+      ]
+    }
+  ],
   "rules": [
     {
       "id": "single-emoji-content",
       "name": "仅单个 Emoji",
       "description": "只匹配整条内容仅有一个完整 Emoji",
-      "enabled": true,
+      "enabled": false,
       "scope": "content",
-      "matcher": "singleEmoji"
+      "condition": {
+        "type": "singleEmoji"
+      }
     },
     {
       "id": "emoji-content-emoji",
@@ -26,7 +92,16 @@
       "description": "非 Emoji → Emoji → 非 Emoji → Emoji → 非 Emoji",
       "enabled": true,
       "scope": "content",
-      "matcher": "structuredEmojiTime"
+      "condition": {
+        "all": [
+          { "type": "lineCount", "equals": 5 },
+          { "type": "lineAt", "index": 0, "condition": { "not": { "type": "singleEmoji" } } },
+          { "type": "lineAt", "index": 1, "condition": { "type": "singleEmoji" } },
+          { "type": "lineAt", "index": 2, "condition": { "not": { "type": "singleEmoji" } } },
+          { "type": "lineAt", "index": 3, "condition": { "type": "singleEmoji" } },
+          { "type": "lineAt", "index": 4, "condition": { "not": { "type": "singleEmoji" } } }
+        ]
+      }
     },
     {
       "id": "three-segment-single-middle",
@@ -34,7 +109,12 @@
       "description": "任意内容 → 单个字符 → 任意内容",
       "enabled": true,
       "scope": "content",
-      "matcher": "structuredThreeSegment"
+      "condition": {
+        "all": [
+          { "type": "lineCount", "equals": 3 },
+          { "type": "lineAt", "index": 1, "condition": { "type": "graphemeCount", "equals": 1 } }
+        ]
+      }
     },
     {
       "id": "four-segment-code-emoji",
@@ -42,7 +122,19 @@
       "description": "3–6 行短编码内容中恰有一行单 Emoji，Emoji 可出现在任意行",
       "enabled": true,
       "scope": "content",
-      "matcher": "structuredFourSegmentCodeEmoji"
+      "condition": {
+        "all": [
+          { "type": "lineCount", "min": 3, "max": 6 },
+          { "type": "countLines", "condition": { "type": "singleEmoji" }, "equals": 1 },
+          { "type": "countLines", "condition": { "not": { "type": "singleEmoji" } }, "min": 2 },
+          {
+            "type": "allLines",
+            "where": { "not": { "type": "singleEmoji" } },
+            "condition": { "type": "regex", "pattern": "^[A-Za-z0-9._-]{1,16}$", "flags": "u" }
+          },
+          { "type": "anyLine", "condition": { "type": "regex", "pattern": "\\d", "flags": "u" } }
+        ]
+      }
     },
     {
       "id": "emoji-copy-tcn-link",
@@ -92,7 +184,7 @@
       "scope": "username",
       "requiresDefaultAvatar": true,
       "normalization": "raw",
-      "pattern": "^(?=.{12,15}$)(?=(?:[^A-Z]*[A-Z]){2}[^A-Z]*$)[A-Z][a-z]{2,11}[A-Z][A-Za-z0-9]{4,12}$",
+      "pattern": "^(?=.{12,15}$)(?=(?:[^A-Z]*[A-Z]){2}[^A-Z]*$)[A-Z][a-z]{2,11}[A-Za-z0-9]{4,12}$",
       "flags": "u"
     }
   ]

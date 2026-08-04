@@ -64,7 +64,7 @@ data class BlockJob(
 }
 
 class BlockQueue(
-    context: Context,
+    private val context: Context,
     private val rules: RuleStore,
     private val auth: AuthState,
     private val api: XApiClient,
@@ -81,6 +81,9 @@ class BlockQueue(
         const val TAG = "AutoBanBlockQueue"
     }
     private val prefs = context.getSharedPreferences("autoban_queue", Context.MODE_PRIVATE)
+    private val clientPrefs = context.getSharedPreferences("autoban_app_client", Context.MODE_PRIVATE)
+    private val installationId = clientPrefs.getString("installation_id", null)
+        ?: UUID.randomUUID().toString().also { clientPrefs.edit().putString("installation_id", it).apply() }
     private val executor = Executors.newSingleThreadExecutor()
     private val processing = AtomicBoolean(false)
     private val jobs = mutableListOf<BlockJob>()
@@ -414,6 +417,7 @@ class BlockQueue(
         }
         val record = job.toJson().apply {
             put("clientEventId", UUID.randomUUID().toString())
+            put("installationId", installationId)
             put("blockedAt", java.time.Instant.now().toString())
             put("confirmedState", outcome.state)
             put("action", "block+mute")
@@ -432,7 +436,7 @@ class BlockQueue(
             .putLong(CONFIRMED_BAN_TOTAL_KEY, nextConfirmedBanTotal)
             .apply()
         markProcessed(job.username, true)
-        if (!api.upload(record)) {
+        if (!api.upload(record, AccountStore(context, rules).session()?.token)) {
             val pending = readUploadQueue()
             pending.put(record)
             prefs.edit().putString("upload_queue", pending.toString()).apply()
@@ -495,7 +499,8 @@ class BlockQueue(
         val remaining = JSONArray()
         for (index in 0 until pending.length()) {
             val record = pending.optJSONObject(index) ?: continue
-            if (!api.upload(record)) remaining.put(record)
+            if (record.optString("installationId").isBlank()) record.put("installationId", installationId)
+            if (!api.upload(record, AccountStore(context, rules).session()?.token)) remaining.put(record)
         }
         prefs.edit().putString("upload_queue", remaining.toString()).apply()
     }
